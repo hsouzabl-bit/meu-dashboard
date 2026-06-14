@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Estatisticas from "./Estatisticas";
 
 const API_URL = "https://script.google.com/macros/s/AKfycbzBEgswS-Jy8HvgYOQITuS6YgRrT7am5DlR3Mhd6KC4sTpl_Xg5It7XBnIKdr1QWfzi/exec";
 
@@ -174,9 +175,9 @@ export default function App(){
 
   const navItems=[
     {label:"Dashboard",    icon:<Ico.Target   s={17} c="currentColor"/>},
+    {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
     {label:"Registros",    icon:<Ico.Book     s={17} c="currentColor"/>},
     {label:"Hábitos",      icon:<Ico.Check    s={17} c="currentColor"/>},
-    {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
     {label:"Livros",       icon:<Ico.BookOpen s={17} c="currentColor"/>},
     {label:"Replays",      icon:<Ico.Repeat   s={17} c="currentColor"/>},
     {label:"Configurações",icon:<Ico.Target   s={17} c="currentColor"/>},
@@ -258,7 +259,7 @@ export default function App(){
       </aside>
 
       {/* Main */}
-      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0}}>
+{activeNav === "Estatísticas" ? <Estatisticas th={th}/> :
 
         {/* Header */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
@@ -432,6 +433,7 @@ export default function App(){
         </div>
 
       </main>
+    : null}
     </div>
   );
 }
