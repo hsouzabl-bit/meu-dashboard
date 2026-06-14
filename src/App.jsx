@@ -415,12 +415,11 @@ export default function App(){
                   {label:"Dias fracos",       val:resumo.diasFracos??0,         color:"#f87171"},
                   {label:"Não registrados",   val:resumo.diasNaoRegistrados??0, color:th.textMuted},
                 ].map(item=>(
-                  <div key={item.label} style={{textAlign:"center",padding:"16px 8px",borderRadius:12,background:th.resumeBg,border:`1px solid ${th.border}`}}>
+                 <div key={item.label} style={{textAlign:"center",padding:"16px 8px",borderRadius:12,background:th.resumeBg,border:`1px solid ${th.border}`}}>
                     <div style={{fontSize:11,color:th.textMuted,marginBottom:6,fontWeight:500}}>{item.label}</div>
                     <div style={{fontSize:32,fontWeight:800,color:item.color,lineHeight:1}}>{item.val}</div>
                     <div style={{fontSize:12,color:th.textMuted,marginTop:5}}>{totalDiasMes>0?Math.round((item.val/totalDiasMes)*100):0}%</div>
                   </div>
-</div>
                 ))}
               </div>
             }
