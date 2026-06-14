@@ -362,29 +362,35 @@ export default function App(){
                 {label:"Leitura 6 páginas",dias:seq[1]?.dias||0,icon:<Ico.Book   s={15} c={th.textMuted}/>},
                 {label:"Vídeo aulas 30min",dias:seq[2]?.dias||0,icon:<Ico.Camera s={15} c={th.textMuted}/>},
               ].map(s=>(
-                <div key={s.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
-                  <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>{s.icon}{s.label}</span>
-                  <span style={{fontSize:14}}>
-                    <span style={{fontWeight:800,color:ACCENT}}>{s.dias}</span>
-                    <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
-                  </span>
-                </div>
-              ))
+  <div key={s.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
+    <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>{s.icon}{s.label}</span>
+    <span style={{display:"flex",alignItems:"center",gap:12}}>
+      <span style={{fontSize:14}}>
+        <span style={{fontWeight:800,color:ACCENT}}>{s.dias}</span>
+        <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
+      </span>
+      <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {s.pr||0}</span>
+    </span>
+  </div>
+))
             }
             <div style={{fontWeight:700,fontSize:10,color:th.textMuted,letterSpacing:1,textTransform:"uppercase",margin:"18px 0 10px"}}>Rotinas de Mercado</div>
             {loading?Array(7).fill(0).map((_,i)=><div key={i} style={{padding:"9px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>)
-              :rotinas.map(r=>(
-                <div key={r.nome} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${th.border}`}}>
-                  <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>
-                    {r.dias>0?<Ico.Check s={14} c={ACCENT}/>:<Ico.X s={14} c="#f87171"/>}
-                    {r.nome}
-                  </span>
-                  <span style={{fontSize:14}}>
-                    <span style={{fontWeight:800,color:r.dias>0?ACCENT:th.textMuted}}>{r.dias}</span>
-                    <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
-                  </span>
-                </div>
-              ))
+             :rotinas.map(r=>(
+  <div key={r.nome} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${th.border}`}}>
+    <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>
+      {r.dias>0?<Ico.Check s={14} c={ACCENT}/>:<Ico.X s={14} c="#f87171"/>}
+      {r.nome}
+    </span>
+    <span style={{display:"flex",alignItems:"center",gap:12}}>
+      <span style={{fontSize:14}}>
+        <span style={{fontWeight:800,color:r.dias>0?ACCENT:th.textMuted}}>{r.dias}</span>
+        <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
+      </span>
+      <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {r.pr||0}</span>
+    </span>
+  </div>
+))
             }
           </div>
         </div>
