@@ -18,9 +18,9 @@ const LIGHT = {
 };
 const DARK = {
   bg:"#1a1d23", surface:"#22262f", border:"#2c3040", border2:"#353a4a",
-  text:"#e8eaf0", textSub:"#a8b2c0", textMuted:"#6b7585",
+  text:"#f0f2f5", textSub:"#c0c8d4", textMuted:"#8a96a8",
   navActiveBg:"#1c2e25", cardBg:"#22262f", cardShadow:"0 1px 6px rgba(0,0,0,0.35)",
-  resumeBg:"#1a1d23", skeletonA:"#2c3040", skeletonB:"#353a4a",
+  resumeBg:"#1a1d23", skeletonA:"#2c3040", skeletonB:"#363d4d",
   calDayBg:{ 1:"#1a3028", 2:"#2d2710", 3:"#2d1420", 0:"#262930" },
   calDayBorder:{ 1:"#2d6b4f", 2:"#856404", 3:"#8b3252", 0:"transparent" },
 };
@@ -32,20 +32,15 @@ function buildCalendario(cal,ano,mes){
   const primeiro=new Date(ano,mes,1);
   let inicio=primeiro.getDay(); inicio=inicio===0?6:inicio-1;
   const ultimo=new Date(ano,mes+1,0).getDate();
-  const hj=new Date();
   const cells=[];
-  for(let i=0;i<inicio;i++) cells.push({num:null,tipo:null,isHoje:false});
-  for(let d=1;d<=ultimo;d++) cells.push({
-    num:d, tipo:cal[d]!==undefined?cal[d]:null,
-    isHoje:d===hj.getDate()&&mes===hj.getMonth()&&ano===hj.getFullYear()
-  });
-  while(cells.length%7!==0) cells.push({num:null,tipo:null,isHoje:false});
+  for(let i=0;i<inicio;i++) cells.push({num:null,tipo:null});
+  for(let d=1;d<=ultimo;d++) cells.push({num:d,tipo:cal[d]!==undefined?cal[d]:null});
+  while(cells.length%7!==0) cells.push({num:null,tipo:null});
   const semanas=[];
   for(let i=0;i<cells.length;i+=7) semanas.push(cells.slice(i,i+7));
   return semanas;
 }
 
-// ── Ícones ────────────────────────────────────────────────────────────────
 const Ico = {
   Clock:   ({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
   Book:    ({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
@@ -68,13 +63,13 @@ function Skeleton({w="100%",h=20,r=6,th}){
 
 function MetricCard({icon,color,label,value,unit,sub,pctVal,barColor,th}){
   return(
-    <div style={{background:th.cardBg,borderRadius:14,padding:"22px 24px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:8,transition:"background 0.3s,border 0.3s"}}>
+    <div style={{background:th.cardBg,borderRadius:14,padding:"20px 22px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:6,transition:"background 0.3s,border 0.3s"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <span style={{fontSize:11,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>{label}</span>
         {icon}
       </div>
-      <div style={{fontSize:38,fontWeight:800,color,lineHeight:1.05}}>
-        {value}<span style={{fontSize:18,fontWeight:600}}>{unit}</span>
+      <div style={{fontSize:32,fontWeight:800,color,lineHeight:1.1}}>
+        {value}<span style={{fontSize:16,fontWeight:600}}>{unit}</span>
       </div>
       {sub&&<div style={{fontSize:12,color:th.textMuted}}>{sub}</div>}
       {pctVal!==undefined&&(
@@ -91,13 +86,13 @@ function MetricCard({icon,color,label,value,unit,sub,pctVal,barColor,th}){
 
 function ProgressBar({label,icon,value,meta,pctVal,color,th}){
   return(
-    <div style={{display:"flex",alignItems:"center",gap:16,padding:"14px 0",borderBottom:`1px solid ${th.border}`}}>
+    <div style={{display:"flex",alignItems:"center",gap:16,padding:"13px 0",borderBottom:`1px solid ${th.border}`}}>
       <span style={{flexShrink:0}}>{icon}</span>
       <span style={{width:150,fontSize:13,color:th.text,fontWeight:500,flexShrink:0}}>{label}</span>
       <div style={{flex:1,background:th.resumeBg,borderRadius:6,height:6}}>
         <div style={{width:`${pctVal}%`,background:color,borderRadius:6,height:6,transition:"width 0.8s ease"}}/>
       </div>
-      <span style={{fontSize:12,color:th.textMuted,width:140,textAlign:"right",flexShrink:0}}>{value} / {meta}</span>
+      <span style={{fontSize:12,color:th.textMuted,width:130,textAlign:"right",flexShrink:0}}>{value} / {meta}</span>
       <span style={{fontSize:12,fontWeight:700,color:th.text,width:36,textAlign:"right",flexShrink:0}}>{pctVal}%</span>
     </div>
   );
@@ -105,8 +100,8 @@ function ProgressBar({label,icon,value,meta,pctVal,color,th}){
 
 function OntemCard({ontem,ontemData,th}){
   if(!ontem) return(
-    <div style={{background:th.cardBg,borderRadius:14,padding:"20px 28px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:20}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:0}}>
+    <div style={{background:th.cardBg,borderRadius:14,padding:"16px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
         <Ico.Calendar s={14} c={th.textMuted}/>
         <span style={{fontSize:11,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Meu Dia Ontem</span>
         <span style={{fontSize:11,color:th.textMuted,marginLeft:4}}>— sem registro</span>
@@ -114,37 +109,34 @@ function OntemCard({ontem,ontemData,th}){
     </div>
   );
 
-  const metricas = [
-    { label:"Estudo",   value: `${ontem.horas}h`,             icon:<Ico.Clock    s={14} c={th.textMuted}/> },
-    { label:"Páginas",  value: `${ontem.paginas}`,             icon:<Ico.BookOpen s={14} c={th.textMuted}/> },
-    { label:"Vídeo",    value: minParaHM(ontem.videoMin),      icon:<Ico.Play     s={14} c={th.textMuted}/> },
-    { label:"Replays",  value: `${ontem.replays}`,             icon:<Ico.Repeat   s={14} c={th.textMuted}/> },
+  const metricas=[
+    {label:"Estudo",  value:`${ontem.horas}h`,        icon:<Ico.Clock    s={14} c={th.textMuted}/>},
+    {label:"Páginas", value:`${ontem.paginas}`,        icon:<Ico.BookOpen s={14} c={th.textMuted}/>},
+    {label:"Vídeo",   value:minParaHM(ontem.videoMin), icon:<Ico.Play     s={14} c={th.textMuted}/>},
+    {label:"Replays", value:`${ontem.replays}`,        icon:<Ico.Repeat   s={14} c={th.textMuted}/>},
   ];
 
   return(
-    <div style={{background:th.cardBg,borderRadius:14,padding:"18px 28px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:20,transition:"background 0.3s,border 0.3s"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+    <div style={{background:th.cardBg,borderRadius:14,padding:"16px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
         <Ico.Calendar s={14} c={ACCENT}/>
         <span style={{fontSize:11,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Meu Dia Ontem</span>
         <span style={{fontSize:11,color:th.textMuted,marginLeft:2}}>— {ontemData}</span>
         <span style={{marginLeft:8,fontSize:11,fontWeight:600,color:ACCENT,background:th.navActiveBg,padding:"2px 10px",borderRadius:20,border:`1px solid ${ACCENT}33`}}>{ontem.tipo}</span>
       </div>
       <div style={{display:"flex",gap:0,alignItems:"stretch"}}>
-        {/* Métricas */}
         <div style={{display:"flex",gap:8,flex:1}}>
           {metricas.map(m=>(
-            <div key={m.label} style={{background:th.resumeBg,borderRadius:10,padding:"12px 18px",display:"flex",flexDirection:"column",gap:4,flex:1,border:`1px solid ${th.border}`}}>
+            <div key={m.label} style={{background:th.resumeBg,borderRadius:10,padding:"10px 16px",display:"flex",flexDirection:"column",gap:4,flex:1,border:`1px solid ${th.border}`}}>
               <div style={{display:"flex",alignItems:"center",gap:5}}>
                 {m.icon}
                 <span style={{fontSize:10,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:0.6}}>{m.label}</span>
               </div>
-              <span style={{fontSize:22,fontWeight:800,color:th.text}}>{m.value}</span>
+              <span style={{fontSize:20,fontWeight:800,color:th.text}}>{m.value}</span>
             </div>
           ))}
         </div>
-        {/* Divisor */}
-        <div style={{width:1,background:th.border,margin:"0 20px"}}/>
-        {/* Hábitos */}
+        <div style={{width:1,background:th.border,margin:"0 18px"}}/>
         <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",alignContent:"center",flex:1.2}}>
           {ontem.habitos.map(h=>(
             <div key={h.nome} style={{display:"flex",alignItems:"center",gap:6,minWidth:"45%"}}>
@@ -225,7 +217,7 @@ export default function App(){
         *{box-sizing:border-box;} button{font-family:inherit;} body{margin:0;}
       `}</style>
 
-      {/* ── Sidebar ── */}
+      {/* Sidebar */}
       <aside style={{width:240,background:th.surface,borderRight:`1px solid ${th.border}`,display:"flex",flexDirection:"column",padding:"28px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflowY:"auto",transition:"background 0.3s,border 0.3s"}}>
         <div style={{padding:"0 24px 28px",display:"flex",alignItems:"center",gap:12}}>
           <div style={{width:40,height:40,borderRadius:11,background:`linear-gradient(135deg,${ACCENT},#2da86e)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -247,8 +239,8 @@ export default function App(){
 
         <div style={{padding:"20px 24px 0",borderTop:`1px solid ${th.border}`,margin:"16px 12px 0"}}>
           <div style={{fontSize:26,color:ACCENT,lineHeight:1,marginBottom:6,fontWeight:800}}>"</div>
-          <p style={{fontSize:12,color:th.textSub,lineHeight:1.7,margin:0}}>Disciplina é escolher entre o que você quer agora e o que você quer mais.</p>
-          <p style={{fontSize:11,color:th.textMuted,marginTop:8,marginBottom:0}}>– Abraham Lincoln</p>
+          <p style={{fontSize:12,color:th.textSub,lineHeight:1.7,margin:0}}>Disciplina é fazer o que você sabe que é certo mesmo quando você não quer.</p>
+          <p style={{fontSize:11,color:th.textMuted,marginTop:8,marginBottom:0}}>– Luciano / Al Brooks Técnico</p>
         </div>
 
         <div style={{padding:"16px 24px 0",margin:"0 12px"}}>
@@ -259,13 +251,13 @@ export default function App(){
             </div>
             <span style={{fontSize:13,color:dados?.checkinHoje?th.text:th.textMuted}}>{dados?.checkinHoje?"Feito hoje!":"Não registrado"}</span>
           </div>
-          <button style={{width:"100%",padding:"9px 0",borderRadius:9,border:`1.5px solid ${th.border2}`,background:th.surface,color:th.text,fontWeight:600,fontSize:13,cursor:"pointer",transition:"background 0.2s"}}>
+          <button style={{width:"100%",padding:"9px 0",borderRadius:9,border:`1.5px solid ${th.border2}`,background:th.surface,color:th.text,fontWeight:600,fontSize:13,cursor:"pointer"}}>
             {dados?.checkinHoje?"Ver registro de hoje":"Fazer check-in agora"}
           </button>
         </div>
       </aside>
 
-      {/* ── Main ── */}
+      {/* Main */}
       <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0}}>
 
         {/* Header */}
@@ -276,7 +268,7 @@ export default function App(){
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             {loading&&<span style={{fontSize:12,color:th.textMuted}}>Carregando...</span>}
-            <button onClick={()=>setDark(d=>!d)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:9,border:`1px solid ${th.border2}`,background:th.surface,cursor:"pointer",color:th.textSub,fontSize:12,fontWeight:600,transition:"all 0.2s"}}>
+            <button onClick={()=>setDark(d=>!d)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:9,border:`1px solid ${th.border2}`,background:th.surface,cursor:"pointer",color:th.textSub,fontSize:12,fontWeight:600}}>
               {dark?<Ico.Sun s={14} c={th.textSub}/>:<Ico.Moon s={14} c={th.textSub}/>}
               {dark?"Claro":"Escuro"}
             </button>
@@ -291,11 +283,11 @@ export default function App(){
 
         {erro&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"13px 18px",marginBottom:20,color:"#dc2626",fontSize:13}}>⚠️ {erro}</div>}
 
-        {/* ── Cards ── */}
-        <div style={{display:"flex",gap:16,marginBottom:20,flexWrap:"nowrap"}}>
+        {/* Cards */}
+        <div style={{display:"flex",gap:14,marginBottom:18,flexWrap:"nowrap"}}>
           {loading?Array(5).fill(0).map((_,i)=>(
-            <div key={i} style={{flex:1,background:th.cardBg,borderRadius:14,padding:"22px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:10}}>
-              <Skeleton h={12} w="55%" th={th}/><Skeleton h={38} w="70%" th={th}/><Skeleton h={8} th={th}/>
+            <div key={i} style={{flex:1,background:th.cardBg,borderRadius:14,padding:"20px 22px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:10}}>
+              <Skeleton h={12} w="55%" th={th}/><Skeleton h={32} w="70%" th={th}/><Skeleton h={8} th={th}/>
             </div>
           )):<>
             <MetricCard th={th} icon={<Ico.Target s={20} c={ACCENT}/>} color={ACCENT} label={modoDia?"Tipo do dia":"Dia Perfeito"} value={modoDia?(cardTipo||"—"):(m.diaPerfeitoAtual??0)} unit="" sub={modoDia?undefined:`Melhor sequência: ${m.melhorSequencia??0} dias`}/>
@@ -306,7 +298,7 @@ export default function App(){
           </>}
         </div>
 
-        {/* ── Meu Dia Ontem ── */}
+        {/* Meu Dia Ontem */}
         {!loading && <OntemCard ontem={ontem} ontemData={ontemData} th={th}/>}
 
         {modoDia&&(
@@ -316,14 +308,13 @@ export default function App(){
           </div>
         )}
 
-        {/* ── Calendário + Sequências ── */}
-        <div style={{display:"flex",gap:16,marginBottom:20,alignItems:"flex-start"}}>
+        {/* Calendário + Sequências */}
+        <div style={{display:"flex",gap:16,marginBottom:18,alignItems:"flex-start"}}>
 
-          {/* Calendário */}
-          <div style={{background:th.cardBg,borderRadius:14,padding:"24px 28px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18,flexWrap:"wrap",gap:8}}>
+          <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
               <span style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase"}}>Calendário de Consistência</span>
-              <div style={{display:"flex",gap:16,fontSize:11,color:th.textMuted}}>
+              <div style={{display:"flex",gap:14,fontSize:11,color:th.textMuted}}>
                 {[[ACCENT,"Perfeito"],["#fbbf24","Quase"],["#f87171","Fraco"],["#94a3b8","—"]].map(([c,l])=>(
                   <span key={l} style={{display:"flex",alignItems:"center",gap:5}}>
                     <span style={{width:9,height:9,borderRadius:3,background:c,display:"inline-block"}}/>{l}
@@ -331,26 +322,26 @@ export default function App(){
                 ))}
               </div>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
               <span style={{fontWeight:700,fontSize:15,color:th.text}}>{MESES_PT[mesVis]} de {anoVis}</span>
               <div style={{display:"flex",gap:4}}>
                 <button onClick={()=>{setDiaSel(null);if(mesVis===0){setMesVis(11);setAnoVis(a=>a-1);}else setMesVis(m=>m-1);}} style={{border:`1px solid ${th.border2}`,background:th.surface,borderRadius:7,width:30,height:30,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:th.text}}>‹</button>
                 <button onClick={()=>{setDiaSel(null);if(mesVis===11){setMesVis(0);setAnoVis(a=>a+1);}else setMesVis(m=>m+1);}} style={{border:`1px solid ${th.border2}`,background:th.surface,borderRadius:7,width:30,height:30,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:th.text}}>›</button>
               </div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6,marginBottom:6}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:5,marginBottom:5}}>
               {DIAS_SEMANA.map(ds=><div key={ds} style={{textAlign:"center",fontSize:11,fontWeight:700,color:th.textMuted,padding:"4px 0"}}>{ds}</div>)}
             </div>
             {semanas.map((sem,si)=>(
-              <div key={si} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6,marginBottom:6}}>
+              <div key={si} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:5,marginBottom:5}}>
                 {sem.map((cel,di)=>(
                   <div key={di}
                     onClick={()=>{if(cel.num)setDiaSel(diaSel===cel.num?null:cel.num);}}
                     style={{
                       background:cel.num?(th.calDayBg[cel.tipo]||th.calDayBg[0]):"transparent",
-                      border:cel.num===diaSel?`2px solid ${ACCENT}`:cel.isHoje?`2px solid ${ACCENT}`:`1px solid ${cel.num?(th.calDayBorder[cel.tipo]||"transparent"):"transparent"}`,
-                      borderRadius:10,padding:"14px 0",textAlign:"center",fontSize:14,
-                      fontWeight:cel.isHoje||cel.num===diaSel?800:500,
+                      border:cel.num===diaSel?`2px solid ${ACCENT}`:`1px solid ${cel.num?(th.calDayBorder[cel.tipo]||"transparent"):"transparent"}`,
+                      borderRadius:9,padding:"13px 0",textAlign:"center",fontSize:13,
+                      fontWeight:cel.num===diaSel?800:500,
                       color:cel.num?(cel.tipo===null?th.textMuted:th.text):"transparent",
                       cursor:cel.num?"pointer":"default",
                       opacity:cel.num?1:0,
@@ -363,16 +354,15 @@ export default function App(){
             ))}
           </div>
 
-          {/* Sequências */}
-          <div style={{background:th.cardBg,borderRadius:14,padding:"24px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1,minWidth:280,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:18}}>Sequências Atuais</div>
-            {loading?Array(3).fill(0).map((_,i)=><div key={i} style={{padding:"12px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>)
+          <div style={{background:th.cardBg,borderRadius:14,padding:"22px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1,minWidth:260,transition:"background 0.3s,border 0.3s"}}>
+            <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:16}}>Sequências Atuais</div>
+            {loading?Array(3).fill(0).map((_,i)=><div key={i} style={{padding:"10px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>)
               :[
                 {label:"Estudo 4h",        dias:seq[0]?.dias||0,icon:<Ico.Clock  s={15} c={th.textMuted}/>},
                 {label:"Leitura 6 páginas",dias:seq[1]?.dias||0,icon:<Ico.Book   s={15} c={th.textMuted}/>},
                 {label:"Vídeo aulas 30min",dias:seq[2]?.dias||0,icon:<Ico.Camera s={15} c={th.textMuted}/>},
               ].map(s=>(
-                <div key={s.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:`1px solid ${th.border}`}}>
+                <div key={s.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
                   <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>{s.icon}{s.label}</span>
                   <span style={{fontSize:14}}>
                     <span style={{fontWeight:800,color:ACCENT}}>{s.dias}</span>
@@ -381,10 +371,10 @@ export default function App(){
                 </div>
               ))
             }
-            <div style={{fontWeight:700,fontSize:10,color:th.textMuted,letterSpacing:1,textTransform:"uppercase",margin:"20px 0 12px"}}>Rotinas de Mercado</div>
+            <div style={{fontWeight:700,fontSize:10,color:th.textMuted,letterSpacing:1,textTransform:"uppercase",margin:"18px 0 10px"}}>Rotinas de Mercado</div>
             {loading?Array(7).fill(0).map((_,i)=><div key={i} style={{padding:"9px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>)
               :rotinas.map(r=>(
-                <div key={r.nome} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${th.border}`}}>
+                <div key={r.nome} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${th.border}`}}>
                   <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>
                     {r.dias>0?<Ico.Check s={14} c={ACCENT}/>:<Ico.X s={14} c="#f87171"/>}
                     {r.nome}
@@ -399,14 +389,14 @@ export default function App(){
           </div>
         </div>
 
-        {/* ── Progresso + Resumo ── */}
+        {/* Progresso + Resumo */}
         <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
-          <div style={{background:th.cardBg,borderRadius:14,padding:"24px 28px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:18}}>
+          <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
+            <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:16}}>
               Progresso das Metas
               <span style={{fontWeight:500,fontSize:12,color:th.textMuted,textTransform:"none",letterSpacing:0,marginLeft:8}}>(acumulado no ano)</span>
             </div>
-            {loading?Array(4).fill(0).map((_,i)=><div key={i} style={{padding:"14px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>):<>
+            {loading?Array(4).fill(0).map((_,i)=><div key={i} style={{padding:"13px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>):<>
               <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend    s={16} c={ACCENT}/>} value={`${m.horasEstudo??0}h`}   meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT}/>
               <ProgressBar th={th} label="Páginas lidas"   icon={<Ico.BookOpen s={16} c={ACCENT}/>} value={m.paginasLidas??0}         meta={METAS_ANUAIS.paginasLidas}      pctVal={pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)} color={ACCENT}/>
               <ProgressBar th={th} label="Vídeo aulas"     icon={<Ico.Play     s={16} c={ACCENT}/>} value={minParaHM((m.videoAulasH??0)*60+(m.videoAulasM??0))} meta={`${METAS_ANUAIS.videoAulas}h`} pctVal={pct((m.videoAulasH??0)*60+(m.videoAulasM??0),METAS_ANUAIS.videoAulas*60)} color={ACCENT}/>
@@ -414,9 +404,9 @@ export default function App(){
             </>}
           </div>
 
-          <div style={{background:th.cardBg,borderRadius:14,padding:"24px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1,minWidth:280,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:20}}>Resumo do Mês</div>
-            {loading?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{Array(4).fill(0).map((_,i)=><Skeleton key={i} h={80} th={th}/>)}</div>
+          <div style={{background:th.cardBg,borderRadius:14,padding:"22px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1,minWidth:260,transition:"background 0.3s,border 0.3s"}}>
+            <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:18}}>Resumo do Mês</div>
+            {loading?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{Array(4).fill(0).map((_,i)=><Skeleton key={i} h={70} th={th}/>)}</div>
               :<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                 {[
                   {label:"Dias perfeitos",    val:resumo.diasPerfeitos??0,      color:ACCENT},
@@ -424,10 +414,10 @@ export default function App(){
                   {label:"Dias fracos",       val:resumo.diasFracos??0,         color:"#f87171"},
                   {label:"Não registrados",   val:resumo.diasNaoRegistrados??0, color:th.textMuted},
                 ].map(item=>(
-                  <div key={item.label} style={{textAlign:"center",padding:"18px 8px",borderRadius:12,background:th.resumeBg,border:`1px solid ${th.border}`}}>
-                    <div style={{fontSize:11,color:th.textMuted,marginBottom:8,fontWeight:500}}>{item.label}</div>
-                    <div style={{fontSize:34,fontWeight:800,color:item.color,lineHeight:1}}>{item.val}</div>
-                    <div style={{fontSize:12,color:th.textMuted,marginTop:6}}>{totalDiasMes>0?Math.round((item.val/totalDiasMes)*100):0}%</div>
+                  <div key={item.label} style={{textAlign:"center",padding:"16px 8px",borderRadius:12,background:th.resumeBg,border:`1px solid ${th.border}`}}>
+                    <div style={{fontSize:11,color:th.textMuted,marginBottom:6,fontWeight:500}}>{item.label}</div>
+                    <div style={{fontSize:32,fontWeight:800,color:item.color,lineHeight:1}}>{item.val}</div>
+                    <div style={{fontSize:12,color:th.textMuted,marginTop:5}}>{totalDiasMes>0?Math.round((item.val/totalDiasMes)*100):0}%</div>
                   </div>
                 ))}
               </div>
