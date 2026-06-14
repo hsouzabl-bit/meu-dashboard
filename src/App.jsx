@@ -419,13 +419,13 @@ export default function App(){
                     <div style={{fontSize:32,fontWeight:800,color:item.color,lineHeight:1}}>{item.val}</div>
                     <div style={{fontSize:12,color:th.textMuted,marginTop:5}}>{totalDiasMes>0?Math.round((item.val/totalDiasMes)*100):0}%</div>
                   </div>
+</div>
                 ))}
               </div>
             }
           </div>
         </div>
-
-      </main>
+      </main>}
     </div>
   );
 }
