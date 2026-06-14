@@ -27,10 +27,11 @@ function ContaCard({ conta, dados, th }) {
   return (
     <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow, flex: 1 }}>
       <div style={{ fontWeight: 800, fontSize: 13, color: th.text, marginBottom: 16, letterSpacing: 0.5 }}>{conta}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
         <StatCard th={th} label="Resultado" value={fmt(dados.financTotal)} color={cor} />
         <StatCard th={th} label="Taxa de acerto" value={`${dados.taxaAcerto}%`} sub={`${dados.gains}G / ${dados.losses}L / ${dados.breakevens}BE`} color={dados.taxaAcerto >= 50 ? ACCENT : "#f87171"} />
         <StatCard th={th} label="RxR Médio" value={`${dados.rxrMedio}x`} color={dados.rxrMedio >= 1 ? ACCENT : "#f87171"} />
+<StatCard th={th} label="Stop Médio" value={fmt(dados.stopMedio)} color={th.text} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
         <StatCard th={th} label="Trades" value={dados.trades} />
