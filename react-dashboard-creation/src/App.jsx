@@ -340,7 +340,7 @@ export default function App(){
                     style={{
                       background:cel.num?(th.calDayBg[cel.tipo]||th.calDayBg[0]):"transparent",
                       border:cel.num===diaSel?`2px solid ${ACCENT}`:`1px solid ${cel.num?(th.calDayBorder[cel.tipo]||"transparent"):"transparent"}`,
-                      borderRadius:9,padding:"13px 0",textAlign:"center",fontSize:13,
+                      borderRadius:9,padding:"20px 0",textAlign:"center",fontSize:13,
                       fontWeight:cel.num===diaSel?800:500,
                       color:cel.num?(cel.tipo===null?th.textMuted:th.text):"transparent",
                       cursor:cel.num?"pointer":"default",
