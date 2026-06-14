@@ -152,15 +152,15 @@ function OntemCard({ontem,ontemData,th}){
 }
 
 export default function App(){
-  const [dados,setDados]       = useState(null);
-  const [erro,setErro]         = useState(null);
-  const [loading,setLoading]   = useState(true);
+  const [dados,setDados]         = useState(null);
+  const [erro,setErro]           = useState(null);
+  const [loading,setLoading]     = useState(true);
   const [activeNav,setActiveNav] = useState("Dashboard");
-  const [dark,setDark]         = useState(false);
-  const [diaSel,setDiaSel]     = useState(null);
+  const [dark,setDark]           = useState(false);
+  const [diaSel,setDiaSel]       = useState(null);
   const hoje = new Date();
-  const [mesVis,setMesVis]     = useState(hoje.getMonth());
-  const [anoVis,setAnoVis]     = useState(hoje.getFullYear());
+  const [mesVis,setMesVis]       = useState(hoje.getMonth());
+  const [anoVis,setAnoVis]       = useState(hoje.getFullYear());
 
   const th = dark ? DARK : LIGHT;
 
@@ -175,25 +175,25 @@ export default function App(){
 
   const navItems=[
     {label:"Dashboard",    icon:<Ico.Target   s={17} c="currentColor"/>},
+    {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
     {label:"Registros",    icon:<Ico.Book     s={17} c="currentColor"/>},
     {label:"Hábitos",      icon:<Ico.Check    s={17} c="currentColor"/>},
-    {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
     {label:"Livros",       icon:<Ico.BookOpen s={17} c="currentColor"/>},
     {label:"Replays",      icon:<Ico.Repeat   s={17} c="currentColor"/>},
     {label:"Configurações",icon:<Ico.Target   s={17} c="currentColor"/>},
   ];
 
-  const m       = dados?.metricas    || {};
-  const seq     = dados?.sequencias  || [];
-  const rotinas = dados?.rotinas     || [];
-  const resumo  = dados?.resumoMes   || {};
-  const calObj  = dados?.calendario  || {};
-  const diasDia = dados?.diasDetalhes|| {};
-  const ontem   = dados?.ontem       || null;
-  const ontemData = dados?.ontemData || "";
+  const m         = dados?.metricas    || {};
+  const seq       = dados?.sequencias  || [];
+  const rotinas   = dados?.rotinas     || [];
+  const resumo    = dados?.resumoMes   || {};
+  const calObj    = dados?.calendario  || {};
+  const diasDia   = dados?.diasDetalhes|| {};
+  const ontem     = dados?.ontem       || null;
+  const ontemData = dados?.ontemData   || "";
 
-  const totalDiasMes = resumo.totalDias||1;
-  const semanas = buildCalendario(calObj,anoVis,mesVis);
+  const totalDiasMes  = resumo.totalDias||1;
+  const semanas       = buildCalendario(calObj,anoVis,mesVis);
   const dataFormatada = hoje.toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"});
 
   const diaKey  = diaSel?`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`:null;
@@ -210,61 +210,10 @@ export default function App(){
   const metaV=modoDia?30:METAS_MENSAIS.videoAulas*60;
   const metaR=modoDia?1:METAS_MENSAIS.replays;
 
-  return(
-    <div style={{display:"flex",minHeight:"100vh",background:th.bg,fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s,color 0.3s"}}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        *{box-sizing:border-box;} button{font-family:inherit;} body{margin:0;}
-      `}</style>
-
-      {/* Sidebar */}
-      <aside style={{width:240,background:th.surface,borderRight:`1px solid ${th.border}`,display:"flex",flexDirection:"column",padding:"28px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflowY:"auto",transition:"background 0.3s,border 0.3s"}}>
-        <div style={{padding:"0 24px 28px",display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:40,height:40,borderRadius:11,background:`linear-gradient(135deg,${ACCENT},#2da86e)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <Ico.Target s={20} c="#fff"/>
-          </div>
-          <div>
-            <div style={{fontWeight:800,fontSize:12,color:th.text,letterSpacing:0.5}}>EVOLUÇÃO DIÁRIA</div>
-            <div style={{fontSize:10,color:th.textMuted,marginTop:2}}>Foco • Consistência • Resultado</div>
-          </div>
-        </div>
-
-        <nav style={{flex:1,padding:"0 12px",display:"flex",flexDirection:"column",gap:2}}>
-          {navItems.map(item=>(
-            <button key={item.label} onClick={()=>setActiveNav(item.label)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:9,border:"none",cursor:"pointer",background:activeNav===item.label?th.navActiveBg:"transparent",color:activeNav===item.label?ACCENT:th.textSub,fontWeight:activeNav===item.label?700:500,fontSize:14,textAlign:"left",width:"100%",transition:"all 0.15s"}}>
-              {item.icon}<span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div style={{padding:"20px 24px 0",borderTop:`1px solid ${th.border}`,margin:"16px 12px 0"}}>
-          <div style={{fontSize:26,color:ACCENT,lineHeight:1,marginBottom:6,fontWeight:800}}>"</div>
-          <p style={{fontSize:12,color:th.textSub,lineHeight:1.7,margin:0}}>Disciplina é fazer o que você sabe que é certo mesmo quando você não quer.</p>
-          <p style={{fontSize:11,color:th.textMuted,marginTop:8,marginBottom:0}}>– Luciano / Al Brooks Técnico</p>
-        </div>
-
-        <div style={{padding:"16px 24px 0",margin:"0 12px"}}>
-          <div style={{fontSize:10,fontWeight:700,color:th.textMuted,letterSpacing:1,marginBottom:8,textTransform:"uppercase"}}>Check-in Diário</div>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-            <div style={{width:22,height:22,borderRadius:"50%",background:dados?.checkinHoje?ACCENT:th.border2,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              {dados?.checkinHoje&&<Ico.Check s={12} c="#fff"/>}
-            </div>
-            <span style={{fontSize:13,color:dados?.checkinHoje?th.text:th.textMuted}}>{dados?.checkinHoje?"Feito hoje!":"Não registrado"}</span>
-          </div>
-          <button style={{width:"100%",padding:"9px 0",borderRadius:9,border:`1.5px solid ${th.border2}`,background:th.surface,color:th.text,fontWeight:600,fontSize:13,cursor:"pointer"}}>
-            {dados?.checkinHoje?"Ver registro de hoje":"Fazer check-in agora"}
-          </button>
-        </div>
-      </aside>
-
-{/* Main */}
-      {activeNav === "Estatísticas" ? (
-        <Estatisticas th={th}/>
-      ) : (
-        <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0}}>
-
-        {/* Header */}
+  const renderMain = () => {
+    if(activeNav === "Estatísticas") return <Estatisticas th={th}/>;
+    return (
+      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
           <div>
             <h1 style={{fontSize:28,fontWeight:800,color:th.text,margin:0}}>Dashboard</h1>
@@ -287,7 +236,6 @@ export default function App(){
 
         {erro&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"13px 18px",marginBottom:20,color:"#dc2626",fontSize:13}}>⚠️ {erro}</div>}
 
-        {/* Cards */}
         <div style={{display:"flex",gap:14,marginBottom:18,flexWrap:"nowrap"}}>
           {loading?Array(5).fill(0).map((_,i)=>(
             <div key={i} style={{flex:1,background:th.cardBg,borderRadius:14,padding:"20px 22px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:10}}>
@@ -295,14 +243,13 @@ export default function App(){
             </div>
           )):<>
             <MetricCard th={th} icon={<Ico.Target s={20} c={ACCENT}/>} color={ACCENT} label={modoDia?"Tipo do dia":"Dia Perfeito"} value={modoDia?(cardTipo||"—"):(m.diaPerfeitoAtual??0)} unit="" sub={modoDia?undefined:`Melhor sequência: ${m.melhorSequencia??0} dias`}/>
-            <MetricCard th={th} icon={<Ico.Trend  s={20} c={ACCENT}/>} color={ACCENT} label="Horas de Estudo"  value={modoDia?minParaHM((cardHoras||0)*60):`${cardHoras}h`} unit="" sub={`Meta: ${modoDia?"4h/dia":`${metaH}h/mês`}`} pctVal={pct(modoDia?(cardHoras||0)*60:cardHoras*60,metaH*60)} barColor={ACCENT}/>
-            <MetricCard th={th} icon={<Ico.BookOpen s={20} c={ACCENT}/>} color={ACCENT} label="Páginas Lidas"  value={cardPaginas} unit="" sub={`Meta: ${modoDia?"6/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT}/>
-            <MetricCard th={th} icon={<Ico.Play   s={20} c={ACCENT}/>} color={ACCENT} label="Vídeo Aulas"     value={minParaHM(cardVideo)} unit="" sub={`Meta: ${modoDia?"30min/dia":`${metaV/60}h/mês`}`} pctVal={pct(cardVideo,metaV)} barColor={ACCENT}/>
-            <MetricCard th={th} icon={<Ico.Repeat s={20} c={ACCENT}/>} color={ACCENT} label="Replays"         value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT}/>
+            <MetricCard th={th} icon={<Ico.Trend  s={20} c={ACCENT}/>} color={ACCENT} label="Horas de Estudo" value={modoDia?minParaHM((cardHoras||0)*60):`${cardHoras}h`} unit="" sub={`Meta: ${modoDia?"4h/dia":`${metaH}h/mês`}`} pctVal={pct(modoDia?(cardHoras||0)*60:cardHoras*60,metaH*60)} barColor={ACCENT}/>
+            <MetricCard th={th} icon={<Ico.BookOpen s={20} c={ACCENT}/>} color={ACCENT} label="Páginas Lidas" value={cardPaginas} unit="" sub={`Meta: ${modoDia?"6/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT}/>
+            <MetricCard th={th} icon={<Ico.Play   s={20} c={ACCENT}/>} color={ACCENT} label="Vídeo Aulas" value={minParaHM(cardVideo)} unit="" sub={`Meta: ${modoDia?"30min/dia":`${metaV/60}h/mês`}`} pctVal={pct(cardVideo,metaV)} barColor={ACCENT}/>
+            <MetricCard th={th} icon={<Ico.Repeat s={20} c={ACCENT}/>} color={ACCENT} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT}/>
           </>}
         </div>
 
-        {/* Meu Dia Ontem */}
         {!loading && <OntemCard ontem={ontem} ontemData={ontemData} th={th}/>}
 
         {modoDia&&(
@@ -312,9 +259,7 @@ export default function App(){
           </div>
         )}
 
-        {/* Calendário + Sequências */}
         <div style={{display:"flex",gap:16,marginBottom:18,alignItems:"flex-start"}}>
-
           <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
               <span style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase"}}>Calendário de Consistência</span>
@@ -362,15 +307,18 @@ export default function App(){
             <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:16}}>Sequências Atuais</div>
             {loading?Array(3).fill(0).map((_,i)=><div key={i} style={{padding:"10px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>)
               :[
-                {label:"Estudo 4h",        dias:seq[0]?.dias||0,icon:<Ico.Clock  s={15} c={th.textMuted}/>},
-                {label:"Leitura 6 páginas",dias:seq[1]?.dias||0,icon:<Ico.Book   s={15} c={th.textMuted}/>},
-                {label:"Vídeo aulas 30min",dias:seq[2]?.dias||0,icon:<Ico.Camera s={15} c={th.textMuted}/>},
+                {label:"Estudo 4h",        dias:seq[0]?.dias||0, pr:seq[0]?.pr||0, icon:<Ico.Clock  s={15} c={th.textMuted}/>},
+                {label:"Leitura 6 páginas",dias:seq[1]?.dias||0, pr:seq[1]?.pr||0, icon:<Ico.Book   s={15} c={th.textMuted}/>},
+                {label:"Vídeo aulas 30min",dias:seq[2]?.dias||0, pr:seq[2]?.pr||0, icon:<Ico.Camera s={15} c={th.textMuted}/>},
               ].map(s=>(
                 <div key={s.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
                   <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>{s.icon}{s.label}</span>
-                  <span style={{fontSize:14}}>
-                    <span style={{fontWeight:800,color:ACCENT}}>{s.dias}</span>
-                    <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
+                  <span style={{display:"flex",alignItems:"center",gap:12}}>
+                    <span style={{fontSize:14}}>
+                      <span style={{fontWeight:800,color:ACCENT}}>{s.dias}</span>
+                      <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
+                    </span>
+                    <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {s.pr||0}</span>
                   </span>
                 </div>
               ))
@@ -383,9 +331,12 @@ export default function App(){
                     {r.dias>0?<Ico.Check s={14} c={ACCENT}/>:<Ico.X s={14} c="#f87171"/>}
                     {r.nome}
                   </span>
-                  <span style={{fontSize:14}}>
-                    <span style={{fontWeight:800,color:r.dias>0?ACCENT:th.textMuted}}>{r.dias}</span>
-                    <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
+                  <span style={{display:"flex",alignItems:"center",gap:12}}>
+                    <span style={{fontSize:14}}>
+                      <span style={{fontWeight:800,color:r.dias>0?ACCENT:th.textMuted}}>{r.dias}</span>
+                      <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
+                    </span>
+                    <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {r.pr||0}</span>
                   </span>
                 </div>
               ))
@@ -393,7 +344,6 @@ export default function App(){
           </div>
         </div>
 
-        {/* Progresso + Resumo */}
         <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
           <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
             <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:16}}>
@@ -418,7 +368,7 @@ export default function App(){
                   {label:"Dias fracos",       val:resumo.diasFracos??0,         color:"#f87171"},
                   {label:"Não registrados",   val:resumo.diasNaoRegistrados??0, color:th.textMuted},
                 ].map(item=>(
-                 <div key={item.label} style={{textAlign:"center",padding:"16px 8px",borderRadius:12,background:th.resumeBg,border:`1px solid ${th.border}`}}>
+                  <div key={item.label} style={{textAlign:"center",padding:"16px 8px",borderRadius:12,background:th.resumeBg,border:`1px solid ${th.border}`}}>
                     <div style={{fontSize:11,color:th.textMuted,marginBottom:6,fontWeight:500}}>{item.label}</div>
                     <div style={{fontSize:32,fontWeight:800,color:item.color,lineHeight:1}}>{item.val}</div>
                     <div style={{fontSize:12,color:th.textMuted,marginTop:5}}>{totalDiasMes>0?Math.round((item.val/totalDiasMes)*100):0}%</div>
@@ -429,7 +379,57 @@ export default function App(){
           </div>
         </div>
       </main>
-      )}
+    );
+  };
+
+  return(
+    <div style={{display:"flex",minHeight:"100vh",background:th.bg,fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s,color 0.3s"}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        *{box-sizing:border-box;} button{font-family:inherit;} body{margin:0;}
+      `}</style>
+
+      <aside style={{width:240,background:th.surface,borderRight:`1px solid ${th.border}`,display:"flex",flexDirection:"column",padding:"28px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflowY:"auto",transition:"background 0.3s,border 0.3s"}}>
+        <div style={{padding:"0 24px 28px",display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:40,height:40,borderRadius:11,background:`linear-gradient(135deg,${ACCENT},#2da86e)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <Ico.Target s={20} c="#fff"/>
+          </div>
+          <div>
+            <div style={{fontWeight:800,fontSize:12,color:th.text,letterSpacing:0.5}}>EVOLUÇÃO DIÁRIA</div>
+            <div style={{fontSize:10,color:th.textMuted,marginTop:2}}>Foco • Consistência • Resultado</div>
+          </div>
+        </div>
+
+        <nav style={{flex:1,padding:"0 12px",display:"flex",flexDirection:"column",gap:2}}>
+          {navItems.map(item=>(
+            <button key={item.label} onClick={()=>setActiveNav(item.label)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:9,border:"none",cursor:"pointer",background:activeNav===item.label?th.navActiveBg:"transparent",color:activeNav===item.label?ACCENT:th.textSub,fontWeight:activeNav===item.label?700:500,fontSize:14,textAlign:"left",width:"100%",transition:"all 0.15s"}}>
+              {item.icon}<span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div style={{padding:"20px 24px 0",borderTop:`1px solid ${th.border}`,margin:"16px 12px 0"}}>
+          <div style={{fontSize:26,color:ACCENT,lineHeight:1,marginBottom:6,fontWeight:800}}>"</div>
+          <p style={{fontSize:12,color:th.textSub,lineHeight:1.7,margin:0}}>Disciplina é fazer o que você sabe que é certo mesmo quando você não quer.</p>
+          <p style={{fontSize:11,color:th.textMuted,marginTop:8,marginBottom:0}}>– Luciano / Al Brooks Técnico</p>
+        </div>
+
+        <div style={{padding:"16px 24px 0",margin:"0 12px"}}>
+          <div style={{fontSize:10,fontWeight:700,color:th.textMuted,letterSpacing:1,marginBottom:8,textTransform:"uppercase"}}>Check-in Diário</div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+            <div style={{width:22,height:22,borderRadius:"50%",background:dados?.checkinHoje?ACCENT:th.border2,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              {dados?.checkinHoje&&<Ico.Check s={12} c="#fff"/>}
+            </div>
+            <span style={{fontSize:13,color:dados?.checkinHoje?th.text:th.textMuted}}>{dados?.checkinHoje?"Feito hoje!":"Não registrado"}</span>
+          </div>
+          <button style={{width:"100%",padding:"9px 0",borderRadius:9,border:`1.5px solid ${th.border2}`,background:th.surface,color:th.text,fontWeight:600,fontSize:13,cursor:"pointer"}}>
+            {dados?.checkinHoje?"Ver registro de hoje":"Fazer check-in agora"}
+          </button>
+        </div>
+      </aside>
+
+      {renderMain()}
     </div>
   );
 }
