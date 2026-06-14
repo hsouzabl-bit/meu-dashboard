@@ -358,9 +358,9 @@ export default function App(){
             <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:16}}>Sequências Atuais</div>
             {loading?Array(3).fill(0).map((_,i)=><div key={i} style={{padding:"10px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>)
               :[
-                {label:"Estudo 4h",        dias:seq[0]?.dias||0,icon:<Ico.Clock  s={15} c={th.textMuted}/>},
-                {label:"Leitura 6 páginas",dias:seq[1]?.dias||0,icon:<Ico.Book   s={15} c={th.textMuted}/>},
-                {label:"Vídeo aulas 30min",dias:seq[2]?.dias||0,icon:<Ico.Camera s={15} c={th.textMuted}/>},
+               {label:"Estudo 4h",        dias:seq[0]?.dias||0, pr:seq[0]?.pr||0, icon:<Ico.Clock  s={15} c={th.textMuted}/>},
+  {label:"Leitura 6 páginas",dias:seq[1]?.dias||0, pr:seq[1]?.pr||0, icon:<Ico.Book   s={15} c={th.textMuted}/>},
+  {label:"Vídeo aulas 30min",dias:seq[2]?.dias||0, pr:seq[2]?.pr||0, icon:<Ico.Camera s={15} c={th.textMuted}/>},
               ].map(s=>(
   <div key={s.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
     <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>{s.icon}{s.label}</span>
