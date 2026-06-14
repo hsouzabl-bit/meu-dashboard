@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Estatisticas from "./Estatisticas";
 
 const API_URL = "https://script.google.com/macros/s/AKfycbzBEgswS-Jy8HvgYOQITuS6YgRrT7am5DlR3Mhd6KC4sTpl_Xg5It7XBnIKdr1QWfzi/exec";
 
