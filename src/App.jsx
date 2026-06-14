@@ -258,7 +258,8 @@ export default function App(){
       </aside>
 
 {/* Main */}
-      {activeNav === "Estatísticas" ? <Estatisticas th={th}/> : <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0}}>
+      {activeNav === "Estatísticas" ? <Estatisticas th={th}/> : (
+      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0}}>
 
         {/* Header */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
@@ -425,7 +426,8 @@ export default function App(){
             }
           </div>
         </div>
-      </main>}
+      </main>
+      )}
     </div>
   );
 }
