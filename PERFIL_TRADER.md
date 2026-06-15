@@ -1,5 +1,8 @@
 # PERFIL — Henrique (Trader)
 
+API Diário: https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec
+API Estudos/check-in? https://script.google.com/macros/s/AKfycbzBEgswS-Jy8HvgYOQITuS6YgRrT7am5DlR3Mhd6KC4sTpl_Xg5It7XBnIKdr1QWfzi/exec
+
 ## Identificação
 - Nome: Henrique
 - Estilo: Daytrade
@@ -59,3 +62,5 @@
 - Reuniões periódicas com mentor Mateus (Starterpack)
 - Usa Google Forms para check-in diário de estudos e rotinas
 - Dashboard pessoal em produção: react-dashboard-creation.vercel.app
+
+
