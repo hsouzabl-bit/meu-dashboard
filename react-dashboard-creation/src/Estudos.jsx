@@ -1136,8 +1136,8 @@ const messagesEndRef = useRef(null);
                     src={pdfSel.url}
                     title={pdfSel.titulo}
                     width="100%"
-                    height="calc(100vh - 200px)"
-                    style={{ border: "none", display: "block" }}
+                    height="calc(100vh - 160px)"
+                    style={{ border: "none", display: "block", minHeight: 600 }}
                     allow="autoplay"
                   />
                 </div>
