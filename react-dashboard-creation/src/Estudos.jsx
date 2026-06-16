@@ -1023,7 +1023,7 @@ const messagesEndRef = useRef(null);
         ))}
       </div>
 
-     <div style={{ flex: 1, padding: "28px 52px 56px", overflowY: "auto", minWidth: 0, boxSizing: "border-box" }}>
+     <div style={{ flex: 1, padding: "28px 52px 56px", overflowY: "auto", minWidth: 0, boxSizing: "border-box", maxWidth: 1200 }}>
 
         {/* ── RESUMOS ── */}
         {activeTab === "resumos" && (
