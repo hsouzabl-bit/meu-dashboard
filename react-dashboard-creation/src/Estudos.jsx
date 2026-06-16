@@ -864,7 +864,6 @@ export default function EstudosAlBrooks({ th = {} }) {
     { id: "ranges",    titulo: "Trading Price Action — Trading Ranges", url: "https://drive.google.com/file/d/1mNKYzZ_jFaGNpeiQZzrVnJ_VjR-_mT7E/preview" },
     { id: "reversals", titulo: "Trading Price Action — Reversals",      url: "https://drive.google.com/file/d/1jR-IfsxWuMPVuFsPrAwMhb5XgE0ZP_cE/preview" },
   ];
-  ];
 
   // Assistente state
   const [messages, setMessages] = useState([{
