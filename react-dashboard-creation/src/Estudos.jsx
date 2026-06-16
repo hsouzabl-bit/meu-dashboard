@@ -893,43 +893,245 @@ Exemplos:
     tipo: "builtin",
     conteudo: `# Resumo — Padrões de Abertura: Triplo Screen
 
-## 1. ESTRUTURA
-Price Action (Al Brooks) + Análise Técnica aplicados ao day trade no Ibovespa Mini com triplo screen M2/M5/M15.
+# Padrões de Abertura — Triplo Screen (Tradesystem + Al Brooks)
 
-**Objetivo:** Leitura de contexto, localização correta e decisão operacional — sem entradas impulsivas.
+## Introdução
 
-## 2. AS 3 POSSIBILIDADES DE GAP
-| Cenário | Leitura |
-|---------|---------|
-| BO + Continuidade | Aceita o gap → seguir a direção |
-| BO + Correção | Correção saudável → possível retomada |
-| BO + FBO | Rejeita o gap → lateralidade ou reversão |
+Este resumo aborda gaps na abertura aplicados ao contexto de day trade com análise em Triplo Screen (M2, M5 e M15), baseado na metodologia de Price Action de Al Brooks e Análise Técnica Clássica.
 
-## 3. MM200 E TEMPOS
-- Duelando → lateralidade
-- Alinhada → melhores movimentos direcionais
-- Ao meio do range → lateralidade
+**Objetivo:** desenvolver leitura de contexto, localização correta e decisão operacional, evitando entradas impulsivas e focando em probabilidades reais.
 
-## 4. CHECKLIST DA ABERTURA
-✅ **Antes:** onde está a mm200? Dia anterior foi direcional? Há lateralidade longa no fechamento?
-✅ **Na Abertura:** B1 forte ou doji? Houve continuidade na B2? Gap pequeno, médio ou grande?
-✅ **Durante:** há continuidade ou sobreposição? Correção saudável ou MC estreito? Favor do tempo maior?
-❌ **Evitar:** BO sem continuidade, comprar alto/vender baixo longe das médias, operar contra tendência sem pressão prévia
+---
 
-## 5. PADRÕES DE ALTA PROBABILIDADE
-- **FAB4** — abertura acima mm200, médias comprimidas
-- **Wedge** — 3 puxadas; após 3º alvo aguardar TBTL antes de reentrar
-- **DB / DT** — fundos e topos duplos como referência
-- **Gap de Média** — preço distante das médias → retorno como setup
+## Conceito de Gap
 
-## 6. MÁXIMAS
-> "A primeira barra diz muito sobre o dia, mas a continuidade confirma tudo."
-> "O macro define a direção; o micro oferece o gatilho."
-> "BO sem continuidade é apenas tentativa, não confirmação."
-> "Sem gap de média, a tendência continua forte."
-> "Clareza gera confiança. Contexto gera probabilidade. Probabilidade gera consistência."`
-  }
-];
+Gap é um deslocamento ou aceleração de preço que ocorre:
+- Entre o fechamento do dia anterior e a primeira barra do dia
+- Por meio de um micro canal inicial sem sobreposição entre as barras
+
+Gaps indicam desequilíbrio temporário entre compradores e vendedores.
+
+---
+
+## As 3 Possibilidades de Gap
+
+### 1. Rompimento e Continuidade (BO + Continuidade)
+
+**Características:**
+- B1 forte, com fechamento acima de 60% do corpo
+- B2 com continuidade: mínima acima da máxima da barra anterior e fechamento acima da máxima da B1
+- Pouco ou nenhum pavio contrário
+- Pouca ou nenhuma sobreposição com a barra anterior à B1
+
+**Leitura:** mercado aceita os preços do gap → alta probabilidade de continuação direcional
+
+> **Alerta:** Em fortes tendências, as primeiras correções tendem a ter apenas 1 a 2 barras (H1). Correções acima de 20 barras configuram Endless Pullback.
+
+---
+
+### 2. Rompimento e Correção (BO + Correção)
+
+**Características:**
+- Gap inicial seguido de movimento lento contra o gap
+- Barras sobrepostas
+- Retorno às médias (MM20 / MM200)
+
+**Leitura:** realização parcial de lucros — correção saudável antes de possível retomada
+
+> **Alerta:** Correções em micro canal estreito aumentam a chance de uma segunda perna contra o gap, podendo se tornar um Endless Pullback.
+
+---
+
+### 3. Rompimento e Falha de Rompimento (BO + FBO)
+
+**Características:**
+- Gap grande, frequentemente climático
+- Forte rejeição do preço
+- Barra de reversão ou barra de tendência contrária
+- Inside bar ou outside bar contra a direção do gap
+
+**Leitura:** mercado não aceita os preços do gap → alta probabilidade de lateralidade ou reversão
+
+> **Alerta:** BO sem continuidade é apenas tentativa, não confirmação. Este cenário, quando ocorre na abertura, frequentemente leva a muita lateralidade durante o restante do dia.
+
+---
+
+## Importância da Primeira Barra (B1)
+
+A B1 oferece informações cruciais sobre o caráter do dia:
+
+| B1 | Leitura Provável |
+|----|-----------------|
+| Forte + continuidade na B2 | Direção inicial confirmada |
+| Doji ou barra sem continuidade | Lateralidade provável |
+| Forte barra de reversão | Possível FBO / reversão climática |
+| Inside bar | Modo rompimento — esperar definição |
+
+**Regra fundamental:** A primeira barra diz muito sobre o dia, mas a continuidade (barras seguintes) confirma tudo. Esta leitura se aplica ao M2, M5, M15, M60 e diário.
+
+> Uma B1 fraca raramente sustenta rompimentos.
+
+---
+
+## Papel da MM200
+
+A MM200 é a referência mais importante de contexto macro:
+
+- **MM200 acima e abaixo em tempos diferentes** → tempos duelando → lateralidade mais provável
+- **MM200 ao meio do range** → alta probabilidade de lateralidade → evitar BO sem validação
+- **MM200 alinhada nos tempos** → melhores movimentos direcionais
+- **MM200 ascendente abaixo do preço** → favorece compradores — correções devem ser vistas como bandeiras de alta
+- **Primeiros rompimentos da MM200** tendem a não ir muito longe ou a falhar — se confirmado com continuidade, busque os alvos
+
+---
+
+## Triplo Screen — Diretriz Operacional
+
+| Tempo | Função |
+|-------|--------|
+| M15   | Contexto e direção macro |
+| M5    | Estrutura e pressão |
+| M2    | Gatilhos de entrada |
+
+> **Princípio fundamental: O macro define a direção, o micro oferece o gatilho.**
+
+O tempo micro nunca deve ser operado sozinho. Sempre a favor de contexto ou gatilhos de tempos maiores. Barras em tempo menor que conflitem com o fechamento do macro têm baixa probabilidade de evolução.
+
+---
+
+## Padrões de Alta Probabilidade na Abertura
+
+### FAB4
+- MM20 e MM200 em estado comprimido (próximas)
+- B1 com forte direção, B2 como continuidade
+- Quanto menor o gap, mais espaço para o mercado ter um tempo direcional
+- Um gap muito grande que já pagou todos os alvos pode apenas lateralizar ou retornar às médias — não é interessante comprar acima de máximas nesses casos
+- No M2: MM200 ao meio do gap serve como suporte na eventual correção — é um dos melhores cenários de FAB4
+
+### Wedge
+- Padrão de 3 puxadas com ponto de inflexão
+- Em 75% das vezes gera pelo menos uma correção TBTL
+- Wedge + DB é ainda um padrão de compra; Wedge + DT é ainda um padrão de venda
+- Em lateralidades, wedges têm maior probabilidade de reverter a direção
+- Falha de wedge (25%) → premissa mínima de 2 pernas na direção contrária
+
+### DB / DT (Fundo Duplo / Topo Duplo)
+- Em lateralidades: DB e DT funcionam como pontos de compra e venda, respectivamente
+- DB mais alto que o anterior → estrutura de alta mantida → compra
+- DT mais baixo que o anterior → melhor probabilidade de nova mínima
+
+### Gap de Média
+- Setup de continuidade da tendência
+- Compra (ou venda) quando o preço retorna às médias após se afastar
+- Em tendência de alta: cada retorno à MM9 → MM20 → MM50 são pontos de compra
+- Gap de média de compra pós tendência de alta é lido como último setup antes de lateralidade ou reversão
+
+---
+
+## Padrões de Alerta
+
+Situações que exigem cautela redobrada:
+
+- **Rompimento sem continuidade** — BO sem confirmação é apenas tentativa
+- **Compras contra MM200 / vendas contra MM200** — primeiros testes tendem a falhar
+- **Vendas sem pressão prévia**, sem tendência de baixa ou MC anterior — não seja o primeiro
+- **Compras sem pressão prévia**, sem tendência de alta ou MC anterior
+- **B1 como doji** → indica dúvida na abertura → tende a manter lateralidade por mais barras; aguardar sinal de força antes de operar BO
+- **Barras sobrepostas, médias planas e emboladas** → indício de lateralidade → rompimentos iniciais tendem a falhar
+- **Preço abrindo dentro do range sem tendência no dia anterior** → precisa de mais barras para leitura
+
+---
+
+## Insights dos Exemplos Gráficos
+
+### Gap de baixa + MM200 acima do preço (contexto vendedor)
+Quando M15 está em tendência de baixa e M5 tem MM200 acima do preço: movimentos de alta são mais difíceis e tendem a encerrar nas médias ou pouco acima delas. Três puxadas de alta neste contexto = setup para novas vendas. Sem gap de média, a tendência de baixa continua forte.
+
+### Gap de alta climático (3 puxadas muito rápidas)
+Após 3 puxadas rápidas: parar de comprar por pelo menos uma correção TBTL (10 barras, 2 pernas). Se a B1 não tem forte fechamento de alta e a B2 nega continuidade, buscar setups de venda de retorno às médias. Um gap muito grande deixará todas as médias ascendentes e o preço irá descer lateralmente para encontrar compradores.
+
+### B1 como doji + TTR acima das médias
+B1 doji indica lateralidade em uma barra. Contexto: TTR acima das médias → comprar baixo, próximo à MM20. Exceto com BO de baixa confirmado. Estruturas como DB, DT e wedge podem definir o rompimento neste cenário.
+
+### BO e FBO → lateralidade
+Gap de alta seguido de falha de rompimento não reverte o mercado — corrige e lateraliza. O mercado passa a ter barras sobrepostas, médias resistindo ao preço. Evitar compras próximas às médias, pouco acima das médias, em setups de venda ou POC.
+
+### Endless Pullback
+O que parece uma correção se torna uma grande tendência de baixa quando há rompimento confirmado com continuidade após 20+ barras de descida em canal estreito.
+
+### Vwap do dia anterior
+O preço justo do dia anterior. A primeira tentativa de romper a vwap tende a falhar — considere pegar a segunda entrada (fechamento acima da vwap) se vier poucas barras depois (até 5 barras).
+
+### Pressão cumulativa dentro da lateralidade
+Micro canais dentro de lateralidades são acúmulos de pressão. Dois micro canais de alta consecutivos dentro da lateralidade, além de estrutura de alta (máximas e mínimas mais altas), favorecem o rompimento de alta.
+
+---
+
+## Checklist Operacional de Gaps
+
+### Antes da Abertura
+- Onde está a MM200 no M15, M5 e M2?
+- Dia anterior foi direcional ou lateral?
+- Existe lateralidade longa no fechamento (modo rompimento)?
+- Qual o contexto de médias: abertas, direcionais, planas ou emboladas?
+
+### Na Abertura
+- A B1 é barra forte ou doji?
+- Houve continuidade na B2?
+- O gap é pequeno, médio ou grande?
+- O preço está acima ou abaixo da MM200?
+
+### Durante o Trade
+- Há continuidade ou sobreposição de barras?
+- A correção é saudável (1-2 barras) ou micro canal, canal estreito?
+- O trade está a favor do tempo maior?
+- Barras do M15 e M60 fecharam a favor da entrada?
+
+### Evitar
+- Operar BO sem devida continuidade
+- Comprar alto longe das médias ou vender baixo longe das médias (exceto em setups de micro canal forte: falha de H1, L1, fechamento em modo rompimento)
+- Operar contra tendência sem pressão prévia — não ser o primeiro
+- Comprar no meio da lateralidade (zona neutra)
+- Entrar quando a MM200 está ao meio do range sem BO confirmado
+
+---
+
+## Regras Essenciais de Contexto
+
+- **80% das tentativas de reversão de tendência falham inicialmente** — em tendências, ver correções como bandeiras a favor
+- **Sem gap de média, a tendência continua forte** — gap de média é o primeiro sinal de possível lateralidade ou reversão
+- **Tendências se prolongam mais do que se imagina** — não opere contra tendência sem pressão anterior, quebra de LTA e algum tipo de teste da máxima (DT mais baixo de preferência)
+- **Quando o preço tenta 2 vezes retomar a máxima prévia e falha**, ele tende a testar a mínima anterior
+- **Canais estreitos no M5 normalmente são micro canais no M15** — o mesmo padrão, em escalas diferentes
+- Quando um canal de baixa tiver 20 ou mais barras: aguardar o BO, a correção, então entrar na retomada
+
+---
+
+## Glossário
+
+| Sigla | Significado |
+|-------|-------------|
+| BO    | Breakout (rompimento) |
+| FBO   | Failed Breakout (falha de rompimento) |
+| B1/B2 | Primeira e segunda barras do dia |
+| MC    | Micro canal |
+| TR    | Trading Range (lateralidade) |
+| TTR   | Lateralidade Estreita |
+| TBTL  | Ten Bars, Two Legs (10 barras, 2 pernas) |
+| DT/DB | Double Top / Double Bottom |
+| HH/LL | Máxima mais alta / Mínima mais baixa |
+| HL/LH | Mínima mais alta / Máxima mais baixa |
+| MTR   | Major Trend Reversal (reversão majoritária da tendência) |
+| POC   | Point of Control |
+| FAB4  | Padrão de gap com MM20 e MM200 comprimidas |
+| OCO/OCOI | Variação de padrão de 3 puxadas (tipo wedge) |
+| M2B/M2S | Moving Average 2 Bar Buy/Sell (setup de retorno à MM) |
+
+---
+
+> *Gaps oferecem oportunidades, mas exigem leitura de contexto e velocidade na ação. A repetição, o estudo e o backtest são fundamentais para internalizar padrões.*
+>
+> **Clareza gera confiança. Contexto gera probabilidade. Probabilidade gera consistência.**
 
 // ─── QUIZ ─────────────────────────────────────────────────────────────────────
 const TEMAS_QUIZ = [
