@@ -889,6 +889,14 @@ const messagesEndRef = useRef(null);
 
   useEffect(() => {
     fetch(`${GAS_ESTUDOS_URL}?action=lerHistorico`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.messages && data.messages.length > 0) {
+          setMessages(data.messages);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Quiz state
   const [temaSel, setTemaSel] = useState("Todos");
