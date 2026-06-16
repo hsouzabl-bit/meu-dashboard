@@ -1523,7 +1523,7 @@ const messagesEndRef = useRef(null);
                     </div>
 
                 {/* Adicionar resumo */}
-                {!showAddResumo ? (
+                {!showAddResumo ? }
                   <button onClick={() => setShowAddResumo(true)} style={{ ...btnSecondary, width: "100%" }}>
                     + Adicionar resumo
                   </button>
