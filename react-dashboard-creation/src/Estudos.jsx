@@ -1132,11 +1132,11 @@ const messagesEndRef = useRef(null);
                   </a>
                 </div>
                 <div style={{ background: th.surface, borderRadius: 12, overflow: "hidden", border: `1px solid ${th.border}` }}>
-                  <iframe
+                <iframe
                     src={pdfSel.url}
                     title={pdfSel.titulo}
                     width="100%"
-                    height="700"
+                    height="calc(100vh - 200px)"
                     style={{ border: "none", display: "block" }}
                     allow="autoplay"
                   />
