@@ -1004,7 +1004,7 @@ const messagesEndRef = useRef(null);
   };
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", background: th.bg, minHeight: "100vh", fontFamily: "'Plus Jakarta Sans','Inter',sans-serif" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", background: th.bg, fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", width: "100%" }}>
 
       {/* Header */}
       <div style={{ background: th.surface, borderBottom: `1px solid ${th.border}`, padding: "16px 32px", display: "flex", alignItems: "center", gap: 12 }}>
@@ -1027,7 +1027,7 @@ const messagesEndRef = useRef(null);
         ))}
       </div>
 
-    <div style={{ flex: 1, padding: activeTab === "pdfs" && pdfSel ? "28px 32px 56px" : "28px 52px 56px", overflowY: "auto", minWidth: 0, boxSizing: "border-box", maxWidth: activeTab === "pdfs" && pdfSel ? "none" : 1200 }}>
+    <div style={{ flex: 1, padding: activeTab === "pdfs" && pdfSel ? "28px 32px 56px" : "28px 52px 56px", overflowY: "auto", boxSizing: "border-box", maxWidth: activeTab === "pdfs" && pdfSel ? "100%" : 1200, width: "100%" }}>
 
         {/* ── RESUMOS ── */}
         {activeTab === "resumos" && (
