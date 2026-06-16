@@ -1519,11 +1519,12 @@ const messagesEndRef = useRef(null);
                           </button>
                         )}
                         <span style={{ fontSize: 18, color: th.textMuted }}>{r.tipo === "link" ? "🔗" : "›"}</span>
-                      </div>
                     </div>
+                  ))}
+                </div>
 
                 {/* Adicionar resumo */}
-                {!showAddResumo ? }
+                {!showAddResumo ? (
                   <button onClick={() => setShowAddResumo(true)} style={{ ...btnSecondary, width: "100%" }}>
                     + Adicionar resumo
                   </button>
