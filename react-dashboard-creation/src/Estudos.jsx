@@ -1131,13 +1131,11 @@ const messagesEndRef = useRef(null);
                     Abrir no Drive ↗
                   </a>
                 </div>
-                <div style={{ background: th.surface, borderRadius: 12, overflow: "hidden", border: `1px solid ${th.border}` }}>
+                <div style={{ background: th.surface, borderRadius: 12, overflow: "hidden", border: `1px solid ${th.border}`, width: "100%", flex: 1 }}>
                 <iframe
                     src={pdfSel.url}
                     title={pdfSel.titulo}
-                    width="100%"
-                    height="calc(100vh - 160px)"
-                    style={{ border: "none", display: "block", minHeight: 600 }}
+                    style={{ border: "none", display: "block", width: "100%", height: "calc(100vh - 160px)", minHeight: 600 }}
                     allow="autoplay"
                   />
                 </div>
