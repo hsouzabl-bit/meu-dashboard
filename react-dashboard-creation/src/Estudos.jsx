@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 
 // ─── PROXY GAS ────────────────────────────────────────────────────────────────
 const PROXY_URL = "https://script.google.com/macros/s/AKfycbzMNdMH3WxrJZSxHYJbkoYhusHqasbFTAhchIIypDAGldZ-DlOcdH58JA8id0QnytOlYg/exec";
+const GAS_ESTUDOS_URL = "https://script.google.com/macros/s/AKfycbzBEgswS-Jy8HvgYOQITuS6YgRrT7am5DlR3Mhd6KC4sTpl_Xg5It7XBnIKdr1QWfzi/exec";
 
 // ─── SYSTEM PROMPT (3 livros Al Brooks) ──────────────────────────────────────
 const SYSTEM_PROMPT = `You are an expert assistant specializing in Al Brooks' Price Action methodology, specifically as taught by the Al Brooks Técnico channel (@albrookstecnico). You evaluate WINFUT (Ibovespa Mini) trades and answer questions based strictly on the three Al Brooks books and the channel's materials.
@@ -867,9 +868,20 @@ export default function EstudosAlBrooks({ th = {} }) {
   }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef(null);
+const messagesEndRef = useRef(null);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  useEffect(() => {
+    fetch(`${GAS_ESTUDOS_URL}?action=lerHistorico`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.messages && data.messages.length > 0) {
+          setMessages(data.messages);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Quiz state
   const [temaSel, setTemaSel] = useState("Todos");
@@ -906,7 +918,13 @@ export default function EstudosAlBrooks({ th = {} }) {
         })
       });
       const data = await response.json();
-      setMessages([...newMessages, { role: "assistant", content: data.reply || "Sem resposta." }]);
+    const updatedMessages = [...newMessages, { role: "assistant", content: data.reply || "Sem resposta." }];
+      setMessages(updatedMessages);
+      fetch(GAS_ESTUDOS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action: "salvarHistorico", messages: updatedMessages })
+      }).catch(() => {});
     } catch {
       setMessages([...newMessages, { role: "assistant", content: "Erro de conexão. Verifique o proxy GAS e tente novamente." }]);
     }
