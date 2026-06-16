@@ -1027,7 +1027,7 @@ const messagesEndRef = useRef(null);
         ))}
       </div>
 
-    <div style={{ flex: 1, padding: activeTab === "pdfs" && pdfSel ? "28px 32px 56px" : "28px 52px 56px", overflowY: "auto", minWidth: 0, boxSizing: "border-box", maxWidth: activeTab === "pdfs" && pdfSel ? "100%" : 1200 }}>
+    <div style={{ flex: 1, padding: activeTab === "pdfs" && pdfSel ? "28px 32px 56px" : "28px 52px 56px", overflowY: "auto", minWidth: 0, boxSizing: "border-box", maxWidth: activeTab === "pdfs" && pdfSel ? "none" : 1200 }}>
 
         {/* ── RESUMOS ── */}
         {activeTab === "resumos" && (
