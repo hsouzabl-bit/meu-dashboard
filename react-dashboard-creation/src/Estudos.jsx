@@ -856,9 +856,14 @@ export default function EstudosAlBrooks({ th = {} }) {
   // PDFs state
   const [pdfSel, setPdfSel] = useState(null);
   const PDFS = [
-    { id: "ebook",   titulo: "E-book Al Brooks Técnico",          url: "https://drive.google.com/file/d/13AxNrxU6pY-bFnYUcdq-mR3_vM8F5HhQ/preview" },
-    { id: "padroes", titulo: "Padrões de Abertura — Triplo Screen", url: "https://drive.google.com/file/d/1mNKYzZ_jFaGNpeiQZzrVnJ_VjR-_mT7E/preview" },
-    { id: "plano",   titulo: "Plano de Trade 2023",                url: "https://drive.google.com/file/d/1nzV1Ky3Lek4WvOVBAFyIVb68CeXqTPUs/preview" },
+    { id: "ebook",     titulo: "E-book Al Brooks Técnico",            url: "https://drive.google.com/file/d/1bD50azdngXOMsYpRaEBwhDeZzfRpzLSH/preview" },
+    { id: "padroes",   titulo: "Padrões de Abertura — Triplo Screen",  url: "https://drive.google.com/file/d/13bYKhJS0P8stpqPxAWopRdDg13cRqh9F/preview" },
+    { id: "plano",     titulo: "Plano de Trade",                       url: "https://drive.google.com/file/d/1iiZBEcdyWaXj_DT3VOhtRpp3YlUDu-km/preview" },
+    { id: "premissas", titulo: "Premissas da Movimentação de Preço",   url: "https://drive.google.com/file/d/1B9uJWqgnqDmFePjsOv7eFXcthTKZXW-b/preview" },
+    { id: "trends",    titulo: "Trading Price Action — Trends",         url: "https://drive.google.com/file/d/1nzV1Ky3Lek4WvOVBAFyIVb68CeXqTPUs/preview" },
+    { id: "ranges",    titulo: "Trading Price Action — Trading Ranges", url: "https://drive.google.com/file/d/1mNKYzZ_jFaGNpeiQZzrVnJ_VjR-_mT7E/preview" },
+    { id: "reversals", titulo: "Trading Price Action — Reversals",      url: "https://drive.google.com/file/d/1jR-IfsxWuMPVuFsPrAwMhb5XgE0ZP_cE/preview" },
+  ];
   ];
 
   // Assistente state
