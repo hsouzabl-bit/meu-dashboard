@@ -877,15 +877,18 @@ const messagesEndRef = useRef(null);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   useEffect(() => {
-    fetch(`${GAS_ESTUDOS_URL}?action=lerHistorico`)
+    fetch(`${GAS_ESTUDOS_URL}?action=lerResumos`)
       .then(r => r.json())
       .then(data => {
-        if (data.messages && data.messages.length > 0) {
-          setMessages(data.messages);
+        if (data.resumos && data.resumos.length > 0) {
+          setResumos(prev => [...RESUMOS_BUILTIN, ...data.resumos]);
         }
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    fetch(`${GAS_ESTUDOS_URL}?action=lerHistorico`)
 
   // Quiz state
   const [temaSel, setTemaSel] = useState("Todos");
@@ -974,6 +977,11 @@ const messagesEndRef = useRef(null);
       link: tipoNovo === "link" ? novoLink : null,
     };
     setResumos(prev => [...prev, novo]);
+    fetch(GAS_ESTUDOS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action: "salvarResumo", resumo: novo })
+    }).catch(() => {});
     setNovoTitulo(""); setNovoConteudo(""); setNovoLink(""); setShowAddResumo(false);
   };
 
