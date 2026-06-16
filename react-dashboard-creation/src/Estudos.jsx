@@ -1495,18 +1495,32 @@ const messagesEndRef = useRef(null);
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
                   {resumos.map(r => (
-                    <div key={r.id} onClick={() => r.tipo === "link" ? window.open(r.link, "_blank") : setResumoSel(r)}
-                      style={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 12, padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color 0.15s" }}
+                   <div key={r.id}
+                      style={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color 0.15s" }}
                       onMouseEnter={e => e.currentTarget.style.borderColor = accent}
                       onMouseLeave={e => e.currentTarget.style.borderColor = th.border}>
-                      <div>
+                      <div onClick={() => r.tipo === "link" ? window.open(r.link, "_blank") : setResumoSel(r)}
+                        style={{ flex: 1, cursor: "pointer" }}>
                         <div style={{ fontWeight: 700, fontSize: 14, color: th.text, marginBottom: 3 }}>{r.titulo}</div>
                         <div style={{ fontSize: 12, color: th.textMuted }}>{r.descricao}</div>
                       </div>
-                      <span style={{ fontSize: 18, color: th.textMuted }}>{r.tipo === "link" ? "🔗" : "›"}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        {r.tipo !== "builtin" && (
+                          <button onClick={e => {
+                            e.stopPropagation();
+                            setResumos(prev => prev.filter(x => x.id !== r.id));
+                            fetch(GAS_ESTUDOS_URL, {
+                              method: "POST",
+                              headers: { "Content-Type": "text/plain" },
+                              body: JSON.stringify({ action: "deletarResumo", id: r.id })
+                            }).catch(() => {});
+                          }} style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", fontSize: 16, padding: "4px 8px" }}>
+                            ✕
+                          </button>
+                        )}
+                        <span style={{ fontSize: 18, color: th.textMuted }}>{r.tipo === "link" ? "🔗" : "›"}</span>
+                      </div>
                     </div>
-                  ))}
-                </div>
 
                 {/* Adicionar resumo */}
                 {!showAddResumo ? (
