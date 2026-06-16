@@ -1518,10 +1518,10 @@ const messagesEndRef = useRef(null);
                             ✕
                           </button>
                         )}
-                        <span style={{ fontSize: 18, color: th.textMuted }}>{r.tipo === "link" ? "🔗" : "›"}</span>
+   <span style={{ fontSize: 18, color: th.textMuted }}>{r.tipo === "link" ? "🔗" : "›"}</span>
+                      </div>
                     </div>
                   ))}
-                </div>
 
                 {/* Adicionar resumo */}
                 {!showAddResumo ? (
