@@ -1133,6 +1133,10 @@ Micro canais dentro de lateralidades são acúmulos de pressão. Dois micro cana
 >
 > **Clareza gera confiança. Contexto gera probabilidade. Probabilidade gera consistência.**
 
+`
+  },
+];
+
 // ─── QUIZ ─────────────────────────────────────────────────────────────────────
 const TEMAS_QUIZ = [
   "Todos",
