@@ -1485,7 +1485,7 @@ const messagesEndRef = useRef(null);
     <div style={{ flex: 1, padding: activeTab === "pdfs" && pdfSel ? "28px 32px 56px" : "28px 52px 56px", overflowY: "auto", boxSizing: "border-box", maxWidth: activeTab === "pdfs" && pdfSel ? "none" : 1200, 
                  width: activeTab === "pdfs" && pdfSel ? "calc(100vw - 240px)" : "100%" }}>
 
-        {/* ── RESUMOS ── */}
+{/* ── RESUMOS ── */}
         {activeTab === "resumos" && (
           <div>
             {!resumoSel ? (
@@ -1495,7 +1495,7 @@ const messagesEndRef = useRef(null);
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
                   {resumos.map(r => (
-                   <div key={r.id}
+                    <div key={r.id}
                       style={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color 0.15s" }}
                       onMouseEnter={e => e.currentTarget.style.borderColor = accent}
                       onMouseLeave={e => e.currentTarget.style.borderColor = th.border}>
@@ -1518,10 +1518,11 @@ const messagesEndRef = useRef(null);
                             ✕
                           </button>
                         )}
-   <span style={{ fontSize: 18, color: th.textMuted }}>{r.tipo === "link" ? "🔗" : "›"}</span>
+                        <span style={{ fontSize: 18, color: th.textMuted }}>{r.tipo === "link" ? "🔗" : "›"}</span>
                       </div>
                     </div>
                   ))}
+                </div>
 
                 {/* Adicionar resumo */}
                 {!showAddResumo ? (
