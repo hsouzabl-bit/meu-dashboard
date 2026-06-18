@@ -7,17 +7,19 @@ const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
 function gerarId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-function hoje() {
+
+function hojeISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
+
 function fmtBRL(val) {
   const n = parseFloat(val);
   if (isNaN(n) || val === "" || val === null || val === undefined) return null;
   return (n >= 0 ? "+" : "−") + "R$ " + Math.abs(n).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
+
 function corResultado(total) {
-  if (total === null || total === undefined || total === "") return null;
   const n = parseFloat(total);
   if (isNaN(n)) return null;
   if (n >= 100)  return { bg: "#1a3a28", border: "#2d6b4f", text: "#4ecb8d" };
@@ -25,26 +27,33 @@ function corResultado(total) {
   return { bg: "#2d2a14", border: "#6b5c00", text: "#e0c040" };
 }
 
-export default function Revisoes({ th }) {
-  // ── tema: usa exatamente os tokens do App.jsx ─────────────────────────────
-  const bg        = th?.bg       || "#f4f5f7";
-  const surface   = th?.surface  || "#ffffff";
-  const cardBg    = th?.cardBg   || "#ffffff";
-  const border    = th?.border   || "#ebebeb";
-  const border2   = th?.border2  || "#e0e0e0";
-  const text      = th?.text     || "#0f1117";
-  const textSub   = th?.textSub  || "#4a5568";
-  const textMuted = th?.textMuted|| "#8a96a3";
-  const resumeBg  = th?.resumeBg || "#f8f9fa";
-  const cardShadow= th?.cardShadow|| "0 1px 4px rgba(0,0,0,0.06)";
+// normaliza nome da conta para chave consistente
+function normConta(s) {
+  const l = (s || "").toLowerCase().trim();
+  if (l.includes("ion")) return "ION 2";
+  if (l.includes("mide")) return "MIDE 2";
+  return s;
+}
 
-  // ── state ──────────────────────────────────────────────────────────────────
-  const [ano, setAno]     = useState(new Date().getFullYear());
-  const [mes, setMes]     = useState(new Date().getMonth());
-  const [revisoes, setRevisoes] = useState([]);
-  const [updates,  setUpdates]  = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [saving,   setSaving]   = useState(false);
+export default function Revisoes({ th }) {
+  const bg         = th?.bg        || "#f4f5f7";
+  const surface    = th?.surface   || "#ffffff";
+  const cardBg     = th?.cardBg    || "#ffffff";
+  const border     = th?.border    || "#ebebeb";
+  const border2    = th?.border2   || "#e0e0e0";
+  const text       = th?.text      || "#0f1117";
+  const textSub    = th?.textSub   || "#4a5568";
+  const textMuted  = th?.textMuted || "#8a96a3";
+  const resumeBg   = th?.resumeBg  || "#f8f9fa";
+  const cardShadow = th?.cardShadow|| "0 1px 4px rgba(0,0,0,0.06)";
+
+  const [ano, setAno]   = useState(new Date().getFullYear());
+  const [mes, setMes]   = useState(new Date().getMonth());
+  const [revisoes,  setRevisoes]  = useState([]);
+  const [updates,   setUpdates]   = useState([]);
+  const [tradesPorData, setTradesPorData] = useState({});
+  const [loading,   setLoading]   = useState(true);
+  const [saving,    setSaving]    = useState(false);
 
   const [painelDia,  setPainelDia]  = useState(null);
   const [painelTipo, setPainelTipo] = useState("diario");
@@ -55,67 +64,78 @@ export default function Revisoes({ th }) {
   const [updateForm,     setUpdateForm]     = useState({ titulo: "", descricao: "" });
   const [expandedUpdate, setExpandedUpdate] = useState(null);
 
-  // ── fetch ──────────────────────────────────────────────────────────────────
+  // ── fetch ────────────────────────────────────────────────────────────────────
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
-      const [rRev, rUpd] = await Promise.all([
+      const [rRev, rUpd, rTrades] = await Promise.all([
         fetch(`${GAS_DIARIO}?action=lerRevisoes`).then(r => r.json()),
         fetch(`${GAS_DIARIO}?action=lerUpdates`).then(r => r.json()),
+        fetch(`${GAS_DIARIO}?action=lerTradesPorData`).then(r => r.json()),
       ]);
-      setRevisoes(rRev.revisoes || []);
-      setUpdates(rUpd.updates   || []);
+      setRevisoes(rRev.revisoes       || []);
+      setUpdates(rUpd.updates         || []);
+      setTradesPorData(rTrades.porData || {});
     } catch(e) { console.error(e); }
     setLoading(false);
   }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  // ── índices rápidos ────────────────────────────────────────────────────────
+  // ── índices ─────────────────────────────────────────────────────────────────
   const revisaoPorData = {};
   revisoes.forEach(r => { revisaoPorData[r.data] = r; });
   const semanasPorDom = {};
   revisoes.filter(r => r.tipo === "semanal").forEach(r => { semanasPorDom[r.data] = r; });
 
-  // ── calendário ─────────────────────────────────────────────────────────────
+  // ── helpers data ─────────────────────────────────────────────────────────────
   function isoData(a, m, d) {
     return `${a}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
   }
-  function domingoSemana(a, m, d) {
-    const dt = new Date(a, m, d);
-    const dom = new Date(dt);
-    dom.setDate(dt.getDate() - dt.getDay());
-    return `${dom.getFullYear()}-${String(dom.getMonth()+1).padStart(2,"0")}-${String(dom.getDate()).padStart(2,"0")}`;
-  }
 
-  // ── abrir painel ───────────────────────────────────────────────────────────
+  // ── abrir painel ─────────────────────────────────────────────────────────────
   function abrirDia(dataStr) {
-    const rev = revisaoPorData[dataStr] || {};
+    const rev    = revisaoPorData[dataStr] || {};
+    const trades = tradesPorData[dataStr]  || {};
+
+    // pré-preenche com dados do diário se não houver revisão salva
+    const ion2  = trades["ION 2"]  || trades["ion 2"]  || {};
+    const mide2 = trades["MIDE 2"] || trades["mide 2"] || {};
+
+    // parsear resumoCurto salvo (JSON com campos por conta)
+    let saved = {};
+    try { saved = JSON.parse(rev.resumoCurto || "{}"); } catch {}
+
     setPainelDia(dataStr);
     setPainelTipo("diario");
     setFormDados({
-      resultadoIon2:      rev.resultadoIon2    ?? "",
-      resultadoMide2:     rev.resultadoMide2   ?? "",
-      qtdOpsIon2:         rev.qtdOpsIon2       ?? "",
-      qtdOpsMide2:        rev.qtdOpsMide2      ?? "",
-      acertoIon2:         rev.acertoIon2       ?? "",
-      acertoMide2:        rev.acertoMide2      ?? "",
-      errosIon2:          rev.errosIon2        ?? "",
-      errosMide2:         rev.errosMide2       ?? "",
-      resumoIon2:         rev.resumoIon2       ?? "",
-      resumoMide2:        rev.resumoMide2      ?? "",
-      revisaoDetalhada:   rev.revisaoDetalhada ?? "",
+      // resultado: prioriza salvo, depois diário
+      resultadoIon2:    rev.resultadoIon2  !== undefined && rev.resultadoIon2  !== "" ? rev.resultadoIon2  : (ion2.resultado  ?? ""),
+      resultadoMide2:   rev.resultadoMide2 !== undefined && rev.resultadoMide2 !== "" ? rev.resultadoMide2 : (mide2.resultado ?? ""),
+      // métricas por conta
+      qtdOpsIon2:   saved.qtdOpsIon2   !== undefined ? saved.qtdOpsIon2   : (ion2.trades    ?? ""),
+      qtdOpsMide2:  saved.qtdOpsMide2  !== undefined ? saved.qtdOpsMide2  : (mide2.trades   ?? ""),
+      acertoIon2:   saved.acertoIon2   !== undefined ? saved.acertoIon2   : (ion2.taxaAcerto  ?? ""),
+      acertoMide2:  saved.acertoMide2  !== undefined ? saved.acertoMide2  : (mide2.taxaAcerto ?? ""),
+      errosIon2:    saved.errosIon2    !== undefined ? saved.errosIon2    : (ion2.erros    ?? ""),
+      errosMide2:   saved.errosMide2   !== undefined ? saved.errosMide2   : (mide2.erros   ?? ""),
+      // textos
+      resumoIon2:       saved.resumoIon2       ?? "",
+      resumoMide2:      saved.resumoMide2      ?? "",
+      revisaoDetalhada: rev.revisaoDetalhada   ?? "",
     });
     setFormDirty(false);
   }
 
   function abrirSemana(domStr) {
     const rev = semanasPorDom[domStr] || {};
+    let saved = {};
+    try { saved = JSON.parse(rev.resumoCurto || "{}"); } catch {}
     setPainelDia(domStr);
     setPainelTipo("semanal");
     setFormDados({
-      resumoCurto:      rev.resumoCurto      ?? "",
-      revisaoDetalhada: rev.revisaoDetalhada ?? "",
+      resumoCurto:      saved.resumoCurto      ?? "",
+      revisaoDetalhada: rev.revisaoDetalhada   ?? "",
     });
     setFormDirty(false);
   }
@@ -131,36 +151,32 @@ export default function Revisoes({ th }) {
     setFormDirty(true);
   }
 
-  // ── salvar revisão ─────────────────────────────────────────────────────────
+  // ── salvar revisão ────────────────────────────────────────────────────────────
   async function salvar() {
     setSaving(true);
     const existente = painelTipo === "diario"
       ? (revisaoPorData[painelDia] || null)
       : (semanasPorDom[painelDia]  || null);
 
-    // Para compatibilidade com o GAS que usa campos antigos,
-    // mapeamos os campos novos mantendo os legados também
     const revisao = {
-      id:   existente?.id || gerarId(),
-      data: painelDia,
-      tipo: painelTipo,
-      resultadoIon2:    formDados.resultadoIon2    ?? "",
-      resultadoMide2:   formDados.resultadoMide2   ?? "",
-      qtdOps:           formDados.qtdOpsIon2       ?? "", // col legada = ION2
-      acerto:           formDados.acertoIon2       ?? "",
-      erros:            formDados.errosIon2        ?? "",
-      // campos extras no resumo_curto e revisao_detalhada como JSON
-      resumoCurto:      JSON.stringify({
-        qtdOpsIon2:   formDados.qtdOpsIon2   ?? "",
-        qtdOpsMide2:  formDados.qtdOpsMide2  ?? "",
-        acertoIon2:   formDados.acertoIon2   ?? "",
-        acertoMide2:  formDados.acertoMide2  ?? "",
-        errosIon2:    formDados.errosIon2    ?? "",
-        errosMide2:   formDados.errosMide2   ?? "",
-        resumoIon2:   formDados.resumoIon2   ?? "",
-        resumoMide2:  formDados.resumoMide2  ?? "",
-        // semanal
-        resumoCurto:  formDados.resumoCurto  ?? "",
+      id:              existente?.id || gerarId(),
+      data:            painelDia,
+      tipo:            painelTipo,
+      resultadoIon2:   formDados.resultadoIon2  ?? "",
+      resultadoMide2:  formDados.resultadoMide2 ?? "",
+      qtdOps:          formDados.qtdOpsIon2     ?? "",
+      acerto:          formDados.acertoIon2     ?? "",
+      erros:           formDados.errosIon2      ?? "",
+      resumoCurto: JSON.stringify({
+        qtdOpsIon2:  formDados.qtdOpsIon2  ?? "",
+        qtdOpsMide2: formDados.qtdOpsMide2 ?? "",
+        acertoIon2:  formDados.acertoIon2  ?? "",
+        acertoMide2: formDados.acertoMide2 ?? "",
+        errosIon2:   formDados.errosIon2   ?? "",
+        errosMide2:  formDados.errosMide2  ?? "",
+        resumoIon2:  formDados.resumoIon2  ?? "",
+        resumoMide2: formDados.resumoMide2 ?? "",
+        resumoCurto: formDados.resumoCurto ?? "",
       }),
       revisaoDetalhada: formDados.revisaoDetalhada ?? "",
     };
@@ -184,27 +200,18 @@ export default function Revisoes({ th }) {
     if (!window.confirm("Excluir esta revisão?")) return;
     setSaving(true);
     try {
-      await fetch(GAS_DIARIO, {
-        method: "POST",
-        body: JSON.stringify({ action: "deletarRevisao", id: existente.id }),
-      });
+      await fetch(GAS_DIARIO, { method: "POST", body: JSON.stringify({ action: "deletarRevisao", id: existente.id }) });
       await carregar();
       setPainelDia(null);
     } catch(e) { alert("Erro ao excluir."); }
     setSaving(false);
   }
 
-  // helper: extrai campos extras do resumoCurto (JSON)
-  function extrairMeta(rev) {
-    if (!rev) return {};
-    try { return JSON.parse(rev.resumoCurto || "{}"); } catch { return {}; }
-  }
-
-  // ── updates operacionais ────────────────────────────────────────────────────
+  // ── updates ───────────────────────────────────────────────────────────────────
   async function salvarUpdate() {
     if (!updateForm.titulo.trim()) return;
     setSaving(true);
-    const upd = { id: gerarId(), data: hoje(), titulo: updateForm.titulo.trim(), descricao: updateForm.descricao.trim() };
+    const upd = { id: gerarId(), data: hojeISO(), titulo: updateForm.titulo.trim(), descricao: updateForm.descricao.trim() };
     try {
       await fetch(GAS_DIARIO, { method: "POST", body: JSON.stringify({ action: "salvarUpdate", update: upd }) });
       await carregar();
@@ -222,11 +229,12 @@ export default function Revisoes({ th }) {
     } catch(e) { alert("Erro ao excluir."); }
   }
 
-  // ── estilos reutilizáveis ─────────────────────────────────────────────────
+  // ── estilos ───────────────────────────────────────────────────────────────────
   const inputStyle = {
     width: "100%", background: resumeBg, border: `1px solid ${border2}`,
     borderRadius: 8, color: text, padding: "9px 12px", fontSize: 13,
-    outline: "none", boxSizing: "border-box", fontFamily: "'Plus Jakarta Sans','Inter',sans-serif",
+    outline: "none", boxSizing: "border-box",
+    fontFamily: "'Plus Jakarta Sans','Inter',sans-serif",
   };
   const labelStyle = {
     fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase",
@@ -243,13 +251,12 @@ export default function Revisoes({ th }) {
     fontFamily: "'Plus Jakarta Sans','Inter',sans-serif",
   };
 
-  // ── render: grade do calendário ───────────────────────────────────────────
+  // ── render calendário ─────────────────────────────────────────────────────────
   function renderCalendario() {
     const primeiro = new Date(ano, mes, 1).getDay();
     const total    = new Date(ano, mes + 1, 0).getDate();
     const cells    = [];
 
-    // cabeçalho
     DIAS_SEMANA.forEach((d, i) => {
       cells.push(
         <div key={`h${i}`} style={{
@@ -260,74 +267,81 @@ export default function Revisoes({ th }) {
       );
     });
 
-    // células vazias
     for (let i = 0; i < primeiro; i++) cells.push(<div key={`e${i}`} />);
 
     for (let d = 1; d <= total; d++) {
-      const dataStr = isoData(ano, mes, d);
-      const diaSem  = new Date(ano, mes, d).getDay();
-      const isDom   = diaSem === 0;
-      const isSab   = diaSem === 6;
-      const isHoje  = dataStr === hoje();
-      const rev     = revisaoPorData[dataStr];
-      const isAberto= painelDia === dataStr;
+      const dataStr  = isoData(ano, mes, d);
+      const diaSem   = new Date(ano, mes, d).getDay();
+      const isDom    = diaSem === 0;
+      const isSab    = diaSem === 6;
+      const isHoje   = dataStr === hojeISO();
+      const isAberto = painelDia === dataStr;
 
+      const rev     = revisaoPorData[dataStr];
       const revSem  = isDom ? semanasPorDom[dataStr] : null;
       const temRev  = !!rev;
       const temSem  = !!revSem;
 
-      // calcular total e cor de fundo
-      const rIon2  = parseFloat(rev?.resultadoIon2)  || 0;
-      const rMide2 = parseFloat(rev?.resultadoMide2) || 0;
-      const total_ = rIon2 + rMide2;
-      const cores  = temRev ? corResultado(total_) : null;
+      // dados do diário para este dia
+      const tradesHoje = tradesPorData[dataStr] || {};
+      const ion2dia    = tradesHoje["ION 2"]  || tradesHoje["ion 2"]  || null;
+      const mide2dia   = tradesHoje["MIDE 2"] || tradesHoje["mide 2"] || null;
 
-      // domingo não tem resultado financeiro, só revisão semanal
+      // resultado: prioriza revisão salva, fallback para diário
+      const rIon2  = parseFloat(rev?.resultadoIon2  ?? ion2dia?.resultado  ?? "NaN");
+      const rMide2 = parseFloat(rev?.resultadoMide2 ?? mide2dia?.resultado ?? "NaN");
+      const temDados = !isNaN(rIon2) || !isNaN(rMide2);
+      const totalDia = (!isNaN(rIon2) ? rIon2 : 0) + (!isNaN(rMide2) ? rMide2 : 0);
+
+      const cores = temDados ? corResultado(totalDia) : null;
+
       const bgCard = isDom
-        ? (temSem ? (ACCENT + "12") : cardBg)
+        ? (temSem ? ACCENT + "15" : cardBg)
         : (cores ? cores.bg : cardBg);
       const bdCard = isDom
         ? (temSem ? ACCENT + "55" : border)
-        : (cores ? cores.border : isHoje ? ACCENT + "88" : border);
+        : (isHoje ? ACCENT + "88" : cores ? cores.border : border);
+
+      // ops totais do dia (diário)
+      const opsIon2  = ion2dia?.trades     ?? null;
+      const opsMide2 = mide2dia?.trades    ?? null;
+      const acIon2   = ion2dia?.taxaAcerto ?? null;
+      const acMide2  = mide2dia?.taxaAcerto?? null;
+      const erIon2   = ion2dia?.erros      ?? null;
+      const erMide2  = mide2dia?.erros     ?? null;
 
       cells.push(
         <div
           key={d}
-          onClick={() => {
-            if (isSab) return;
-            if (isDom) abrirSemana(dataStr);
-            else abrirDia(dataStr);
-          }}
+          onClick={() => { if (isSab) return; if (isDom) abrirSemana(dataStr); else abrirDia(dataStr); }}
           style={{
-            position: "relative",
-            background: isAberto ? (ACCENT + "22") : bgCard,
+            background: isAberto ? ACCENT + "22" : bgCard,
             border: `1px solid ${isAberto ? ACCENT : bdCard}`,
             borderRadius: 10,
-            padding: "10px 10px 9px",
+            padding: "9px 10px 8px",
             cursor: isSab ? "default" : "pointer",
-            minHeight: 92,
+            minHeight: 100,
             transition: "border-color .15s, background .15s",
-            opacity: isSab ? 0.35 : 1,
+            opacity: isSab ? 0.3 : 1,
             display: "flex",
             flexDirection: "column",
-            gap: 5,
+            gap: 4,
             userSelect: "none",
           }}
         >
-          {/* número do dia + dot */}
+          {/* número + indicador */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{
-              fontSize: 12, fontWeight: isHoje ? 800 : 600,
-              color: isHoje ? ACCENT : isDom ? textMuted : text,
-            }}>{d}</span>
-            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+            <span style={{ fontSize: 12, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : isDom ? textMuted : text }}>
+              {d}
+            </span>
+            <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
               {temRev && !isDom && (
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT }} />
               )}
               {isDom && (
                 <span style={{
                   fontSize: 9, fontWeight: 700,
-                  background: temSem ? (ACCENT + "22") : "transparent",
+                  background: temSem ? ACCENT + "22" : "transparent",
                   color: temSem ? ACCENT : textMuted,
                   borderRadius: 4, padding: "1px 5px",
                   border: temSem ? "none" : `1px dashed ${border2}`,
@@ -336,39 +350,58 @@ export default function Revisoes({ th }) {
             </div>
           </div>
 
-          {/* resultado financeiro total */}
-          {temRev && !isDom && (
-            <div style={{
-              fontSize: 13, fontWeight: 800,
-              color: cores ? cores.text : textMuted,
-              lineHeight: 1.1,
-            }}>
-              {fmtBRL(total_) || "R$ 0"}
+          {/* resultado total */}
+          {!isDom && temDados && (
+            <div style={{ fontSize: 12, fontWeight: 800, color: cores ? cores.text : textMuted, lineHeight: 1.1 }}>
+              {(totalDia >= 0 ? "+" : "−") + "R$ " + Math.abs(totalDia).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
             </div>
           )}
 
-          {/* linha ION 2 */}
-          {temRev && !isDom && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 9, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.06em" }}>ION 2</span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: parseFloat(rev.resultadoIon2) >= 0 ? "#4ecb8d" : "#f06b6b" }}>
-                  {fmtBRL(rev.resultadoIon2) || "—"}
-                </span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 9, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.06em" }}>MIDE 2</span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: parseFloat(rev.resultadoMide2) >= 0 ? "#4ecb8d" : "#f06b6b" }}>
-                  {fmtBRL(rev.resultadoMide2) || "—"}
-                </span>
-              </div>
+          {/* ION 2 linha */}
+          {!isDom && (ion2dia || rev) && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.04em" }}>ION 2</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: !isNaN(rIon2) && rIon2 >= 0 ? "#4ecb8d" : "#f06b6b" }}>
+                {!isNaN(rIon2) ? ((rIon2 >= 0 ? "+" : "−") + "R$ " + Math.abs(rIon2).toLocaleString("pt-BR", { maximumFractionDigits: 0 })) : "—"}
+              </span>
             </div>
           )}
 
-          {/* domingo: preview semanal */}
+          {/* MIDE 2 linha */}
+          {!isDom && (mide2dia || rev) && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.04em" }}>MIDE 2</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: !isNaN(rMide2) && rMide2 >= 0 ? "#4ecb8d" : "#f06b6b" }}>
+                {!isNaN(rMide2) ? ((rMide2 >= 0 ? "+" : "−") + "R$ " + Math.abs(rMide2).toLocaleString("pt-BR", { maximumFractionDigits: 0 })) : "—"}
+              </span>
+            </div>
+          )}
+
+          {/* ops + acerto + erros — linha compacta por conta */}
+          {!isDom && (ion2dia || mide2dia) && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 1, marginTop: 1 }}>
+              {ion2dia && (
+                <div style={{ fontSize: 9, color: textMuted }}>
+                  {opsIon2 !== null ? `${opsIon2} ops` : ""}
+                  {acIon2  !== null ? ` · ${acIon2}%` : ""}
+                  {erIon2  > 0      ? ` · ${erIon2}err` : ""}
+                </div>
+              )}
+              {mide2dia && (
+                <div style={{ fontSize: 9, color: textMuted }}>
+                  {opsMide2 !== null ? `${opsMide2} ops` : ""}
+                  {acMide2  !== null ? ` · ${acMide2}%` : ""}
+                  {erMide2  > 0      ? ` · ${erMide2}err` : ""}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* domingo preview */}
           {isDom && temSem && (() => {
-            const meta = extrairMeta(revSem);
-            const preview = meta.resumoCurto || revSem.resumoCurto || "";
+            let preview = "";
+            try { preview = JSON.parse(revSem.resumoCurto || "{}").resumoCurto || ""; } catch {}
+            if (!preview) preview = revSem.resumoCurto || "";
             return preview ? (
               <div style={{
                 fontSize: 9, color: textMuted, lineHeight: 1.4, marginTop: 2,
@@ -383,7 +416,7 @@ export default function Revisoes({ th }) {
     return cells;
   }
 
-  // ── render: painel lateral ────────────────────────────────────────────────
+  // ── render painel ─────────────────────────────────────────────────────────────
   function renderPainel() {
     if (!painelDia) return null;
 
@@ -395,23 +428,23 @@ export default function Revisoes({ th }) {
         })()
       : `${DIAS_SEMANA[dt.getDay()]}, ${dt.getDate()} de ${MESES[dt.getMonth()]} de ${dt.getFullYear()}`;
 
-    const existente = painelTipo === "diario"
-      ? revisaoPorData[painelDia]
-      : semanasPorDom[painelDia];
+    const existente = painelTipo === "diario" ? revisaoPorData[painelDia] : semanasPorDom[painelDia];
 
     function campo(label, key, tipo = "text", placeholder = "", rows = 3) {
       return (
         <div key={key}>
           <label style={labelStyle}>{label}</label>
           {tipo === "textarea"
-            ? <textarea value={formDados[key] || ""} placeholder={placeholder} onChange={e => setField(key, e.target.value)} rows={rows} style={{ ...inputStyle, resize: "vertical" }} />
-            : <input type={tipo} value={formDados[key] || ""} placeholder={placeholder} onChange={e => setField(key, e.target.value)} style={inputStyle} />
+            ? <textarea value={formDados[key] || ""} placeholder={placeholder}
+                onChange={e => setField(key, e.target.value)} rows={rows}
+                style={{ ...inputStyle, resize: "vertical" }} />
+            : <input type={tipo} value={formDados[key] || ""} placeholder={placeholder}
+                onChange={e => setField(key, e.target.value)} style={inputStyle} />
           }
         </div>
       );
     }
 
-    // bloco por conta: resultado + ops + acerto + erros + resumo
     function contaBlock(conta, keyResult, keyOps, keyAcerto, keyErros, keyResumo) {
       return (
         <div style={{
@@ -423,10 +456,10 @@ export default function Revisoes({ th }) {
             {conta}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-            {campo("Resultado (R$)", keyResult, "number", "ex: 320")}
-            {campo("Qtd ops", keyOps, "number", "ex: 5")}
-            {campo("Acerto %", keyAcerto, "number", "ex: 60")}
-            {campo("Erros", keyErros, "number", "ex: 2")}
+            {campo("Resultado (R$)", keyResult,  "number", "ex: 320")}
+            {campo("Qtd ops",        keyOps,     "number", "ex: 5")}
+            {campo("Acerto %",       keyAcerto,  "number", "ex: 60")}
+            {campo("Erros",          keyErros,   "number", "ex: 2")}
           </div>
           {campo(`Resumo ${conta}`, keyResumo, "textarea", "O que funcionou? O que errou?", 2)}
         </div>
@@ -441,7 +474,7 @@ export default function Revisoes({ th }) {
         boxShadow: "-8px 0 32px rgba(0,0,0,0.22)",
         zIndex: 200, display: "flex", flexDirection: "column", overflow: "hidden",
       }}>
-        {/* header */}
+        {/* header painel */}
         <div style={{
           padding: "20px 24px 16px", borderBottom: `1px solid ${border}`,
           display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexShrink: 0,
@@ -464,7 +497,7 @@ export default function Revisoes({ th }) {
           <button onClick={fecharPainel} style={{ background: "none", border: "none", cursor: "pointer", color: textMuted, fontSize: 24, lineHeight: 1, padding: 0, flexShrink: 0 }}>×</button>
         </div>
 
-        {/* corpo */}
+        {/* corpo painel */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
           {painelTipo === "diario" && (
             <>
@@ -481,11 +514,8 @@ export default function Revisoes({ th }) {
           )}
         </div>
 
-        {/* footer */}
-        <div style={{
-          padding: "16px 24px", borderTop: `1px solid ${border}`,
-          display: "flex", gap: 10, flexShrink: 0,
-        }}>
+        {/* footer painel */}
+        <div style={{ padding: "16px 24px", borderTop: `1px solid ${border}`, display: "flex", gap: 10, flexShrink: 0 }}>
           <button onClick={salvar} disabled={saving} style={{ ...btnPrimary, flex: 1 }}>
             {saving ? "Salvando..." : "Salvar"}
           </button>
@@ -499,7 +529,7 @@ export default function Revisoes({ th }) {
     );
   }
 
-  // ── render: updates operacionais ──────────────────────────────────────────
+  // ── render updates ────────────────────────────────────────────────────────────
   function renderUpdates() {
     return (
       <div style={{ marginTop: 40 }}>
@@ -527,8 +557,9 @@ export default function Revisoes({ th }) {
           }}>
             <div>
               <label style={labelStyle}>Título do update</label>
-              <input type="text" placeholder="ex: Regra de correção rasa pós-dia ruim" value={updateForm.titulo}
-                onChange={e => setUpdateForm(p => ({ ...p, titulo: e.target.value }))} style={inputStyle} autoFocus />
+              <input type="text" placeholder="ex: Regra de correção rasa pós-dia ruim"
+                value={updateForm.titulo} onChange={e => setUpdateForm(p => ({ ...p, titulo: e.target.value }))}
+                style={inputStyle} autoFocus />
             </div>
             <div>
               <label style={labelStyle}>Descrição</label>
@@ -551,7 +582,7 @@ export default function Revisoes({ th }) {
             border: `1px dashed ${border2}`, borderRadius: 12,
           }}>
             Nenhum update registrado ainda.<br />
-            <span style={{ fontSize: 12 }}>Clique em "+ Novo update" para registrar uma mudança no seu operacional.</span>
+            <span style={{ fontSize: 12 }}>Clique em "+ Novo update" para registrar uma mudança no operacional.</span>
           </div>
         )}
 
@@ -581,7 +612,7 @@ export default function Revisoes({ th }) {
                   <span style={{ color: textMuted, fontSize: 13, flexShrink: 0 }}>{isExp ? "▲" : "▼"}</span>
                 </div>
                 {isExp && (
-                  <div style={{ padding: "0 16px 14px", borderTop: `1px solid ${border}`, paddingTop: 12 }}>
+                  <div style={{ padding: "12px 16px 14px", borderTop: `1px solid ${border}` }}>
                     {upd.descricao && (
                       <p style={{ margin: "0 0 12px", fontSize: 13, color: textSub, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                         {upd.descricao}
@@ -601,9 +632,9 @@ export default function Revisoes({ th }) {
     );
   }
 
-  // ── render principal ──────────────────────────────────────────────────────
+  // ── render principal ──────────────────────────────────────────────────────────
   return (
-    <main style={{
+    <div style={{
       flex: 1, padding: "36px 52px 56px", overflowY: "auto", minWidth: 0,
       fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: text,
       position: "relative",
@@ -620,7 +651,7 @@ export default function Revisoes({ th }) {
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: text, margin: 0 }}>Revisões</h1>
           <p style={{ fontSize: 13, color: textMuted, margin: "4px 0 0" }}>
-            Registro diário e semanal das operações. Clique num dia para registrar.
+            Registro diário e semanal. Clique num dia para ver ou editar.
           </p>
         </div>
       </div>
@@ -629,7 +660,7 @@ export default function Revisoes({ th }) {
         <div style={{ textAlign: "center", padding: 60, color: textMuted, fontSize: 14 }}>Carregando…</div>
       ) : (
         <div style={{ background: cardBg, borderRadius: 14, padding: "22px 26px", boxShadow: cardShadow, border: `1px solid ${border}` }}>
-          {/* navegação mês */}
+          {/* nav mês */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <span style={{ fontWeight: 800, fontSize: 15, color: text }}>{MESES[mes]} {ano}</span>
             <div style={{ display: "flex", gap: 4 }}>
@@ -642,12 +673,12 @@ export default function Revisoes({ th }) {
 
           {/* legenda */}
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 14, fontSize: 11, color: textMuted }}>
-            {[["#4ecb8d","Gain (+R$ 100)"],["#e0c040","Breakeven"],["#f06b6b","Loss (−R$ 100)"]].map(([c,l]) => (
+            {[["#4ecb8d","Gain (≥ +R$ 100)"],["#e0c040","Breakeven"],["#f06b6b","Loss (≤ −R$ 100)"]].map(([c,l]) => (
               <span key={l} style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <span style={{ width: 9, height: 9, borderRadius: 3, background: c, display: "inline-block" }} />{l}
               </span>
             ))}
-            <span style={{ opacity: 0.6 }}>Dom = revisão semanal</span>
+            <span style={{ opacity: 0.6 }}>Dom = revisão semanal · Sáb = folga</span>
           </div>
 
           {/* grade */}
@@ -659,6 +690,6 @@ export default function Revisoes({ th }) {
 
       {!loading && renderUpdates()}
       {renderPainel()}
-    </main>
+    </div>
   );
 }
