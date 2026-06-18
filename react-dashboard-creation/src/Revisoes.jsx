@@ -11,13 +11,6 @@ function hojeISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
-function corResultado(total) {
-  const n = parseFloat(total);
-  if (isNaN(n)) return null;
-  if (n >= 100)  return { bg: "#1a3a28", border: "#2d6b4f", text: "#4ecb8d" };
-  if (n <= -100) return { bg: "#3a1a1a", border: "#6b2d2d", text: "#f06b6b" };
-  return { bg: "#2d2a14", border: "#6b5c00", text: "#e0c040" };
-}
 function fmtVal(n) {
   if (isNaN(n)) return "—";
   return (n >= 0 ? "+" : "−") + "R$ " + Math.abs(n).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
@@ -34,6 +27,14 @@ export default function Revisoes({ th }) {
   const textMuted  = th?.textMuted || "#8a96a3";
   const resumeBg   = th?.resumeBg  || "#f8f9fa";
   const cardShadow = th?.cardShadow|| "0 1px 4px rgba(0,0,0,0.06)";
+  function corResultado(total) {
+    const n = parseFloat(total);
+    if (isNaN(n)) return null;
+    const isDark = bg === "#1a1d23" || bg.startsWith("#1") || bg.startsWith("#0");
+    if (n >= 100)  return { bg: isDark ? "#1a3a28" : "#d1fae5", border: isDark ? "#2d6b4f" : "#6ee7b7", text: "#4ecb8d" };
+    if (n <= -100) return { bg: isDark ? "#3a1a1a" : "#fee2e2", border: isDark ? "#6b2d2d" : "#fca5a5", text: "#f06b6b" };
+    return         { bg: isDark ? "#2d2a14" : "#fef9c3", border: isDark ? "#6b5c00" : "#fde047", text: isDark ? "#e0c040" : "#a16207" };
+  }
 
   const [ano, setAno]             = useState(new Date().getFullYear());
   const [mes, setMes]             = useState(new Date().getMonth());
@@ -557,7 +558,7 @@ export default function Revisoes({ th }) {
             <span style={{ opacity: 0.6 }}>Dom = revisão semanal · Sáb = folga</span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gridAutoRows: "150px", gap: 8, width: "100%" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gridAutoRows: "170px", gap: 8, width: "100%" }}>
             {renderCalendario()}
           </div>
         </div>
