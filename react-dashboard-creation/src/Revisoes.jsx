@@ -635,7 +635,7 @@ export default function Revisoes({ th }) {
   // ── render principal ──────────────────────────────────────────────────────────
   return (
     <div style={{
-      flex: 1, padding: "36px 52px 56px", overflowY: "auto", minWidth: 0,
+       flex: 1, padding: "36px 52px 56px", overflowY: "auto", minWidth: 0, width: "100%", boxSizing: "border-box",
       fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: text,
       position: "relative",
     }}>
