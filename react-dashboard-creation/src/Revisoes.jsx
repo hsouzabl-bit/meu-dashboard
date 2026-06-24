@@ -212,7 +212,7 @@ export default function Revisoes({ th, dark, setDark }) {
       revisaoDetalhada: formDados.revisaoDetalhada ?? "",
     };
     try {
-      await fetch(GAS_DIARIO, { method: "POST", body: JSON.stringify({ action: "salvarRevisao", revisao }) });
+      await fetch(GAS_DIARIO, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ action: "salvarRevisao", revisao }) });
       await carregar();
       setFormDirty(false);
     } catch(e) { alert("Erro ao salvar. Tente novamente."); }
@@ -224,7 +224,7 @@ export default function Revisoes({ th, dark, setDark }) {
     if (!existente || !window.confirm("Excluir esta revisão?")) return;
     setSaving(true);
     try {
-      await fetch(GAS_DIARIO, { method: "POST", body: JSON.stringify({ action: "deletarRevisao", id: existente.id }) });
+      await fetch(GAS_DIARIO, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ action: "deletarRevisao", id: existente.id }) });
       await carregar();
       setPainelDia(null);
     } catch(e) { alert("Erro ao excluir."); }
@@ -236,7 +236,7 @@ export default function Revisoes({ th, dark, setDark }) {
     setSaving(true);
     const upd = { id: gerarId(), data: hojeISO(), titulo: updateForm.titulo.trim(), descricao: updateForm.descricao.trim() };
     try {
-      await fetch(GAS_DIARIO, { method: "POST", body: JSON.stringify({ action: "salvarUpdate", update: upd }) });
+      await fetch(GAS_DIARIO, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ action: "salvarUpdate", update: upd }) });
       await carregar();
       setUpdateForm({ titulo: "", descricao: "" });
       setShowUpdateForm(false);
@@ -247,7 +247,7 @@ export default function Revisoes({ th, dark, setDark }) {
   async function deletarUpdateFn(id) {
     if (!window.confirm("Excluir este update?")) return;
     try {
-      await fetch(GAS_DIARIO, { method: "POST", body: JSON.stringify({ action: "deletarUpdate", id }) });
+      await fetch(GAS_DIARIO, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ action: "deletarUpdate", id }) });
       await carregar();
     } catch(e) { alert("Erro ao excluir."); }
   }
@@ -637,7 +637,6 @@ export default function Revisoes({ th, dark, setDark }) {
           {painelTipo === "diario" && (
             <>
               {contaBlock("ION 2",  "resultadoIon2",  "qtdOpsIon2",  "acertoIon2",  "errosIon2",  "resumoIon2")}
-              {contaBlock("MIDE 2", "resultadoMide2", "qtdOpsMide2", "acertoMide2", "errosMide2", "resumoMide2")}
               {campo("Revisão detalhada", "revisaoDetalhada", "textarea", "Análise técnica e emocional aprofundada, lições, próximos passos...", 5)}
             </>
           )}
@@ -697,8 +696,16 @@ export default function Revisoes({ th, dark, setDark }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {updates.map(upd => {
             const isExp = expandedUpdate === upd.id;
-            const dt = new Date(upd.data + "T12:00:00");
-            const dtStr = `${dt.getDate()}/${dt.getMonth()+1}/${dt.getFullYear()}`;
+            const dtStr = (() => {
+              if (!upd.data) return "—";
+              // defende contra número serial do Sheets ou string inválida
+              const raw = upd.data.toString();
+              if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+                const dt = new Date(raw + "T12:00:00");
+                return `${dt.getDate()}/${dt.getMonth()+1}/${dt.getFullYear()}`;
+              }
+              return raw;
+            })();
             return (
               <div key={upd.id} style={{ background: cardBg, border: `1px solid ${border}`, borderLeft: `3px solid ${ACCENT}`, borderRadius: 10, overflow: "hidden" }}>
                 <div onClick={() => setExpandedUpdate(isExp ? null : upd.id)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", cursor: "pointer", gap: 12 }}>
