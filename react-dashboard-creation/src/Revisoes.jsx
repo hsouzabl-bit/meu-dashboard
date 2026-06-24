@@ -194,28 +194,28 @@ export default function Revisoes({ th, dark, setDark }) {
       data:            painelDia,
       tipo:            painelTipo,
       resultadoIon2:   formDados.resultadoIon2  ?? "",
-      resultadoMide2:  formDados.resultadoMide2 ?? "",
+      resultadoMide2:  "",
       qtdOps:          formDados.qtdOpsIon2     ?? "",
       acerto:          formDados.acertoIon2     ?? "",
       erros:           formDados.errosIon2      ?? "",
       resumoCurto: JSON.stringify({
         qtdOpsIon2:  formDados.qtdOpsIon2  ?? "",
-        qtdOpsMide2: formDados.qtdOpsMide2 ?? "",
         acertoIon2:  formDados.acertoIon2  ?? "",
-        acertoMide2: formDados.acertoMide2 ?? "",
         errosIon2:   formDados.errosIon2   ?? "",
-        errosMide2:  formDados.errosMide2  ?? "",
         resumoIon2:  formDados.resumoIon2  ?? "",
-        resumoMide2: formDados.resumoMide2 ?? "",
         resumoCurto: formDados.resumoCurto ?? "",
       }),
       revisaoDetalhada: formDados.revisaoDetalhada ?? "",
     };
-    try {
-      await fetch(GAS_DIARIO, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ action: "salvarRevisao", revisao }) });
-      await carregar();
-      setFormDirty(false);
-    } catch(e) { alert("Erro ao salvar. Tente novamente."); }
+    fetch(GAS_DIARIO, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action: "salvarRevisao", revisao })
+    }).catch(() => {});
+    await new Promise(r => setTimeout(r, 2000));
+    await carregar();
+    setFormDirty(false);
+    setPainelDia(null);
     setSaving(false);
   }
 
@@ -223,11 +223,14 @@ export default function Revisoes({ th, dark, setDark }) {
     const existente = painelTipo === "diario" ? (revisaoPorData[painelDia] || null) : (semanasPorDom[painelDia] || null);
     if (!existente || !window.confirm("Excluir esta revisão?")) return;
     setSaving(true);
-    try {
-      await fetch(GAS_DIARIO, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ action: "deletarRevisao", id: existente.id }) });
-      await carregar();
-      setPainelDia(null);
-    } catch(e) { alert("Erro ao excluir."); }
+    fetch(GAS_DIARIO, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action: "deletarRevisao", id: existente.id })
+    }).catch(() => {});
+    await new Promise(r => setTimeout(r, 2000));
+    await carregar();
+    setPainelDia(null);
     setSaving(false);
   }
 
@@ -235,21 +238,27 @@ export default function Revisoes({ th, dark, setDark }) {
     if (!updateForm.titulo.trim()) return;
     setSaving(true);
     const upd = { id: gerarId(), data: hojeISO(), titulo: updateForm.titulo.trim(), descricao: updateForm.descricao.trim() };
-    try {
-      await fetch(GAS_DIARIO, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ action: "salvarUpdate", update: upd }) });
-      await carregar();
-      setUpdateForm({ titulo: "", descricao: "" });
-      setShowUpdateForm(false);
-    } catch(e) { alert("Erro ao salvar update."); }
+    fetch(GAS_DIARIO, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action: "salvarUpdate", update: upd })
+    }).catch(() => {});
+    await new Promise(r => setTimeout(r, 2000));
+    await carregar();
+    setUpdateForm({ titulo: "", descricao: "" });
+    setShowUpdateForm(false);
     setSaving(false);
   }
 
   async function deletarUpdateFn(id) {
     if (!window.confirm("Excluir este update?")) return;
-    try {
-      await fetch(GAS_DIARIO, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ action: "deletarUpdate", id }) });
-      await carregar();
-    } catch(e) { alert("Erro ao excluir."); }
+    fetch(GAS_DIARIO, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action: "deletarUpdate", id })
+    }).catch(() => {});
+    await new Promise(r => setTimeout(r, 2000));
+    await carregar();
   }
 
   const inputStyle = {
