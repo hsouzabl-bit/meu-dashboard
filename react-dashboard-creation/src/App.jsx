@@ -215,7 +215,7 @@ export default function App(){
   const renderMain = () => {
     if(activeNav === "Estatísticas") return <Estatisticas th={th}/>;
     if(activeNav === "Estudos") return <main style={{flex:1, overflowY:"auto", minWidth:0, display:"flex", flexDirection:"column"}}><Estudos th={th}/></main>;
-    if(activeNav === "Revisões") return <div style={{flex:1, overflowY:"auto", minWidth:0, display:"flex", flexDirection:"column", width:"100%"}}><Revisoes th={th}/></div>;
+    if(activeNav === "Revisões") return <div style={{flex:1, overflowY:"auto", minWidth:0, display:"flex", flexDirection:"column", width:"100%"}}><Revisoes th={th} dark={dark} setDark={setDark}/></div>;
     return (
       <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
