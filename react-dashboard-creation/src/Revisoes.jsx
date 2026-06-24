@@ -33,19 +33,19 @@ export default function Revisoes({ th }) {
     const n = parseFloat(total);
     if (isNaN(n)) return null;
     if (n >= 100)  return {
-      bg:     isDark ? "#1a3a28" : "#f0faf5",
-      border: isDark ? "#2d6b4f" : "#a8d5be",
-      text:   isDark ? "#4ecb8d" : "#2e7d5a",
+      bg:     isDark ? "#172b20" : "#f0faf5",
+      border: isDark ? "#2e5c40" : "#6bbf96",
+      text:   isDark ? "#3daa78" : "#2e7d5a",
     };
     if (n <= -100) return {
-      bg:     isDark ? "#3a1a1a" : "#faf0f0",
-      border: isDark ? "#6b2d2d" : "#d4a8a8",
-      text:   isDark ? "#f06b6b" : "#a04040",
+      bg:     isDark ? "#2b1717" : "#faf0f0",
+      border: isDark ? "#5c2e2e" : "#c47878",
+      text:   isDark ? "#c05858" : "#a04040",
     };
     return {
-      bg:     isDark ? "#2d2a14" : "#fafaf0",
-      border: isDark ? "#6b5c00" : "#ccc89a",
-      text:   isDark ? "#e0c040" : "#7a7030",
+      bg:     isDark ? "#252210" : "#fafaf0",
+      border: isDark ? "#5c5010" : "#b8b06a",
+      text:   isDark ? "#b09830" : "#7a7030",
     };
   }
 
@@ -359,7 +359,7 @@ export default function Revisoes({ th }) {
                   {sem.totalErros > 0 && (
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                       <span style={{ fontSize: 10, color: textMuted }}>Erros</span>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: isDark ? "#f06b6b" : "#a04040" }}>{sem.totalErros}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: isDark ? "#c05858" : "#a04040" }}>{sem.totalErros}</span>
                     </div>
                   )}
                 </div>
@@ -465,7 +465,7 @@ export default function Revisoes({ th }) {
           {(ion2dia || rev) && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.04em" }}>ION 2</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: !isNaN(rIon2) && rIon2 >= 0 ? (isDark ? "#4ecb8d" : "#2e7d5a") : (isDark ? "#f06b6b" : "#a04040") }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: !isNaN(rIon2) && rIon2 >= 0 ? (isDark ? "#3daa78" : "#2e7d5a") : (isDark ? "#c05858" : "#a04040") }}>
                 {fmtVal(rIon2)}
               </span>
             </div>
@@ -477,7 +477,7 @@ export default function Revisoes({ th }) {
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {opsIon2 !== null && <span style={{ fontSize: 11, color: textMuted }}>{opsIon2} ops</span>}
                 {acIon2  !== null && <span style={{ fontSize: 11, color: textMuted }}>· {acIon2}%</span>}
-                {erIon2  > 0      && <span style={{ fontSize: 11, color: isDark ? "#f06b6b" : "#a04040" }}>· {erIon2} err</span>}
+                {erIon2  > 0      && <span style={{ fontSize: 11, color: isDark ? "#c05858" : "#a04040" }}>· {erIon2} err</span>}
               </div>
             </>
           )}
