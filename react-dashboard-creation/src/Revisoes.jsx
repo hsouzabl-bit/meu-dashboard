@@ -27,13 +27,26 @@ export default function Revisoes({ th }) {
   const textMuted  = th?.textMuted || "#8a96a3";
   const resumeBg   = th?.resumeBg  || "#f8f9fa";
   const cardShadow = th?.cardShadow|| "0 1px 4px rgba(0,0,0,0.06)";
+  const isDark     = bg === "#1a1d23" || bg.startsWith("#1") || bg.startsWith("#0");
+
   function corResultado(total) {
     const n = parseFloat(total);
     if (isNaN(n)) return null;
-    const isDark = bg === "#1a1d23" || bg.startsWith("#1") || bg.startsWith("#0");
-    if (n >= 100)  return { bg: isDark ? "#1a3a28" : "#d1fae5", border: isDark ? "#2d6b4f" : "#6ee7b7", text: "#4ecb8d" };
-    if (n <= -100) return { bg: isDark ? "#3a1a1a" : "#fee2e2", border: isDark ? "#6b2d2d" : "#fca5a5", text: "#f06b6b" };
-    return         { bg: isDark ? "#2d2a14" : "#fef9c3", border: isDark ? "#6b5c00" : "#fde047", text: isDark ? "#e0c040" : "#a16207" };
+    if (n >= 100)  return {
+      bg:     isDark ? "#1a3a28" : "#f0faf5",
+      border: isDark ? "#2d6b4f" : "#a8d5be",
+      text:   isDark ? "#4ecb8d" : "#2e7d5a",
+    };
+    if (n <= -100) return {
+      bg:     isDark ? "#3a1a1a" : "#faf0f0",
+      border: isDark ? "#6b2d2d" : "#d4a8a8",
+      text:   isDark ? "#f06b6b" : "#a04040",
+    };
+    return {
+      bg:     isDark ? "#2d2a14" : "#fafaf0",
+      border: isDark ? "#6b5c00" : "#ccc89a",
+      text:   isDark ? "#e0c040" : "#7a7030",
+    };
   }
 
   const [ano, setAno]             = useState(new Date().getFullYear());
@@ -79,11 +92,53 @@ export default function Revisoes({ th }) {
     return `${a}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
   }
 
+  // Retorna o domingo da semana de uma data qualquer (para agrupar Seg–Sáb)
+  function domingoAnterior(dataStr) {
+    const dt = new Date(dataStr + "T12:00:00");
+    const dom = new Date(dt);
+    dom.setDate(dt.getDate() - dt.getDay());
+    return isoData(dom.getFullYear(), dom.getMonth(), dom.getDate());
+  }
+
+  // Calcula o resumo semanal ION 2 para um sábado específico (Seg a Sex daquela semana)
+  function resumoSemanalIon2(sabadoStr) {
+    const sabado = new Date(sabadoStr + "T12:00:00");
+    let totalRes = 0, totalOps = 0, somaAcerto = 0, diasAcerto = 0, totalErros = 0, diasComDados = 0;
+
+    for (let offset = -5; offset <= -1; offset++) { // Seg(-5) a Sex(-1) em relação ao Sáb
+      const dt = new Date(sabado);
+      dt.setDate(sabado.getDate() + offset);
+      const dataStr = isoData(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      const trades  = tradesPorData[dataStr] || {};
+      const ion2    = trades["ION 2"] || trades["ion 2"] || null;
+      const rev     = revisaoPorData[dataStr] || null;
+
+      const rIon2 = parseFloat(rev?.resultadoIon2 ?? ion2?.resultado ?? "NaN");
+      if (!isNaN(rIon2)) { totalRes += rIon2; diasComDados++; }
+
+      const ops = parseFloat(ion2?.trades ?? "NaN");
+      if (!isNaN(ops)) totalOps += ops;
+
+      const ac = parseFloat(ion2?.taxaAcerto ?? "NaN");
+      if (!isNaN(ac)) { somaAcerto += ac; diasAcerto++; }
+
+      const er = parseFloat(ion2?.erros ?? "NaN");
+      if (!isNaN(er)) totalErros += er;
+    }
+
+    return {
+      totalRes,
+      totalOps: totalOps || 0,
+      acertoMedio: diasAcerto > 0 ? Math.round(somaAcerto / diasAcerto) : null,
+      totalErros: totalErros || 0,
+      diasComDados,
+    };
+  }
+
   function abrirDia(dataStr) {
     const rev    = revisaoPorData[dataStr] || {};
     const trades = tradesPorData[dataStr]  || {};
     const ion2   = trades["ION 2"]  || trades["ion 2"]  || {};
-    const mide2  = trades["MIDE 2"] || trades["mide 2"] || {};
     let saved = {};
     try { saved = JSON.parse(rev.resumoCurto || "{}"); } catch {}
 
@@ -91,13 +146,13 @@ export default function Revisoes({ th }) {
     setPainelTipo("diario");
     setFormDados({
       resultadoIon2:    rev.resultadoIon2  !== undefined && rev.resultadoIon2  !== "" ? rev.resultadoIon2  : (ion2.resultado  ?? ""),
-      resultadoMide2:   rev.resultadoMide2 !== undefined && rev.resultadoMide2 !== "" ? rev.resultadoMide2 : (mide2.resultado ?? ""),
+      resultadoMide2:   rev.resultadoMide2 !== undefined && rev.resultadoMide2 !== "" ? rev.resultadoMide2 : "",
       qtdOpsIon2:   saved.qtdOpsIon2  !== undefined ? saved.qtdOpsIon2  : (ion2.trades      ?? ""),
-      qtdOpsMide2:  saved.qtdOpsMide2 !== undefined ? saved.qtdOpsMide2 : (mide2.trades     ?? ""),
+      qtdOpsMide2:  saved.qtdOpsMide2 !== undefined ? saved.qtdOpsMide2 : "",
       acertoIon2:   saved.acertoIon2  !== undefined ? saved.acertoIon2  : (ion2.taxaAcerto  ?? ""),
-      acertoMide2:  saved.acertoMide2 !== undefined ? saved.acertoMide2 : (mide2.taxaAcerto ?? ""),
+      acertoMide2:  saved.acertoMide2 !== undefined ? saved.acertoMide2 : "",
       errosIon2:    saved.errosIon2   !== undefined ? saved.errosIon2   : (ion2.erros  ?? ""),
-      errosMide2:   saved.errosMide2  !== undefined ? saved.errosMide2  : (mide2.erros ?? ""),
+      errosMide2:   saved.errosMide2  !== undefined ? saved.errosMide2  : "",
       resumoIon2:       saved.resumoIon2       ?? "",
       resumoMide2:      saved.resumoMide2      ?? "",
       revisaoDetalhada: rev.revisaoDetalhada   ?? "",
@@ -221,7 +276,6 @@ export default function Revisoes({ th }) {
     const total    = new Date(ano, mes + 1, 0).getDate();
     const cells    = [];
 
-    // cabeçalho
     DIAS_SEMANA.forEach((d, i) => (
       cells.push(
         <div key={`h${i}`} style={{
@@ -232,7 +286,6 @@ export default function Revisoes({ th }) {
       )
     ));
 
-    // células vazias
     for (let i = 0; i < primeiro; i++) cells.push(<div key={`e${i}`} />);
 
     for (let d = 1; d <= total; d++) {
@@ -243,57 +296,106 @@ export default function Revisoes({ th }) {
       const isHoje   = dataStr === hojeISO();
       const isAberto = painelDia === dataStr;
 
-      const rev    = revisaoPorData[dataStr];
-      const revSem = isDom ? semanasPorDom[dataStr] : null;
-      const temSem = !!revSem;
+      // ── SÁBADO: card de resumo semanal ──────────────────────────────────
+      if (isSab) {
+        const sem = resumoSemanalIon2(dataStr);
+        const temDados = sem.diasComDados > 0;
+        const cores = temDados ? corResultado(sem.totalRes) : null;
+        const sabBg = isDark
+          ? (cores ? cores.bg : ACCENT + "08")
+          : (cores ? cores.bg : ACCENT + "08");
+        const sabBorder = cores ? cores.border : ACCENT + "33";
 
-      const tradesHoje = tradesPorData[dataStr] || {};
-      const ion2dia    = tradesHoje["ION 2"]  || tradesHoje["ion 2"]  || null;
-      const mide2dia   = tradesHoje["MIDE 2"] || tradesHoje["mide 2"] || null;
-
-      const rIon2   = parseFloat(rev?.resultadoIon2  ?? ion2dia?.resultado  ?? "NaN");
-      const rMide2  = parseFloat(rev?.resultadoMide2 ?? mide2dia?.resultado ?? "NaN");
-      const temDados = !isNaN(rIon2) || !isNaN(rMide2);
-      const totalDia = (!isNaN(rIon2) ? rIon2 : 0) + (!isNaN(rMide2) ? rMide2 : 0);
-      const cores    = temDados && !isDom ? corResultado(totalDia) : null;
-
-      const bgCard = cores ? cores.bg : isDom && temSem ? ACCENT + "15" : cardBg;
-      const bdCard = isAberto ? ACCENT : cores ? cores.border : isHoje ? ACCENT + "88" : isDom && temSem ? ACCENT + "55" : border;
-
-      const opsIon2  = ion2dia?.trades      ?? null;
-      const opsMide2 = mide2dia?.trades     ?? null;
-      const acIon2   = ion2dia?.taxaAcerto  ?? null;
-      const acMide2  = mide2dia?.taxaAcerto ?? null;
-      const erIon2   = ion2dia?.erros       ?? null;
-      const erMide2  = mide2dia?.erros      ?? null;
-
-      cells.push(
-        <div
-          key={d}
-          onClick={() => { if (isSab) return; if (isDom) abrirSemana(dataStr); else abrirDia(dataStr); }}
-          style={{
-            background: isAberto ? ACCENT + "22" : bgCard,
-            border: `1px solid ${bdCard}`,
+        cells.push(
+          <div key={d} style={{
+            background: sabBg,
+            border: `2px solid ${sabBorder}`,
             borderRadius: 10,
             padding: "11px 12px 10px",
-            cursor: isSab ? "default" : "pointer",
+            cursor: "default",
             height: "100%",
-            transition: "border-color .15s, background .15s",
-            opacity: isSab ? 0.3 : 1,
             display: "flex",
             flexDirection: "column",
             gap: 5,
-            userSelect: "none",
             boxSizing: "border-box",
             overflow: "hidden",
-          }}
-        >
-          {/* número + badge */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 13, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : isDom ? textMuted : text }}>
-              {d}
-            </span>
-            {isDom && (
+          }}>
+            {/* número + badge SEM */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 13, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : textMuted }}>{d}</span>
+              <span style={{
+                fontSize: 9, fontWeight: 800, color: ACCENT,
+                background: ACCENT + "18", borderRadius: 4, padding: "1px 6px",
+                letterSpacing: "0.04em", textTransform: "uppercase",
+              }}>semana</span>
+            </div>
+
+            {temDados ? (
+              <>
+                {/* total ION 2 */}
+                <div style={{ fontSize: 15, fontWeight: 800, color: cores ? cores.text : textMuted, lineHeight: 1.1, marginTop: 2 }}>
+                  {fmtVal(sem.totalRes)}
+                </div>
+                {/* label */}
+                <div style={{ fontSize: 9, fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  ION 2 · {sem.diasComDados}d
+                </div>
+                {/* divider */}
+                <div style={{ height: 1, background: isDark ? sabBorder : "#ddd", margin: "1px 0" }} />
+                {/* stats */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  {sem.totalOps > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 10, color: textMuted }}>Ops</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: text }}>{sem.totalOps}</span>
+                    </div>
+                  )}
+                  {sem.acertoMedio !== null && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 10, color: textMuted }}>Acerto</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: text }}>{sem.acertoMedio}%</span>
+                    </div>
+                  )}
+                  {sem.totalErros > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 10, color: textMuted }}>Erros</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: isDark ? "#f06b6b" : "#a04040" }}>{sem.totalErros}</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: 10, color: textMuted, marginTop: 4, lineHeight: 1.4 }}>
+                Sem dados<br/>na semana
+              </div>
+            )}
+          </div>
+        );
+        continue;
+      }
+
+      // ── DOMINGO ──────────────────────────────────────────────────────────
+      if (isDom) {
+        const revSem = semanasPorDom[dataStr] || null;
+        const temSem = !!revSem;
+        const bgCard = isDom && temSem ? ACCENT + "15" : cardBg;
+        const bdCard = isAberto ? ACCENT : isHoje ? ACCENT + "88" : isDom && temSem ? ACCENT + "55" : border;
+
+        cells.push(
+          <div key={d}
+            onClick={() => abrirSemana(dataStr)}
+            style={{
+              background: isAberto ? ACCENT + "22" : bgCard,
+              border: `2px solid ${bdCard}`,
+              borderRadius: 10, padding: "11px 12px 10px",
+              cursor: "pointer", height: "100%",
+              transition: "border-color .15s, background .15s",
+              display: "flex", flexDirection: "column", gap: 5,
+              userSelect: "none", boxSizing: "border-box", overflow: "hidden",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 13, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : textMuted }}>{d}</span>
               <span style={{
                 fontSize: 9, fontWeight: 700,
                 background: temSem ? ACCENT + "22" : "transparent",
@@ -301,77 +403,84 @@ export default function Revisoes({ th }) {
                 borderRadius: 4, padding: "1px 5px",
                 border: temSem ? "none" : `1px dashed ${border2}`,
               }}>sem</span>
-            )}
-            {!isDom && rev && (
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
-            )}
+            </div>
+            {isDom && temSem && (() => {
+              let preview = "";
+              try { preview = JSON.parse(revSem.resumoCurto || "{}").resumoCurto || ""; } catch {}
+              if (!preview) preview = revSem.resumoCurto || "";
+              return preview ? (
+                <div style={{
+                  fontSize: 10, color: textMuted, lineHeight: 1.4, marginTop: 2,
+                  overflow: "hidden", display: "-webkit-box",
+                  WebkitLineClamp: 3, WebkitBoxOrient: "vertical",
+                }}>{preview}</div>
+              ) : null;
+            })()}
+          </div>
+        );
+        continue;
+      }
+
+      // ── DIAS ÚTEIS (Seg–Sex) ─────────────────────────────────────────────
+      const rev    = revisaoPorData[dataStr];
+      const tradesHoje = tradesPorData[dataStr] || {};
+      const ion2dia    = tradesHoje["ION 2"] || tradesHoje["ion 2"] || null;
+
+      const rIon2   = parseFloat(rev?.resultadoIon2 ?? ion2dia?.resultado ?? "NaN");
+      const temDados = !isNaN(rIon2);
+      const cores    = temDados ? corResultado(rIon2) : null;
+
+      const bgCard  = cores ? cores.bg : cardBg;
+      const bdCard  = isAberto ? ACCENT : cores ? cores.border : isHoje ? ACCENT + "88" : border;
+
+      const opsIon2 = ion2dia?.trades     ?? null;
+      const acIon2  = ion2dia?.taxaAcerto ?? null;
+      const erIon2  = ion2dia?.erros      ?? null;
+
+      cells.push(
+        <div
+          key={d}
+          onClick={() => abrirDia(dataStr)}
+          style={{
+            background: isAberto ? ACCENT + "22" : bgCard,
+            border: `2px solid ${bdCard}`,
+            borderRadius: 10, padding: "11px 12px 10px",
+            cursor: "pointer", height: "100%",
+            transition: "border-color .15s, background .15s",
+            display: "flex", flexDirection: "column", gap: 5,
+            userSelect: "none", boxSizing: "border-box", overflow: "hidden",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 13, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : text }}>{d}</span>
+            {rev && <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />}
           </div>
 
-          {/* resultado total */}
-          {!isDom && temDados && (
+          {temDados && (
             <div style={{ fontSize: 14, fontWeight: 800, color: cores ? cores.text : textMuted, lineHeight: 1.2, marginTop: 2 }}>
-              {fmtVal(totalDia)}
+              {fmtVal(rIon2)}
             </div>
           )}
 
-          {/* ION 2 */}
-          {!isDom && (ion2dia || rev) && (
+          {(ion2dia || rev) && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.04em" }}>ION 2</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: !isNaN(rIon2) && rIon2 >= 0 ? "#4ecb8d" : "#f06b6b" }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: !isNaN(rIon2) && rIon2 >= 0 ? (isDark ? "#4ecb8d" : "#2e7d5a") : (isDark ? "#f06b6b" : "#a04040") }}>
                 {fmtVal(rIon2)}
               </span>
             </div>
           )}
 
-          {/* MIDE 2 */}
-          {!isDom && (mide2dia || rev) && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.04em" }}>MIDE 2</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: !isNaN(rMide2) && rMide2 >= 0 ? "#4ecb8d" : "#f06b6b" }}>
-                {fmtVal(rMide2)}
-              </span>
-            </div>
+          {ion2dia && (
+            <>
+              <div style={{ height: 1, background: border, margin: "2px 0" }} />
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {opsIon2 !== null && <span style={{ fontSize: 11, color: textMuted }}>{opsIon2} ops</span>}
+                {acIon2  !== null && <span style={{ fontSize: 11, color: textMuted }}>· {acIon2}%</span>}
+                {erIon2  > 0      && <span style={{ fontSize: 11, color: isDark ? "#f06b6b" : "#a04040" }}>· {erIon2} err</span>}
+              </div>
+            </>
           )}
-
-          {/* separador */}
-          {!isDom && (ion2dia || mide2dia) && (
-            <div style={{ height: 1, background: border, margin: "2px 0" }} />
-          )}
-
-          {/* ops / acerto / erros — ION 2 */}
-          {!isDom && ion2dia && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {opsIon2 !== null && <span style={{ fontSize: 11, color: textMuted }}>{opsIon2} ops</span>}
-              {acIon2  !== null && <span style={{ fontSize: 11, color: textMuted }}>·</span>}
-              {acIon2  !== null && <span style={{ fontSize: 11, color: textMuted }}>{acIon2}%</span>}
-              {erIon2  > 0      && <span style={{ fontSize: 11, color: "#f06b6b" }}>· {erIon2} err</span>}
-            </div>
-          )}
-
-          {/* ops / acerto / erros — MIDE 2 */}
-          {!isDom && mide2dia && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {opsMide2 !== null && <span style={{ fontSize: 11, color: textMuted }}>{opsMide2} ops</span>}
-              {acMide2  !== null && <span style={{ fontSize: 11, color: textMuted }}>·</span>}
-              {acMide2  !== null && <span style={{ fontSize: 11, color: textMuted }}>{acMide2}%</span>}
-              {erMide2  > 0      && <span style={{ fontSize: 11, color: "#f06b6b" }}>· {erMide2} err</span>}
-            </div>
-          )}
-
-          {/* domingo preview semanal */}
-          {isDom && temSem && (() => {
-            let preview = "";
-            try { preview = JSON.parse(revSem.resumoCurto || "{}").resumoCurto || ""; } catch {}
-            if (!preview) preview = revSem.resumoCurto || "";
-            return preview ? (
-              <div style={{
-                fontSize: 10, color: textMuted, lineHeight: 1.4, marginTop: 2,
-                overflow: "hidden", display: "-webkit-box",
-                WebkitLineClamp: 3, WebkitBoxOrient: "vertical",
-              }}>{preview}</div>
-            ) : null;
-          })()}
         </div>
       );
     }
@@ -555,7 +664,7 @@ export default function Revisoes({ th }) {
                 <span style={{ width: 9, height: 9, borderRadius: 3, background: c, display: "inline-block" }} />{l}
               </span>
             ))}
-            <span style={{ opacity: 0.6 }}>Dom = revisão semanal · Sáb = folga</span>
+            <span style={{ opacity: 0.6 }}>Dom = revisão semanal · Sáb = resumo da semana</span>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gridAutoRows: "170px", gap: 8, width: "100%" }}>
