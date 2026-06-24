@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 
 const GAS_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 const ACCENT = "#4ecb8d";
+const IcoMoon = ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
+const IcoSun  = ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
 
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -16,7 +18,7 @@ function fmtVal(n) {
   return (n >= 0 ? "+" : "−") + "R$ " + Math.abs(n).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 }
 
-export default function Revisoes({ th }) {
+export default function Revisoes({ th, dark, setDark }) {
   const bg         = th?.bg        || "#f4f5f7";
   const surface    = th?.surface   || "#ffffff";
   const cardBg     = th?.cardBg    || "#ffffff";
@@ -271,6 +273,29 @@ export default function Revisoes({ th }) {
     fontFamily: "'Plus Jakarta Sans','Inter',sans-serif",
   };
 
+  // Calcula resumo mensal ION 2 (todos os dias úteis do mês)
+  function resumoMensalIon2() {
+    const total = new Date(ano, mes + 1, 0).getDate();
+    let totalRes = 0, totalOps = 0, somaAcerto = 0, diasAcerto = 0, totalErros = 0, diasComDados = 0;
+    for (let d = 1; d <= total; d++) {
+      const dataStr = isoData(ano, mes, d);
+      const diaSem  = new Date(ano, mes, d).getDay();
+      if (diaSem === 0 || diaSem === 6) continue;
+      const trades = tradesPorData[dataStr] || {};
+      const ion2   = trades["ION 2"] || trades["ion 2"] || null;
+      const rev    = revisaoPorData[dataStr] || null;
+      const rIon2  = parseFloat(rev?.resultadoIon2 ?? ion2?.resultado ?? "NaN");
+      if (!isNaN(rIon2)) { totalRes += rIon2; diasComDados++; }
+      const ops = parseFloat(ion2?.trades ?? "NaN");
+      if (!isNaN(ops)) totalOps += ops;
+      const ac = parseFloat(ion2?.taxaAcerto ?? "NaN");
+      if (!isNaN(ac)) { somaAcerto += ac; diasAcerto++; }
+      const er = parseFloat(ion2?.erros ?? "NaN");
+      if (!isNaN(er)) totalErros += er;
+    }
+    return { totalRes, totalOps, acertoMedio: diasAcerto > 0 ? Math.round(somaAcerto / diasAcerto) : null, totalErros, diasComDados };
+  }
+
   function renderCalendario() {
     const primeiro = new Date(ano, mes, 1).getDay();
     const total    = new Date(ano, mes + 1, 0).getDate();
@@ -426,12 +451,17 @@ export default function Revisoes({ th }) {
       const tradesHoje = tradesPorData[dataStr] || {};
       const ion2dia    = tradesHoje["ION 2"] || tradesHoje["ion 2"] || null;
 
-      const rIon2   = parseFloat(rev?.resultadoIon2 ?? ion2dia?.resultado ?? "NaN");
+      const rIon2    = parseFloat(rev?.resultadoIon2 ?? ion2dia?.resultado ?? "NaN");
       const temDados = !isNaN(rIon2);
+      const semTrades = !ion2dia && !rev;
       const cores    = temDados ? corResultado(rIon2) : null;
 
-      const bgCard  = cores ? cores.bg : cardBg;
-      const bdCard  = isAberto ? ACCENT : cores ? cores.border : isHoje ? ACCENT + "88" : border;
+      const bgCard  = semTrades
+        ? (isDark ? "#2a2a2a" : "#e8e8e8")
+        : isAberto ? ACCENT + "22" : (cores ? cores.bg : cardBg);
+      const bdCard  = isAberto ? ACCENT : semTrades
+        ? (isDark ? "#404040" : "#c0c0c0")
+        : cores ? cores.border : isHoje ? ACCENT + "88" : border;
 
       const opsIon2 = ion2dia?.trades     ?? null;
       const acIon2  = ion2dia?.taxaAcerto ?? null;
@@ -442,7 +472,7 @@ export default function Revisoes({ th }) {
           key={d}
           onClick={() => abrirDia(dataStr)}
           style={{
-            background: isAberto ? ACCENT + "22" : bgCard,
+            background: bgCard,
             border: `2px solid ${bdCard}`,
             borderRadius: 10, padding: "11px 12px 10px",
             cursor: "pointer", height: "100%",
@@ -452,38 +482,102 @@ export default function Revisoes({ th }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 13, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : text }}>{d}</span>
-            {rev && <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />}
+            <span style={{ fontSize: 13, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : semTrades ? (isDark ? "#666" : "#999") : text }}>{d}</span>
+            {semTrades ? (
+              <span style={{
+                fontSize: 9, fontWeight: 800,
+                color: isDark ? "#666" : "#999",
+                background: isDark ? "#333" : "#d4d4d4",
+                borderRadius: 4, padding: "1px 5px",
+                letterSpacing: "0.04em", textTransform: "uppercase",
+              }}>sem trades</span>
+            ) : (
+              rev && <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
+            )}
           </div>
 
-          {temDados && (
-            <div style={{ fontSize: 14, fontWeight: 800, color: cores ? cores.text : textMuted, lineHeight: 1.2, marginTop: 2 }}>
-              {fmtVal(rIon2)}
-            </div>
-          )}
-
-          {(ion2dia || rev) && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.04em" }}>ION 2</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: !isNaN(rIon2) && rIon2 >= 0 ? (isDark ? "#3daa78" : "#2e7d5a") : (isDark ? "#c05858" : "#a04040") }}>
-                {fmtVal(rIon2)}
-              </span>
-            </div>
-          )}
-
-          {ion2dia && (
+          {semTrades ? (
             <>
-              <div style={{ height: 1, background: border, margin: "2px 0" }} />
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {opsIon2 !== null && <span style={{ fontSize: 11, color: textMuted }}>{opsIon2} ops</span>}
-                {acIon2  !== null && <span style={{ fontSize: 11, color: textMuted }}>· {acIon2}%</span>}
-                {erIon2  > 0      && <span style={{ fontSize: 11, color: isDark ? "#c05858" : "#a04040" }}>· {erIon2} err</span>}
+              <div style={{ fontSize: 14, fontWeight: 800, color: isDark ? "#555" : "#aaa", lineHeight: 1.2, marginTop: 2 }}>—</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: isDark ? "#555" : "#aaa", textTransform: "uppercase", letterSpacing: "0.04em" }}>ION 2</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: isDark ? "#555" : "#aaa" }}>—</span>
               </div>
+              <div style={{ height: 1, background: isDark ? "#333" : "#ccc", margin: "2px 0" }} />
+              <div style={{ display: "flex", gap: 6 }}>
+                <span style={{ fontSize: 11, color: isDark ? "#555" : "#aaa" }}>— ops · —% · — err</span>
+              </div>
+            </>
+          ) : (
+            <>
+              {temDados && (
+                <div style={{ fontSize: 14, fontWeight: 800, color: cores ? cores.text : textMuted, lineHeight: 1.2, marginTop: 2 }}>
+                  {fmtVal(rIon2)}
+                </div>
+              )}
+
+              {(ion2dia || rev) && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.04em" }}>ION 2</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: !isNaN(rIon2) && rIon2 >= 0 ? (isDark ? "#3daa78" : "#2e7d5a") : (isDark ? "#c05858" : "#a04040") }}>
+                    {fmtVal(rIon2)}
+                  </span>
+                </div>
+              )}
+
+              {ion2dia && (
+                <>
+                  <div style={{ height: 1, background: border, margin: "2px 0" }} />
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {opsIon2 !== null && <span style={{ fontSize: 11, color: textMuted }}>{opsIon2} ops</span>}
+                    {acIon2  !== null && <span style={{ fontSize: 11, color: textMuted }}>· {acIon2}%</span>}
+                    {erIon2  > 0      && <span style={{ fontSize: 11, color: isDark ? "#c05858" : "#a04040" }}>· {erIon2} err</span>}
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
       );
     }
+
+    // ── CARD MENSAL — após o último sábado ───────────────────────────────
+    // Preenche células vazias até completar a linha, depois adiciona o card ocupando 7 colunas
+    const totalCells = primeiro + total;
+    const resto = totalCells % 7;
+    if (resto !== 0) {
+      for (let i = 0; i < (7 - resto); i++) cells.push(<div key={`ef${i}`} />);
+    }
+
+    const sem = resumoMensalIon2();
+    const coresMes = sem.diasComDados > 0 ? corResultado(sem.totalRes) : null;
+    const mesBg    = coresMes ? coresMes.bg : (isDark ? ACCENT + "08" : ACCENT + "08");
+    const mesBd    = coresMes ? coresMes.border : ACCENT + "44";
+
+    cells.push(
+      <div key="card-mensal" style={{ gridColumn: "1 / -1", background: mesBg, border: `2px solid ${mesBd}`, borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 140 }}>
+          <span style={{ fontSize: 9, fontWeight: 800, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.07em" }}>Resumo do mês · ION 2</span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: coresMes ? coresMes.text : textMuted, lineHeight: 1.1 }}>
+            {sem.diasComDados > 0 ? fmtVal(sem.totalRes) : "—"}
+          </span>
+          <span style={{ fontSize: 11, color: textMuted }}>{sem.diasComDados} dias com trades</span>
+        </div>
+        <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
+          {[
+            ["Ops", sem.totalOps > 0 ? sem.totalOps : "—"],
+            ["Acerto médio", sem.acertoMedio !== null ? `${sem.acertoMedio}%` : "—"],
+            ["Erros", sem.totalErros > 0 ? sem.totalErros : "—"],
+          ].map(([label, val]) => (
+            <div key={label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
+              <span style={{ fontSize: 18, fontWeight: 800, color: label === "Erros" && sem.totalErros > 0 ? (isDark ? "#c05858" : "#a04040") : text }}>{val}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
     return cells;
   }
 
@@ -644,6 +738,12 @@ export default function Revisoes({ th }) {
           <h1 style={{ fontSize: 28, fontWeight: 800, color: text, margin: 0 }}>Revisões</h1>
           <p style={{ fontSize: 13, color: textMuted, margin: "4px 0 0" }}>Registro diário e semanal. Clique num dia para ver ou editar.</p>
         </div>
+        {setDark && (
+          <button onClick={() => setDark(d => !d)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, border: `1px solid ${border2}`, background: surface, cursor: "pointer", color: textSub, fontSize: 12, fontWeight: 600, fontFamily: "'Plus Jakarta Sans','Inter',sans-serif" }}>
+            {dark ? <IcoSun s={14} c={textSub}/> : <IcoMoon s={14} c={textSub}/>}
+            {dark ? "Claro" : "Escuro"}
+          </button>
+        )}
       </div>
 
       {loading ? (
