@@ -59,6 +59,15 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   const [loading, setLoading]     = useState(loadingProp && !revisoesProp?.length);
   const [saving, setSaving]       = useState(false);
 
+  const [painelDia, setPainelDia]   = useState(null);
+  const [painelTipo, setPainelTipo] = useState("diario");
+  const [formDados, setFormDados]   = useState({});
+  const [formDirty, setFormDirty]   = useState(false);
+
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [updateForm, setUpdateForm]         = useState({ titulo: "", descricao: "" });
+  const [expandedUpdate, setExpandedUpdate] = useState(null);
+
   // Sincroniza com props quando chegam do cache
   useEffect(() => { if (revisoesProp?.length)   setRevisoes(revisoesProp);   }, [revisoesProp]);
   useEffect(() => { if (updatesProp?.length)    setUpdates(updatesProp);     }, [updatesProp]);

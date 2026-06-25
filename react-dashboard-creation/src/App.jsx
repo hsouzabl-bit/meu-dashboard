@@ -453,7 +453,7 @@ export default function App(){
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        *{box-sizing:border-box;} button{font-family:inherit;} body{margin:0;}
+        *{box-sizing:border-box;} button{font-family:inherit;} body{margin:0;display:block;min-width:unset;min-height:unset;}
       `}</style>
 
       <aside style={{width:240,background:th.surface,borderRight:`1px solid ${th.border}`,display:"flex",flexDirection:"column",padding:"28px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflowY:"auto",transition:"background 0.3s,border 0.3s"}}>
