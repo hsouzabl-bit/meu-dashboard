@@ -387,7 +387,7 @@ export default function App(){
   };
 
   return(
-    <div style={{display:"flex",minHeight:"100vh",background:th.bg,fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s,color 0.3s"}}>
+<div style={{display:"flex",minHeight:"100vh",width:"100%",background:th.bg,fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s,color 0.3s"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
