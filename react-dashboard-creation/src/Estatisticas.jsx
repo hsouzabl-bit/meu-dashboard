@@ -31,7 +31,7 @@ function ContaCard({ conta, dados, th }) {
         <StatCard th={th} label="Resultado" value={fmt(dados.financTotal)} color={cor} />
         <StatCard th={th} label="Taxa de acerto" value={`${dados.taxaAcerto}%`} sub={`${dados.gains}G / ${dados.losses}L / ${dados.breakevens}BE`} color={dados.taxaAcerto >= 50 ? ACCENT : "#f87171"} />
         <StatCard th={th} label="RxR Médio" value={`${dados.rxrMedio}x`} color={dados.rxrMedio >= 1 ? ACCENT : "#f87171"} />
-<StatCard th={th} label="Stop Médio" value={fmt(dados.stopMedio)} color={th.text} />
+        <StatCard th={th} label="Stop Médio" value={fmt(dados.stopMedio)} color={th.text} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
         <StatCard th={th} label="Trades" value={dados.trades} />
@@ -101,7 +101,6 @@ function ErrosCard({ errosMacro, top3Tecnicos, top3Emocionais, th }) {
           </div>
         ))}
       </div>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
         <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow, flex: 1 }}>
           <div style={{ fontWeight: 800, fontSize: 12, color: th.text, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 14 }}>Top 3 Erros Técnicos</div>
@@ -136,7 +135,6 @@ function GraficoPatrimonio({ graficoION2, graficoMIDE2, th }) {
     dadosCombinados[d.data].mide2 = d.valor;
   });
   const dados = Object.values(dadosCombinados).sort((a, b) => a.data.localeCompare(b.data));
-
   return (
     <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow }}>
       <div style={{ fontWeight: 800, fontSize: 12, color: th.text, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 20 }}>Patrimônio Acumulado</div>
@@ -145,11 +143,7 @@ function GraficoPatrimonio({ graficoION2, graficoMIDE2, th }) {
           <CartesianGrid strokeDasharray="3 3" stroke={th.border} />
           <XAxis dataKey="data" tick={{ fontSize: 11, fill: th.textMuted }} tickFormatter={d => d.slice(5)} />
           <YAxis tick={{ fontSize: 11, fill: th.textMuted }} tickFormatter={v => `R$${v}`} />
-          <Tooltip
-            contentStyle={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 8, fontSize: 12 }}
-            formatter={(v, n) => [fmt(v), n === "ion2" ? "ION 2" : "MIDE 2"]}
-            labelFormatter={l => `Data: ${l}`}
-          />
+          <Tooltip contentStyle={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 8, fontSize: 12 }} formatter={(v, n) => [fmt(v), n === "ion2" ? "ION 2" : "MIDE 2"]} labelFormatter={l => `Data: ${l}`} />
           <ReferenceLine y={0} stroke={th.textMuted} strokeDasharray="4 4" />
           <Line type="monotone" dataKey="ion2" stroke={ACCENT} strokeWidth={2} dot={false} name="ION 2" />
           <Line type="monotone" dataKey="mide2" stroke="#60a5fa" strokeWidth={2} dot={false} name="MIDE 2" />
@@ -167,36 +161,44 @@ function GraficoPatrimonio({ graficoION2, graficoMIDE2, th }) {
   );
 }
 
-export default function Estatisticas({ th }) {
-  const [dados, setDados]     = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [erro, setErro]       = useState(null);
-  const [inicio, setInicio]   = useState("");
-  const [fim, setFim]         = useState("");
+export default function Estatisticas({ th, dadosCache, loadingCache, onRecarregar }) {
+  const [dados, setDados]           = useState(dadosCache || null);
+  const [loading, setLoading]       = useState(!dadosCache);
+  const [erro, setErro]             = useState(null);
+  const [inicio, setInicio]         = useState("");
+  const [fim, setFim]               = useState("");
+  const [filtroAtivo, setFiltroAtivo] = useState(false);
 
-  const carregar = (ini, fi) => {
+  useEffect(() => {
+    if (dadosCache && !filtroAtivo) {
+      setDados(dadosCache);
+      setLoading(false);
+    }
+  }, [dadosCache]);
+
+  useEffect(() => {
+    if (loadingCache && !dadosCache && !filtroAtivo) setLoading(true);
+    else if (!loadingCache && dadosCache && !filtroAtivo) setLoading(false);
+  }, [loadingCache, dadosCache]);
+
+  const carregarFiltrado = (ini, fi) => {
     setLoading(true);
     let url = API_DIARIO;
     const params = [];
     if (ini) params.push(`inicio=${ini}`);
     if (fi)  params.push(`fim=${fi}`);
     if (params.length) url += "?" + params.join("&");
-
     fetch(url)
       .then(r => r.json())
       .then(j => { if (j.erro) throw new Error(j.erro); setDados(j); setLoading(false); })
       .catch(e => { setErro(e.message); setLoading(false); });
   };
 
-  useEffect(() => { carregar("", ""); }, []);
-
-  const aplicarFiltro = () => carregar(inicio, fim);
-  const limparFiltro  = () => { setInicio(""); setFim(""); carregar("", ""); };
+  const aplicarFiltro = () => { setFiltroAtivo(true); carregarFiltrado(inicio, fim); };
+  const limparFiltro  = () => { setInicio(""); setFim(""); setFiltroAtivo(false); setDados(dadosCache); };
 
   return (
     <div style={{ flex: 1, padding: "36px 52px 56px", overflowY: "auto", minWidth: 0 }}>
-
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: th.text, margin: 0 }}>Estatísticas</h1>
@@ -225,22 +227,13 @@ export default function Estatisticas({ th }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: th.textMuted, fontSize: 14 }}>Carregando dados do diário...</div>
       ) : dados ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
-          {/* Cards por conta */}
           <div style={{ display: "flex", gap: 16 }}>
             <ContaCard conta="ION 2"  dados={dados.contas?.["ION 2"]}  th={th} />
             <ContaCard conta="MIDE 2" dados={dados.contas?.["MIDE 2"]} th={th} />
           </div>
-
-          {/* Gráfico */}
           <GraficoPatrimonio graficoION2={dados.graficoION2 || []} graficoMIDE2={dados.graficoMIDE2 || []} th={th} />
-
-          {/* Tabela de setups */}
           <SetupTable setups={dados.setups || []} th={th} />
-
-          {/* Erros */}
           <ErrosCard errosMacro={dados.errosMacro || []} top3Tecnicos={dados.top3Tecnicos || []} top3Emocionais={dados.top3Emocionais || []} th={th} />
-
         </div>
       ) : null}
     </div>

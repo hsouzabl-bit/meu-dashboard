@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 const GAS_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 const ACCENT = "#4ecb8d";
@@ -18,7 +18,7 @@ function fmtVal(n) {
   return (n >= 0 ? "+" : "−") + "R$ " + Math.abs(n).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 }
 
-export default function Revisoes({ th, dark, setDark }) {
+export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp, tradesPorDataProp, loadingProp, onCarregar }) {
   const bg         = th?.bg        || "#f4f5f7";
   const surface    = th?.surface   || "#ffffff";
   const cardBg     = th?.cardBg    || "#ffffff";
@@ -53,22 +53,19 @@ export default function Revisoes({ th, dark, setDark }) {
 
   const [ano, setAno]             = useState(new Date().getFullYear());
   const [mes, setMes]             = useState(new Date().getMonth());
-  const [revisoes, setRevisoes]   = useState([]);
-  const [updates, setUpdates]     = useState([]);
-  const [tradesPorData, setTradesPorData] = useState({});
-  const [loading, setLoading]     = useState(true);
+  const [revisoes, setRevisoes]   = useState(revisoesProp || []);
+  const [updates, setUpdates]     = useState(updatesProp  || []);
+  const [tradesPorData, setTradesPorData] = useState(tradesPorDataProp || {});
+  const [loading, setLoading]     = useState(loadingProp && !revisoesProp?.length);
   const [saving, setSaving]       = useState(false);
 
-  const [painelDia, setPainelDia]   = useState(null);
-  const [painelTipo, setPainelTipo] = useState("diario");
-  const [formDados, setFormDados]   = useState({});
-  const [formDirty, setFormDirty]   = useState(false);
+  // Sincroniza com props quando chegam do cache
+  useEffect(() => { if (revisoesProp?.length)   setRevisoes(revisoesProp);   }, [revisoesProp]);
+  useEffect(() => { if (updatesProp?.length)    setUpdates(updatesProp);     }, [updatesProp]);
+  useEffect(() => { if (tradesPorDataProp && Object.keys(tradesPorDataProp).length) setTradesPorData(tradesPorDataProp); }, [tradesPorDataProp]);
+  useEffect(() => { setLoading(loadingProp && !revisoesProp?.length); }, [loadingProp]);
 
-  const [showUpdateForm, setShowUpdateForm] = useState(false);
-  const [updateForm, setUpdateForm]         = useState({ titulo: "", descricao: "" });
-  const [expandedUpdate, setExpandedUpdate] = useState(null);
-
-  const carregar = useCallback(async () => {
+  const carregar = async () => {
     setLoading(true);
     try {
       const [rRev, rUpd, rTrades] = await Promise.all([
@@ -79,11 +76,10 @@ export default function Revisoes({ th, dark, setDark }) {
       setRevisoes(rRev.revisoes || []);
       setUpdates(rUpd.updates   || []);
       setTradesPorData(rTrades.porData || {});
+      if (onCarregar) onCarregar();
     } catch(e) { console.error(e); }
     setLoading(false);
-  }, []);
-
-  useEffect(() => { carregar(); }, [carregar]);
+  };
 
   const revisaoPorData = {};
   revisoes.forEach(r => { revisaoPorData[r.data] = r; });
@@ -207,15 +203,12 @@ export default function Revisoes({ th, dark, setDark }) {
       }),
       revisaoDetalhada: formDados.revisaoDetalhada ?? "",
     };
-    fetch(GAS_DIARIO, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({ action: "salvarRevisao", revisao })
-    }).catch(() => {});
-    await new Promise(r => setTimeout(r, 2000));
-    await carregar();
-    setFormDirty(false);
-    setPainelDia(null);
+    try {
+      await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURIComponent(JSON.stringify(revisao))}`);
+      await carregar();
+      setFormDirty(false);
+      setPainelDia(null);
+    } catch(e) { alert("Erro ao salvar."); }
     setSaving(false);
   }
 
@@ -223,14 +216,11 @@ export default function Revisoes({ th, dark, setDark }) {
     const existente = painelTipo === "diario" ? (revisaoPorData[painelDia] || null) : (semanasPorDom[painelDia] || null);
     if (!existente || !window.confirm("Excluir esta revisão?")) return;
     setSaving(true);
-    fetch(GAS_DIARIO, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({ action: "deletarRevisao", id: existente.id })
-    }).catch(() => {});
-    await new Promise(r => setTimeout(r, 2000));
-    await carregar();
-    setPainelDia(null);
+    try {
+      await fetch(`${GAS_DIARIO}?action=deletarRevisao&id=${existente.id}`);
+      await carregar();
+      setPainelDia(null);
+    } catch(e) { alert("Erro ao excluir."); }
     setSaving(false);
   }
 
@@ -238,27 +228,21 @@ export default function Revisoes({ th, dark, setDark }) {
     if (!updateForm.titulo.trim()) return;
     setSaving(true);
     const upd = { id: gerarId(), data: hojeISO(), titulo: updateForm.titulo.trim(), descricao: updateForm.descricao.trim() };
-    fetch(GAS_DIARIO, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({ action: "salvarUpdate", update: upd })
-    }).catch(() => {});
-    await new Promise(r => setTimeout(r, 2000));
-    await carregar();
-    setUpdateForm({ titulo: "", descricao: "" });
-    setShowUpdateForm(false);
+    try {
+      await fetch(`${GAS_DIARIO}?action=salvarUpdate&dados=${encodeURIComponent(JSON.stringify(upd))}`);
+      await carregar();
+      setUpdateForm({ titulo: "", descricao: "" });
+      setShowUpdateForm(false);
+    } catch(e) { alert("Erro ao salvar update."); }
     setSaving(false);
   }
 
   async function deletarUpdateFn(id) {
     if (!window.confirm("Excluir este update?")) return;
-    fetch(GAS_DIARIO, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({ action: "deletarUpdate", id })
-    }).catch(() => {});
-    await new Promise(r => setTimeout(r, 2000));
-    await carregar();
+    try {
+      await fetch(`${GAS_DIARIO}?action=deletarUpdate&id=${id}`);
+      await carregar();
+    } catch(e) { alert("Erro ao excluir."); }
   }
 
   const inputStyle = {
