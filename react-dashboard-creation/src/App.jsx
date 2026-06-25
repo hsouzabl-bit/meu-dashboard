@@ -3,7 +3,8 @@ import Estatisticas from "./Estatisticas";
 import Estudos from "./Estudos";
 import Revisoes from "./Revisoes";
 
-const API_URL = "https://script.google.com/macros/s/AKfycbzBEgswS-Jy8HvgYOQITuS6YgRrT7am5DlR3Mhd6KC4sTpl_Xg5It7XBnIKdr1QWfzi/exec";
+const API_URL    = "https://script.google.com/macros/s/AKfycbzBEgswS-Jy8HvgYOQITuS6YgRrT7am5DlR3Mhd6KC4sTpl_Xg5It7XBnIKdr1QWfzi/exec";
+const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 
 const METAS_MENSAIS = { horasEstudo:80, paginasLidas:100, videoAulas:10, replays:20 };
 const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:600, videoAulas:60, replays:120 };
@@ -111,14 +112,12 @@ function OntemCard({ontem,ontemData,th}){
       </div>
     </div>
   );
-
   const metricas=[
     {label:"Estudo",  value:`${ontem.horas}h`,        icon:<Ico.Clock    s={14} c={th.textMuted}/>},
     {label:"Páginas", value:`${ontem.paginas}`,        icon:<Ico.BookOpen s={14} c={th.textMuted}/>},
     {label:"Vídeo",   value:minParaHM(ontem.videoMin), icon:<Ico.Play     s={14} c={th.textMuted}/>},
     {label:"Replays", value:`${ontem.replays}`,        icon:<Ico.Repeat   s={14} c={th.textMuted}/>},
   ];
-
   return(
     <div style={{background:th.cardBg,borderRadius:14,padding:"16px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
@@ -154,9 +153,19 @@ function OntemCard({ontem,ontemData,th}){
 }
 
 export default function App(){
+  // ── dados do GAS Estudos (Dashboard) ──
   const [dados,setDados]         = useState(null);
   const [erro,setErro]           = useState(null);
   const [loading,setLoading]     = useState(true);
+
+  // ── dados do GAS Diário (Estatísticas + Revisões) — cache central ──
+  const [dadosDiario, setDadosDiario]         = useState(null);
+  const [loadingDiario, setLoadingDiario]     = useState(true);
+  const [revisoes, setRevisoes]               = useState([]);
+  const [updates, setUpdates]                 = useState([]);
+  const [tradesPorData, setTradesPorData]     = useState({});
+  const [loadingRevisoes, setLoadingRevisoes] = useState(true);
+
   const [activeNav,setActiveNav] = useState("Dashboard");
   const [dark,setDark]           = useState(false);
   const [diaSel,setDiaSel]       = useState(null);
@@ -166,6 +175,7 @@ export default function App(){
 
   const th = dark ? DARK : LIGHT;
 
+  // Carrega GAS Estudos (Dashboard)
   const carregar=()=>{
     setLoading(true);
     fetch(API_URL)
@@ -173,17 +183,43 @@ export default function App(){
       .then(j=>{if(j.erro)throw new Error(j.erro);setDados(j);setLoading(false);})
       .catch(e=>{setErro(e.message);setLoading(false);});
   };
-  useEffect(()=>{carregar();},[]);
 
-  const navItems=[
-    {label:"Dashboard",    icon:<Ico.Target   s={17} c="currentColor"/>},
-    {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
-    {label:"Estudos",       icon:<Ico.BookOpen s={17} c="currentColor"/>},
-    {label:"Revisões", icon:<Ico.Calendar s={17} c="currentColor"/>},
-    {label:"Registros",    icon:<Ico.Book     s={17} c="currentColor"/>},
-    {label:"Hábitos",      icon:<Ico.Check    s={17} c="currentColor"/>},
-    {label:"Replays",      icon:<Ico.Repeat   s={17} c="currentColor"/>},
-  ];
+  // Carrega GAS Diário — estatísticas
+  const carregarDiario=(ini="",fi="")=>{
+    setLoadingDiario(true);
+    let url = API_DIARIO;
+    const params=[];
+    if(ini) params.push(`inicio=${ini}`);
+    if(fi)  params.push(`fim=${fi}`);
+    if(params.length) url += "?" + params.join("&");
+    fetch(url)
+      .then(r=>r.json())
+      .then(j=>{if(j.erro)throw new Error(j.erro);setDadosDiario(j);setLoadingDiario(false);})
+      .catch(()=>setLoadingDiario(false));
+  };
+
+  // Carrega GAS Diário — revisões (3 fetches em paralelo)
+  const carregarRevisoes=async()=>{
+    setLoadingRevisoes(true);
+    try {
+      const [rRev, rUpd, rTrades] = await Promise.all([
+        fetch(`${API_DIARIO}?action=lerRevisoes`).then(r=>r.json()),
+        fetch(`${API_DIARIO}?action=lerUpdates`).then(r=>r.json()),
+        fetch(`${API_DIARIO}?action=lerTradesPorData`).then(r=>r.json()),
+      ]);
+      setRevisoes(rRev.revisoes || []);
+      setUpdates(rUpd.updates   || []);
+      setTradesPorData(rTrades.porData || {});
+    } catch(e){ console.error(e); }
+    setLoadingRevisoes(false);
+  };
+
+  // Carrega tudo na inicialização em paralelo
+  useEffect(()=>{
+    carregar();
+    carregarDiario();
+    carregarRevisoes();
+  },[]);
 
   const m         = dados?.metricas    || {};
   const seq       = dados?.sequencias  || [];
@@ -213,11 +249,37 @@ export default function App(){
   const metaR=modoDia?1:METAS_MENSAIS.replays;
 
   const renderMain = () => {
-    if(activeNav === "Estatísticas") return <Estatisticas th={th}/>;
-    if(activeNav === "Estudos") return <main style={{flex:1, overflowY:"auto", minWidth:0, display:"flex", flexDirection:"column"}}><Estudos th={th}/></main>;
-    if(activeNav === "Revisões") return <div style={{flex:1, overflowY:"auto", minWidth:0, display:"flex", flexDirection:"column", width:"100%"}}><Revisoes th={th} dark={dark} setDark={setDark}/></div>;
+    if(activeNav === "Estatísticas") return (
+      <Estatisticas
+        th={th}
+        dark={dark}
+        setDark={setDark}
+        dadosCache={dadosDiario}
+        loadingCache={loadingDiario}
+        onRecarregar={carregarDiario}
+      />
+    );
+    if(activeNav === "Estudos") return (
+      <main style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column"}}>
+        <Estudos th={th}/>
+      </main>
+    );
+    if(activeNav === "Revisões") return (
+      <div style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column",width:"100%"}}>
+        <Revisoes
+          th={th}
+          dark={dark}
+          setDark={setDark}
+          revisoesProp={revisoes}
+          updatesProp={updates}
+          tradesPorDataProp={tradesPorData}
+          loadingProp={loadingRevisoes}
+          onCarregar={carregarRevisoes}
+        />
+      </div>
+    );
     return (
-      <main style={{flex:1,width:0,padding:"36px 52px 56px",overflowY:"auto",minWidth:0}}>
+      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0,maxWidth:"calc(100vw - 240px)"}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
           <div>
             <h1 style={{fontSize:28,fontWeight:800,color:th.text,margin:0}}>Dashboard</h1>
@@ -387,7 +449,7 @@ export default function App(){
   };
 
   return(
-<div style={{display:"flex",minHeight:"100vh",width:"100%",background:th.bg,fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s,color 0.3s"}}>
+    <div style={{display:"flex",minHeight:"100vh",width:"100%",background:th.bg,fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s,color 0.3s"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -406,7 +468,15 @@ export default function App(){
         </div>
 
         <nav style={{flex:1,padding:"0 12px",display:"flex",flexDirection:"column",gap:2}}>
-          {navItems.map(item=>(
+          {[
+            {label:"Dashboard",    icon:<Ico.Target   s={17} c="currentColor"/>},
+            {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
+            {label:"Estudos",      icon:<Ico.BookOpen s={17} c="currentColor"/>},
+            {label:"Revisões",     icon:<Ico.Calendar s={17} c="currentColor"/>},
+            {label:"Registros",    icon:<Ico.Book     s={17} c="currentColor"/>},
+            {label:"Hábitos",      icon:<Ico.Check    s={17} c="currentColor"/>},
+            {label:"Replays",      icon:<Ico.Repeat   s={17} c="currentColor"/>},
+          ].map(item=>(
             <button key={item.label} onClick={()=>setActiveNav(item.label)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:9,border:"none",cursor:"pointer",background:activeNav===item.label?th.navActiveBg:"transparent",color:activeNav===item.label?ACCENT:th.textSub,fontWeight:activeNav===item.label?700:500,fontSize:14,textAlign:"left",width:"100%",transition:"all 0.15s"}}>
               {item.icon}<span>{item.label}</span>
             </button>
