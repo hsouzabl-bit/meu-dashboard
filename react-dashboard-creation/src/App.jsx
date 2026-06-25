@@ -249,23 +249,25 @@ export default function App(){
   const metaR=modoDia?1:METAS_MENSAIS.replays;
 
   const renderMain = () => {
-    if(activeNav === "Estatísticas") return (
-      <Estatisticas
-        th={th}
-        dark={dark}
-        setDark={setDark}
-        dadosCache={dadosDiario}
-        loadingCache={loadingDiario}
-        onRecarregar={carregarDiario}
-      />
+if(activeNav === "Estatísticas") return (
+      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+        <Estatisticas
+          th={th}
+          dark={dark}
+          setDark={setDark}
+          dadosCache={dadosDiario}
+          loadingCache={loadingDiario}
+          onRecarregar={carregarDiario}
+        />
+      </div>
     );
     if(activeNav === "Estudos") return (
-      <main style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column"}}>
+      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)",display:"flex",flexDirection:"column"}}>
         <Estudos th={th}/>
-      </main>
+      </div>
     );
     if(activeNav === "Revisões") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column",width:"100%"}}>
+      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)",display:"flex",flexDirection:"column"}}>
         <Revisoes
           th={th}
           dark={dark}
