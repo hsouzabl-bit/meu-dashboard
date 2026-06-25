@@ -279,7 +279,7 @@ export default function App(){
       </div>
     );
     return (
-      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0,maxWidth:"calc(100vw - 240px)"}>
+      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0,maxWidth:"calc(100vw - 240px)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
           <div>
             <h1 style={{fontSize:28,fontWeight:800,color:th.text,margin:0}}>Dashboard</h1>
