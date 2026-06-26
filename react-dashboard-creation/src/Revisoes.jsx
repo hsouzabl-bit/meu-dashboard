@@ -736,7 +736,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   return (
     <div style={{
       flex: 1, padding: "36px 40px 56px", overflowY: "auto", minWidth: 0,
-      width: "100%", boxSizing: "border-box",
+      width: "100%", maxWidth: "calc(75vw - 240px)", boxSizing: "border-box",
       fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: text,
       position: "relative",
     }}>
