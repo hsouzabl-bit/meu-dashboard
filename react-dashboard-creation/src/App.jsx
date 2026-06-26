@@ -267,7 +267,8 @@ if(activeNav === "Estatísticas") return (
         <Estudos th={th}/>
       </div>
     );
-    if(activeNav === "Objetivos") return <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}><Objetivos th={th}/></div>;
+    if(activeNav === "Objetivos") return (
+      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}><Objetivos th={th}/></div>;
           <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)",display:"flex",flexDirection:"column"}}>
         <Objetivos
           th={th}
