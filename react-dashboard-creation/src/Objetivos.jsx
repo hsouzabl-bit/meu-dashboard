@@ -66,14 +66,14 @@ export default function Objetivos({ th, dark, setDark }) {
   const semanas = gerarListaSemanas();
   const { ano: anoAtual, semana: semAtual } = semanaISO(new Date());
 
-  const [semSel, setSemSel]     = useState({ ano: anoAtual, semana: semAtual });
-  const [dadosSem, setDadosSem] = useState({});
-  const [loading, setLoading]   = useState(true);
-  const [saving, setSaving]     = useState(false);
+  const [semSel, setSemSel]       = useState({ ano: anoAtual, semana: semAtual });
+  const [dadosSem, setDadosSem]   = useState({});
+  const [loading, setLoading]     = useState(true);
+  const [saving, setSaving]       = useState(false);
+  const [expandidos, setExpandidos] = useState({});
 
-  // dados da semana selecionada
-  const chave = `${semSel.ano}-S${String(semSel.semana).padStart(2, "0")}`;
-  const semDados = dadosSem[chave] || { objetivos: [], cor: "neutro", comentario: "" };
+  const chaveAtual = `${semSel.ano}-S${String(semSel.semana).padStart(2, "0")}`;
+  const semDados = dadosSem[chaveAtual] || { objetivos: [], cor: "neutro", comentario: "" };
 
   useEffect(() => { carregar(); }, []);
 
@@ -90,14 +90,14 @@ export default function Objetivos({ th, dark, setDark }) {
 
   async function salvar(novosDados) {
     setSaving(true);
-    const payload = { chave, ano: semSel.ano, semana: semSel.semana, ...novosDados };
+    const payload = { chave: chaveAtual, ano: semSel.ano, semana: semSel.semana, ...novosDados };
     fetch(`${GAS_DIARIO}?action=salvarObjetivos&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(() => {});
-    setDadosSem(prev => ({ ...prev, [chave]: { ...semDados, ...novosDados } }));
+    setDadosSem(prev => ({ ...prev, [chaveAtual]: { ...semDados, ...novosDados } }));
     setSaving(false);
   }
 
   function setCor(cor) { salvar({ ...semDados, cor }); }
-  function setComentario(comentario) { setDadosSem(prev => ({ ...prev, [chave]: { ...semDados, comentario } })); }
+  function setComentario(comentario) { setDadosSem(prev => ({ ...prev, [chaveAtual]: { ...semDados, comentario } })); }
   function salvarComentario() { salvar({ ...semDados }); }
 
   function addObjetivo() {
@@ -108,12 +108,11 @@ export default function Objetivos({ th, dark, setDark }) {
 
   function updateObjetivo(id, campo, valor) {
     const obj = (semDados.objetivos || []).map(o => o.id === id ? { ...o, [campo]: valor } : o);
-    setDadosSem(prev => ({ ...prev, [chave]: { ...semDados, objetivos: obj } }));
+    setDadosSem(prev => ({ ...prev, [chaveAtual]: { ...semDados, objetivos: obj } }));
   }
 
-  function salvarObjetivo(id) {
-    const obj = semDados.objetivos || [];
-    salvar({ ...semDados, objetivos: obj });
+  function salvarObjetivo() {
+    salvar({ ...semDados });
   }
 
   function removeObjetivo(id) {
@@ -129,16 +128,6 @@ export default function Objetivos({ th, dark, setDark }) {
   const corSel = CORES_SEMANA.find(c => c.id === semDados.cor) || CORES_SEMANA[3];
   const cardCorBg = isDark ? (corSel.bgDark || cardBg) : (corSel.bg || cardBg);
   const cardCorBorder = isDark ? (corSel.borderDark || border) : (corSel.border || border);
-  const cardCorText = isDark ? (corSel.textDark || text) : (corSel.text || text);
-
-  const totalObj = semDados.objetivos?.length || 0;
-  const feitosObj = semDados.objetivos?.filter(o => o.feito).length || 0;
-
-  const inputStyle = {
-    background: resumeBg, border: `1px solid ${border2}`, borderRadius: 8,
-    color: text, padding: "8px 12px", fontSize: 13, outline: "none",
-    fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", width: "100%", boxSizing: "border-box",
-  };
 
   const tagColors = {
     "Técnico":  { bg: isDark ? "#1a2a3a" : "#e8f0fe", text: isDark ? "#60a5fa" : "#1a56db" },
@@ -146,6 +135,159 @@ export default function Objetivos({ th, dark, setDark }) {
     "Rotina":   { bg: isDark ? "#1a2a1a" : "#e8fce8", text: isDark ? "#4ade80" : "#166534" },
     "Estudo":   { bg: isDark ? "#2a2a1a" : "#fefce8", text: isDark ? "#facc15" : "#854d0e" },
   };
+
+  const inputStyle = {
+    background: resumeBg, border: `1px solid ${border2}`, borderRadius: 8,
+    color: text, padding: "8px 12px", fontSize: 13, outline: "none",
+    fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", width: "100%", boxSizing: "border-box",
+  };
+
+  function renderCardEdicao() {
+    const totalObj = semDados.objetivos?.length || 0;
+    const feitosObj = semDados.objetivos?.filter(o => o.feito).length || 0;
+
+    return (
+      <div style={{ background: cardCorBg, border: `2px solid ${cardCorBorder}`, borderRadius: 14, padding: "24px 28px", boxShadow: cardShadow, marginBottom: 16 }}>
+        {/* Topo */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: text }}>{fmtSemana(semSel.ano, semSel.semana)}</span>
+            {totalObj > 0 && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: feitosObj === totalObj ? ACCENT : textMuted, background: resumeBg, padding: "2px 10px", borderRadius: 20, border: `1px solid ${border}` }}>
+                {feitosObj}/{totalObj} feitos
+              </span>
+            )}
+            {saving && <span style={{ fontSize: 11, color: textMuted }}>Salvando…</span>}
+          </div>
+          {/* Seletor de cor */}
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <span style={{ fontSize: 11, color: textMuted, marginRight: 4 }}>Semana:</span>
+            {CORES_SEMANA.filter(c => c.id !== "neutro").map(c => (
+              <button key={c.id} onClick={() => setCor(semDados.cor === c.id ? "neutro" : c.id)} title={c.label}
+                style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${isDark ? c.borderDark : c.border}`, background: isDark ? c.bgDark : c.bg, cursor: "pointer", outline: semDados.cor === c.id ? `2px solid ${text}` : "none", outlineOffset: 2 }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Lista de objetivos */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+          {(semDados.objetivos || []).length === 0 && (
+            <div style={{ textAlign: "center", padding: "24px 0", color: textMuted, fontSize: 13, border: `1px dashed ${border2}`, borderRadius: 10 }}>
+              Nenhum objetivo ainda. Clique em "+ Objetivo" para adicionar.
+            </div>
+          )}
+          {(semDados.objetivos || []).map(obj => (
+            <div key={obj.id} style={{ background: isDark ? "#1e222a" : "#fff", border: `1px solid ${border}`, borderRadius: 10, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div onClick={() => toggleFeito(obj.id)} style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${obj.feito ? ACCENT : border2}`, background: obj.feito ? ACCENT : "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {obj.feito && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                </div>
+                <select value={obj.categoria} onChange={e => updateObjetivo(obj.id, "categoria", e.target.value)} onBlur={salvarObjetivo}
+                  style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, border: "none", cursor: "pointer", outline: "none", fontFamily: "inherit", background: tagColors[obj.categoria]?.bg, color: tagColors[obj.categoria]?.text, flexShrink: 0 }}>
+                  {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input value={obj.texto} onChange={e => updateObjetivo(obj.id, "texto", e.target.value)} onBlur={salvarObjetivo}
+                  placeholder="Descreva o objetivo..."
+                  style={{ ...inputStyle, flex: 1, textDecoration: obj.feito ? "line-through" : "none", color: obj.feito ? textMuted : text }} />
+                <input type="number" min="1" max="10" value={obj.nota} onChange={e => updateObjetivo(obj.id, "nota", e.target.value)} onBlur={salvarObjetivo}
+                  placeholder="Nota"
+                  style={{ ...inputStyle, width: 64, textAlign: "center" }} />
+                <button onClick={() => removeObjetivo(obj.id)} style={{ background: "none", border: "none", cursor: "pointer", color: textMuted, fontSize: 18, lineHeight: 1, padding: "0 4px", flexShrink: 0 }}>×</button>
+              </div>
+              <input value={obj.comentario || ""} onChange={e => updateObjetivo(obj.id, "comentario", e.target.value)} onBlur={salvarObjetivo}
+                placeholder="Comentário sobre este objetivo..."
+                style={{ ...inputStyle, fontSize: 12, color: textMuted }} />
+            </div>
+          ))}
+        </div>
+
+        <button onClick={addObjetivo} style={{ background: "none", border: `1px dashed ${ACCENT}`, color: ACCENT, borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: 16, width: "100%" }}>
+          + Objetivo
+        </button>
+
+        <div>
+          <label style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6, display: "block" }}>Comentário geral da semana</label>
+          <textarea value={semDados.comentario || ""} onChange={e => setComentario(e.target.value)} onBlur={salvarComentario}
+            placeholder="Como foi a semana? O que funcionou? O que melhorar?"
+            rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+        </div>
+      </div>
+    );
+  }
+
+  function renderCardVisualizacao(chave, dados) {
+    if (!dados) return null;
+    const cor = CORES_SEMANA.find(c => c.id === dados.cor) || CORES_SEMANA[3];
+    const bgC = isDark ? (cor.bgDark || cardBg) : (cor.bg || cardBg);
+    const bdC = isDark ? (cor.borderDark || border) : (cor.border || border);
+    const txtC = isDark ? (cor.textDark || textMuted) : (cor.text || textMuted);
+    const total = dados.objetivos?.length || 0;
+    const feitos = dados.objetivos?.filter(o => o.feito).length || 0;
+    const isOpen = expandidos[chave];
+
+    // parse chave: "2026-S25" → ano 2026, semana 25
+    const [ano, semStr] = chave.split("-S");
+    const semana = parseInt(semStr);
+
+    return (
+      <div key={chave} style={{ background: bgC, border: `2px solid ${bdC}`, borderRadius: 12, marginBottom: 10, overflow: "hidden", boxShadow: cardShadow }}>
+        {/* Header colapsável */}
+        <div onClick={() => setExpandidos(p => ({ ...p, [chave]: !p[chave] }))}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", cursor: "pointer", userSelect: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {cor.id !== "neutro" && (
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: isDark ? cor.borderDark : cor.border, display: "inline-block", flexShrink: 0 }} />
+            )}
+            <span style={{ fontSize: 13, fontWeight: 700, color: text }}>{fmtSemana(Number(ano), semana)}</span>
+            {total > 0 && (
+              <span style={{ fontSize: 11, color: feitos === total ? ACCENT : textMuted, background: resumeBg, padding: "1px 8px", borderRadius: 20, border: `1px solid ${border}` }}>
+                {feitos}/{total} feitos
+              </span>
+            )}
+            {cor.id !== "neutro" && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: txtC }}>{cor.label}</span>
+            )}
+          </div>
+          <span style={{ color: textMuted, fontSize: 13 }}>{isOpen ? "▲" : "▼"}</span>
+        </div>
+
+        {/* Conteúdo expandido — só visualização */}
+        {isOpen && (
+          <div style={{ padding: "0 20px 16px", borderTop: `1px solid ${bdC}` }}>
+            {total === 0 && (
+              <div style={{ color: textMuted, fontSize: 13, padding: "12px 0" }}>Nenhum objetivo registrado.</div>
+            )}
+            {(dados.objetivos || []).map(obj => (
+              <div key={obj.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", borderBottom: `1px solid ${border}` }}>
+                <div style={{ width: 16, height: 16, borderRadius: 4, border: `2px solid ${obj.feito ? ACCENT : border2}`, background: obj.feito ? ACCENT : "transparent", flexShrink: 0, marginTop: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {obj.feito && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: obj.comentario ? 4 : 0 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 20, background: tagColors[obj.categoria]?.bg, color: tagColors[obj.categoria]?.text }}>{obj.categoria}</span>
+                    <span style={{ fontSize: 13, color: obj.feito ? textMuted : text, textDecoration: obj.feito ? "line-through" : "none" }}>{obj.texto || "—"}</span>
+                    {obj.nota && <span style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginLeft: "auto" }}>Nota: {obj.nota}</span>}
+                  </div>
+                  {obj.comentario && <div style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>{obj.comentario}</div>}
+                </div>
+              </div>
+            ))}
+            {dados.comentario && (
+              <div style={{ marginTop: 12, padding: "10px 14px", background: resumeBg, borderRadius: 8, fontSize: 13, color: textSub, fontStyle: "italic" }}>
+                {dados.comentario}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Semanas com dados registrados, ordenadas da mais recente pra mais antiga
+  const semanasComDados = Object.keys(dadosSem)
+    .filter(k => k !== chaveAtual)
+    .sort((a, b) => b.localeCompare(a));
 
   return (
     <div style={{ flex: 1, padding: "36px 52px 56px", overflowY: "auto", minWidth: 0, fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: text }}>
@@ -162,7 +304,6 @@ export default function Objetivos({ th, dark, setDark }) {
               {dark ? "☀️ Claro" : "🌙 Escuro"}
             </button>
           )}
-          {/* Dropdown de semanas */}
           <select
             value={`${semSel.ano}-${semSel.semana}`}
             onChange={e => {
@@ -181,158 +322,15 @@ export default function Objetivos({ th, dark, setDark }) {
       {loading ? (
         <div style={{ textAlign: "center", padding: 60, color: textMuted, fontSize: 14 }}>Carregando…</div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div>
+          {/* Card de edição — semana selecionada */}
+          {renderCardEdicao()}
 
-          {/* Card principal da semana */}
-          <div style={{ background: cardCorBg, border: `2px solid ${cardCorBorder}`, borderRadius: 14, padding: "24px 28px", boxShadow: cardShadow }}>
-
-            {/* Topo do card */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 15, fontWeight: 800, color: text }}>
-                  {fmtSemana(semSel.ano, semSel.semana)}
-                </span>
-                {totalObj > 0 && (
-                  <span style={{ fontSize: 12, fontWeight: 600, color: feitosObj === totalObj ? ACCENT : textMuted, background: resumeBg, padding: "2px 10px", borderRadius: 20, border: `1px solid ${border}` }}>
-                    {feitosObj}/{totalObj} feitos
-                  </span>
-                )}
-              </div>
-
-              {/* Seletor de cor */}
-              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                <span style={{ fontSize: 11, color: textMuted, marginRight: 4 }}>Semana:</span>
-                {CORES_SEMANA.filter(c => c.id !== "neutro").map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => setCor(semDados.cor === c.id ? "neutro" : c.id)}
-                    title={c.label}
-                    style={{
-                      width: 22, height: 22, borderRadius: "50%", border: `2px solid ${isDark ? c.borderDark : c.border}`,
-                      background: isDark ? c.bgDark : c.bg, cursor: "pointer",
-                      outline: semDados.cor === c.id ? `2px solid ${text}` : "none",
-                      outlineOffset: 2,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Lista de objetivos */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-              {(semDados.objetivos || []).length === 0 && (
-                <div style={{ textAlign: "center", padding: "24px 0", color: textMuted, fontSize: 13, border: `1px dashed ${border2}`, borderRadius: 10 }}>
-                  Nenhum objetivo ainda. Clique em "+ Objetivo" para adicionar.
-                </div>
-              )}
-
-              {(semDados.objetivos || []).map(obj => (
-                <div key={obj.id} style={{ background: isDark ? "#1e222a" : "#fff", border: `1px solid ${border}`, borderRadius: 10, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-
-                  {/* Linha principal */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    {/* Checkbox */}
-                    <div
-                      onClick={() => toggleFeito(obj.id)}
-                      style={{
-                        width: 18, height: 18, borderRadius: 5, border: `2px solid ${obj.feito ? ACCENT : border2}`,
-                        background: obj.feito ? ACCENT : "transparent", cursor: "pointer", flexShrink: 0,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}
-                    >
-                      {obj.feito && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                    </div>
-
-                    {/* Tag categoria */}
-                    <select
-                      value={obj.categoria}
-                      onChange={e => updateObjetivo(obj.id, "categoria", e.target.value)}
-                      onBlur={() => salvarObjetivo(obj.id)}
-                      style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, border: "none", cursor: "pointer", outline: "none", fontFamily: "inherit", background: tagColors[obj.categoria]?.bg, color: tagColors[obj.categoria]?.text, flexShrink: 0 }}
-                    >
-                      {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-
-                    {/* Texto do objetivo */}
-                    <input
-                      value={obj.texto}
-                      onChange={e => updateObjetivo(obj.id, "texto", e.target.value)}
-                      onBlur={() => salvarObjetivo(obj.id)}
-                      placeholder="Descreva o objetivo..."
-                      style={{ ...inputStyle, flex: 1, textDecoration: obj.feito ? "line-through" : "none", color: obj.feito ? textMuted : text }}
-                    />
-
-                    {/* Nota */}
-                    <input
-                      type="number" min="1" max="10"
-                      value={obj.nota}
-                      onChange={e => updateObjetivo(obj.id, "nota", e.target.value)}
-                      onBlur={() => salvarObjetivo(obj.id)}
-                      placeholder="Nota"
-                      style={{ ...inputStyle, width: 64, textAlign: "center" }}
-                    />
-
-                    {/* Remover */}
-                    <button
-                      onClick={() => removeObjetivo(obj.id)}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: textMuted, fontSize: 18, lineHeight: 1, padding: "0 4px", flexShrink: 0 }}
-                    >×</button>
-                  </div>
-
-                  {/* Comentário do objetivo */}
-                  <input
-                    value={obj.comentario || ""}
-                    onChange={e => updateObjetivo(obj.id, "comentario", e.target.value)}
-                    onBlur={() => salvarObjetivo(obj.id)}
-                    placeholder="Comentário sobre este objetivo..."
-                    style={{ ...inputStyle, fontSize: 12, color: textMuted }}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Botão adicionar */}
-            <button
-              onClick={addObjetivo}
-              style={{ background: "none", border: `1px dashed ${ACCENT}`, color: ACCENT, borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: 16, width: "100%" }}
-            >
-              + Objetivo
-            </button>
-
-            {/* Comentário geral da semana */}
-            <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6, display: "block" }}>
-                Comentário geral da semana
-              </label>
-              <textarea
-                value={semDados.comentario || ""}
-                onChange={e => setComentario(e.target.value)}
-                onBlur={salvarComentario}
-                placeholder="Como foi a semana? O que funcionou? O que melhorar?"
-                rows={3}
-                style={{ ...inputStyle, resize: "vertical" }}
-              />
-            </div>
-          </div>
-
-          {/* Resumo rápido */}
-          {totalObj > 0 && (
-            <div style={{ display: "flex", gap: 12 }}>
-              {CATEGORIAS.map(cat => {
-                const catObjs = (semDados.objetivos || []).filter(o => o.categoria === cat);
-                if (catObjs.length === 0) return null;
-                const feitos = catObjs.filter(o => o.feito).length;
-                const notaMedia = catObjs.filter(o => o.nota).length > 0
-                  ? Math.round(catObjs.filter(o => o.nota).reduce((s, o) => s + Number(o.nota), 0) / catObjs.filter(o => o.nota).length * 10) / 10
-                  : null;
-                return (
-                  <div key={cat} style={{ background: cardBg, border: `1px solid ${border}`, borderRadius: 10, padding: "12px 16px", flex: 1, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: tagColors[cat]?.text, background: tagColors[cat]?.bg, borderRadius: 20, padding: "2px 10px", display: "inline-block", marginBottom: 8 }}>{cat}</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: feitos === catObjs.length ? ACCENT : text }}>{feitos}/{catObjs.length}</div>
-                    <div style={{ fontSize: 11, color: textMuted, marginTop: 2 }}>{notaMedia !== null ? `Nota média: ${notaMedia}` : "Sem nota"}</div>
-                  </div>
-                );
-              })}
+          {/* Histórico — cards colapsáveis */}
+          {semanasComDados.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Histórico</div>
+              {semanasComDados.map(chave => renderCardVisualizacao(chave, dadosSem[chave]))}
             </div>
           )}
         </div>
