@@ -268,18 +268,8 @@ if(activeNav === "Estatísticas") return (
       </div>
     );
     if(activeNav === "Objetivos") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}><Objetivos th={th}/></div>;
-          <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)",display:"flex",flexDirection:"column"}}>
-        <Objetivos
-          th={th}
-          dark={dark}
-          setDark={setDark}
-          revisoesProp={revisoes}
-          updatesProp={updates}
-          tradesPorDataProp={tradesPorData}
-          loadingProp={loadingRevisoes}
-          onCarregar={carregarRevisoes}
-        />
+      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+        <Objetivos th={th} dark={dark} setDark={setDark}/>
       </div>
     );
     if(activeNav === "Revisões") return (
