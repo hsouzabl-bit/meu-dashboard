@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Estatisticas from "./Estatisticas";
 import Estudos from "./Estudos";
 import Revisoes from "./Revisoes";
+import Objetivos from "./Objetivos";
 
 const API_URL    = "https://script.google.com/macros/s/AKfycbzBEgswS-Jy8HvgYOQITuS6YgRrT7am5DlR3Mhd6KC4sTpl_Xg5It7XBnIKdr1QWfzi/exec";
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
@@ -266,6 +267,20 @@ if(activeNav === "Estatísticas") return (
         <Estudos th={th}/>
       </div>
     );
+    if(activeNav === "Objetivos") return <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}><Objetivos th={th}/></div>;
+          <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)",display:"flex",flexDirection:"column"}}>
+        <Objetivos
+          th={th}
+          dark={dark}
+          setDark={setDark}
+          revisoesProp={revisoes}
+          updatesProp={updates}
+          tradesPorDataProp={tradesPorData}
+          loadingProp={loadingRevisoes}
+          onCarregar={carregarRevisoes}
+        />
+      </div>
+    );
     if(activeNav === "Revisões") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)",display:"flex",flexDirection:"column"}}>
         <Revisoes
@@ -475,6 +490,7 @@ if(activeNav === "Estatísticas") return (
             {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
             {label:"Estudos",      icon:<Ico.BookOpen s={17} c="currentColor"/>},
             {label:"Revisões",     icon:<Ico.Calendar s={17} c="currentColor"/>},
+            {label:"Objetivos",    icon:<Ico.Target   s={17} c="currentColor"/>},
             {label:"Registros",    icon:<Ico.Book     s={17} c="currentColor"/>},
             {label:"Hábitos",      icon:<Ico.Check    s={17} c="currentColor"/>},
             {label:"Replays",      icon:<Ico.Repeat   s={17} c="currentColor"/>},
