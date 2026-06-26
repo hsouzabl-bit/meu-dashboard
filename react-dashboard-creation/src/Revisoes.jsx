@@ -33,7 +33,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   const isDark     = bg === "#1a1d23" || bg.startsWith("#1") || bg.startsWith("#0");
   const ACCENT = isDark ? ACCENT_DARK : ACCENT_LIGHT;
 
-  function corResultado(total) {
+function corResultado(total) {
     const n = parseFloat(total);
     if (isNaN(n)) return null;
     if (n >= 100)  return {
