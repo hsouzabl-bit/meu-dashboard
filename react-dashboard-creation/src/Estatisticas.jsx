@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
-const ACCENT = "#4ecb8d";
+const ACCENT_LIGHT = "#2563EB";
+const ACCENT_DARK  = "#38BDF8";
 
 function fmt(val) {
   if (val === undefined || val === null) return "R$ 0,00";
@@ -162,6 +163,8 @@ function GraficoPatrimonio({ graficoION2, graficoMIDE2, th }) {
 }
 
 export default function Estatisticas({ th, dadosCache, loadingCache, onRecarregar }) {
+  const isDark = th?.bg === "#111111" || th?.bg?.startsWith("#1") || th?.bg?.startsWith("#0");
+  const ACCENT = isDark ? ACCENT_DARK : ACCENT_LIGHT;
   const [dados, setDados]           = useState(dadosCache || null);
   const [loading, setLoading]       = useState(!dadosCache);
   const [erro, setErro]             = useState(null);

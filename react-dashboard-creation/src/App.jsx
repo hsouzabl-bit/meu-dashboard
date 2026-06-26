@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import Estatisticas from "./Estatisticas";
 import Estudos from "./Estudos";
 import Revisoes from "./Revisoes";
-import Objetivos from "./Objetivos";
 
 const API_URL    = "https://script.google.com/macros/s/AKfycbzBEgswS-Jy8HvgYOQITuS6YgRrT7am5DlR3Mhd6KC4sTpl_Xg5It7XBnIKdr1QWfzi/exec";
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
@@ -11,22 +10,23 @@ const METAS_MENSAIS = { horasEstudo:80, paginasLidas:100, videoAulas:10, replays
 const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:600, videoAulas:60, replays:120 };
 const DIAS_SEMANA   = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
 const MESES_PT      = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const ACCENT        = "#4ecb8d";
+const ACCENT_LIGHT  = "#2563EB";
+const ACCENT_DARK   = "#38BDF8";
 
 const LIGHT = {
   bg:"#f4f5f7", surface:"#ffffff", border:"#ebebeb", border2:"#e0e0e0",
   text:"#0f1117", textSub:"#4a5568", textMuted:"#8a96a3",
-  navActiveBg:"#f0fdf8", cardBg:"#ffffff", cardShadow:"0 1px 4px rgba(0,0,0,0.06)",
+  navActiveBg:"#EEF2FF", cardBg:"#ffffff", cardShadow:"0 1px 4px rgba(0,0,0,0.06)",
   resumeBg:"#f8f9fa", skeletonA:"#efefef", skeletonB:"#e5e5e5",
   calDayBg:{ 1:"#e6faf2", 2:"#fff8e1", 3:"#fce4ec", 0:"#f5f5f5" },
   calDayBorder:{ 1:"#a7e9c9", 2:"#ffe082", 3:"#f48fb1", 0:"transparent" },
 };
 const DARK = {
-  bg:"#1a1d23", surface:"#22262f", border:"#2c3040", border2:"#353a4a",
-  text:"#f0f2f5", textSub:"#c0c8d4", textMuted:"#8a96a8",
-  navActiveBg:"#1c2e25", cardBg:"#22262f", cardShadow:"0 1px 6px rgba(0,0,0,0.35)",
-  resumeBg:"#1a1d23", skeletonA:"#2c3040", skeletonB:"#363d4d",
-  calDayBg:{ 1:"#1a3028", 2:"#2d2710", 3:"#2d1420", 0:"#262930" },
+  bg:"#111111", surface:"#161616", border:"#252525", border2:"#2e2e2e",
+  text:"#f0f2f5", textSub:"#c0c8d4", textMuted:"#707070",
+  navActiveBg:"#0d1a2e", cardBg:"#1c1c1c", cardShadow:"0 1px 6px rgba(0,0,0,0.5)",
+  resumeBg:"#111111", skeletonA:"#252525", skeletonB:"#2e2e2e",
+  calDayBg:{ 1:"#1a3028", 2:"#2d2710", 3:"#2d1420", 0:"#1e1e1e" },
   calDayBorder:{ 1:"#2d6b4f", 2:"#856404", 3:"#8b3252", 0:"transparent" },
 };
 
@@ -50,13 +50,13 @@ const Ico = {
   Clock:   ({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
   Book:    ({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
   Camera:  ({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
-  Check:   ({s=16,c=ACCENT})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  Check:   ({s=16,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
   X:       ({s=16,c="#f87171"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  Target:  ({s=20,c=ACCENT})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
-  Trend:   ({s=20,c=ACCENT})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
-  BookOpen:({s=20,c=ACCENT})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-  Play:    ({s=20,c=ACCENT})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
-  Repeat:  ({s=20,c=ACCENT})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>,
+  Target:  ({s=20,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  Trend:   ({s=20,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+  BookOpen:({s=20,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+  Play:    ({s=20,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+  Repeat:  ({s=20,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>,
   Moon:    ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
   Sun:     ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
   Calendar:({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
@@ -175,6 +175,7 @@ export default function App(){
   const [anoVis,setAnoVis]       = useState(hoje.getFullYear());
 
   const th = dark ? DARK : LIGHT;
+  const ACCENT = dark ? ACCENT_DARK : ACCENT_LIGHT;
 
   // Carrega GAS Estudos (Dashboard)
   const carregar=()=>{
@@ -250,30 +251,23 @@ export default function App(){
   const metaR=modoDia?1:METAS_MENSAIS.replays;
 
   const renderMain = () => {
-if(activeNav === "Estatísticas") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
-        <Estatisticas
-          th={th}
-          dark={dark}
-          setDark={setDark}
-          dadosCache={dadosDiario}
-          loadingCache={loadingDiario}
-          onRecarregar={carregarDiario}
-        />
-      </div>
+    if(activeNav === "Estatísticas") return (
+      <Estatisticas
+        th={th}
+        dark={dark}
+        setDark={setDark}
+        dadosCache={dadosDiario}
+        loadingCache={loadingDiario}
+        onRecarregar={carregarDiario}
+      />
     );
     if(activeNav === "Estudos") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)",display:"flex",flexDirection:"column"}}>
+      <main style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column"}}>
         <Estudos th={th}/>
-      </div>
-    );
-    if(activeNav === "Objetivos") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
-        <Objetivos th={th} dark={dark} setDark={setDark}/>
-      </div>
+      </main>
     );
     if(activeNav === "Revisões") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)",display:"flex",flexDirection:"column"}}>
+      <div style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column",width:"100%"}}>
         <Revisoes
           th={th}
           dark={dark}
@@ -287,7 +281,7 @@ if(activeNav === "Estatísticas") return (
       </div>
     );
     return (
-      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0,maxWidth:"calc(100vw - 240px)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
           <div>
             <h1 style={{fontSize:28,fontWeight:800,color:th.text,margin:0}}>Dashboard</h1>
@@ -466,7 +460,7 @@ if(activeNav === "Estatísticas") return (
 
       <aside style={{width:240,background:th.surface,borderRight:`1px solid ${th.border}`,display:"flex",flexDirection:"column",padding:"28px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflowY:"auto",transition:"background 0.3s,border 0.3s"}}>
         <div style={{padding:"0 24px 28px",display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:40,height:40,borderRadius:11,background:`linear-gradient(135deg,${ACCENT},#2da86e)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <div style={{width:40,height:40,borderRadius:11,background:`linear-gradient(135deg,${ACCENT},${dark?'#1a9ed4':'#1a4bc4'})`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
             <Ico.Target s={20} c="#fff"/>
           </div>
           <div>
@@ -481,7 +475,6 @@ if(activeNav === "Estatísticas") return (
             {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
             {label:"Estudos",      icon:<Ico.BookOpen s={17} c="currentColor"/>},
             {label:"Revisões",     icon:<Ico.Calendar s={17} c="currentColor"/>},
-            {label:"Objetivos",    icon:<Ico.Target   s={17} c="currentColor"/>},
             {label:"Registros",    icon:<Ico.Book     s={17} c="currentColor"/>},
             {label:"Hábitos",      icon:<Ico.Check    s={17} c="currentColor"/>},
             {label:"Replays",      icon:<Ico.Repeat   s={17} c="currentColor"/>},
