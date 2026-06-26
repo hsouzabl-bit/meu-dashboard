@@ -50,7 +50,7 @@ function gerarListaSemanas() {
   return lista;
 }
 
-export default function Objetivos({ th }) {
+export default function Objetivos({ th, dark, setDark }) {
   const bg        = th?.bg        || "#f4f5f7";
   const surface   = th?.surface   || "#ffffff";
   const cardBg    = th?.cardBg    || "#ffffff";
@@ -156,20 +156,26 @@ export default function Objetivos({ th }) {
           <h1 style={{ fontSize: 28, fontWeight: 800, color: text, margin: 0 }}>Objetivos</h1>
           <p style={{ fontSize: 13, color: textMuted, margin: "4px 0 0" }}>Metas semanais e acompanhamento</p>
         </div>
-
-        {/* Dropdown de semanas */}
-        <select
-          value={`${semSel.ano}-${semSel.semana}`}
-          onChange={e => {
-            const [ano, sem] = e.target.value.split("-").map(Number);
-            setSemSel({ ano, semana: sem });
-          }}
-          style={{ padding: "8px 14px", borderRadius: 9, border: `1px solid ${border2}`, background: surface, color: text, fontSize: 13, fontFamily: "inherit", cursor: "pointer", outline: "none" }}
-        >
-          {semanas.map(s => (
-            <option key={`${s.ano}-${s.semana}`} value={`${s.ano}-${s.semana}`}>{s.label}</option>
-          ))}
-        </select>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {setDark && (
+            <button onClick={() => setDark(d => !d)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, border: `1px solid ${border2}`, background: surface, cursor: "pointer", color: textSub, fontSize: 12, fontWeight: 600, fontFamily: "'Plus Jakarta Sans','Inter',sans-serif" }}>
+              {dark ? "☀️ Claro" : "🌙 Escuro"}
+            </button>
+          )}
+          {/* Dropdown de semanas */}
+          <select
+            value={`${semSel.ano}-${semSel.semana}`}
+            onChange={e => {
+              const [ano, sem] = e.target.value.split("-").map(Number);
+              setSemSel({ ano, semana: sem });
+            }}
+            style={{ padding: "8px 14px", borderRadius: 9, border: `1px solid ${border2}`, background: surface, color: text, fontSize: 13, fontFamily: "inherit", cursor: "pointer", outline: "none" }}
+          >
+            {semanas.map(s => (
+              <option key={`${s.ano}-${s.semana}`} value={`${s.ano}-${s.semana}`}>{s.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loading ? (
