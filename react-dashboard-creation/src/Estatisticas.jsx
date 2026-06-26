@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 const ACCENT_LIGHT = "#2563EB";
 const ACCENT_DARK  = "#38BDF8";
+const ACCENT = ACCENT_LIGHT; // fallback para componentes externos ao App
 
 function fmt(val) {
   if (val === undefined || val === null) return "R$ 0,00";

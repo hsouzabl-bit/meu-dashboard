@@ -252,19 +252,21 @@ export default function App(){
 
   const renderMain = () => {
     if(activeNav === "Estatísticas") return (
-      <Estatisticas
-        th={th}
-        dark={dark}
-        setDark={setDark}
-        dadosCache={dadosDiario}
-        loadingCache={loadingDiario}
-        onRecarregar={carregarDiario}
-      />
+      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+        <Estatisticas
+          th={th}
+          dark={dark}
+          setDark={setDark}
+          dadosCache={dadosDiario}
+          loadingCache={loadingDiario}
+          onRecarregar={carregarDiario}
+        />
+      </div>
     );
     if(activeNav === "Estudos") return (
-      <main style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column"}}>
+      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)",display:"flex",flexDirection:"column"}}>
         <Estudos th={th}/>
-      </main>
+      </div>
     );
     if(activeNav === "Revisões") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column",width:"100%"}}>
@@ -281,7 +283,7 @@ export default function App(){
       </div>
     );
     return (
-      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0,maxWidth:"calc(100vw - 240px)"}}>
+      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
           <div>
             <h1 style={{fontSize:28,fontWeight:800,color:th.text,margin:0}}>Dashboard</h1>
