@@ -37,9 +37,9 @@ function corResultado(total) {
     const n = parseFloat(total);
     if (isNaN(n)) return null;
     if (n >= 100)  return {
-      bg:     isDark ? "#141f1a" : "#f0faf5",
-      border: isDark ? "#1e3d2a" : "#6bbf96",
-      text:   isDark ? "#2d8a5e" : "#2e7d5a",
+      bg:     isDark ? "#131713" : "#f0faf5",
+      border: isDark ? "#1a2e1e" : "#6bbf96",
+      text:   isDark ? "#4a7a5a" : "#2e7d5a",
     };
     if (n <= -100) return {
       bg:     isDark ? "#1a1212" : "#faf0f0",
