@@ -37,13 +37,13 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     const n = parseFloat(total);
     if (isNaN(n)) return null;
     if (n >= 100)  return {
-      bg:     isDark ? "#1a1d1b" : "#f0faf5",
-      border: isDark ? "#254d38" : "#6bbf96",
+      bg:     isDark ? "#1e2b22" : "#f0faf5",
+      border: isDark ? "#3d8a5a" : "#6bbf96",
       text:   isDark ? "#5dd89a" : "#2e7d5a",
     };
     if (n <= -100) return {
-      bg:     isDark ? "#1d1a1a" : "#faf0f0",
-      border: isDark ? "#4d2525" : "#c47878",
+      bg:     isDark ? "#2b1e1e" : "#faf0f0",
+      border: isDark ? "#8a3a3a" : "#c47878",
       text:   isDark ? "#d96868" : "#a04040",
     };
     return {
