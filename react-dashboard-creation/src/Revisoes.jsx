@@ -39,12 +39,12 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     if (n >= 100)  return {
       bg:     isDark ? "#1a1d1b" : "#f0faf5",
       border: isDark ? "#254d38" : "#6bbf96",
-      text:   isDark ? "#4ecb8d" : "#2e7d5a",
+      text:   isDark ? "#5dd89a" : "#2e7d5a",
     };
     if (n <= -100) return {
       bg:     isDark ? "#1d1a1a" : "#faf0f0",
       border: isDark ? "#4d2525" : "#c47878",
-      text:   isDark ? "#c05858" : "#a04040",
+      text:   isDark ? "#d96868" : "#a04040",
     };
     return {
       bg:     isDark ? "#1a1c1e" : "#f0f2f5",
