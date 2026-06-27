@@ -33,23 +33,23 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   const isDark     = bg === "#1a1d23" || bg.startsWith("#1") || bg.startsWith("#0");
   const ACCENT = isDark ? ACCENT_DARK : ACCENT_LIGHT;
 
-function corResultado(total) {
+  function corResultado(total) {
     const n = parseFloat(total);
     if (isNaN(n)) return null;
     if (n >= 100)  return {
-      bg:     isDark ? "#131713" : "#f0faf5",
-      border: isDark ? "#1a2e1e" : "#6bbf96",
-      text:   isDark ? "#4a7a5a" : "#2e7d5a",
+      bg:     isDark ? "#141f1a" : "#f0faf5",
+      border: isDark ? "#3daa78" : "#6bbf96",
+      text:   isDark ? "#4ecb8d" : "#2e7d5a",
     };
     if (n <= -100) return {
       bg:     isDark ? "#1a1212" : "#faf0f0",
-      border: isDark ? "#3a1e1e" : "#c47878",
-      text:   isDark ? "#8a3a3a" : "#a04040",
+      border: isDark ? "#c05858" : "#c47878",
+      text:   isDark ? "#f06b6b" : "#a04040",
     };
     return {
       bg:     isDark ? "#1a1a0e" : "#fafaf0",
-      border: isDark ? "#3a3410" : "#b8b06a",
-      text:   isDark ? "#7a6e20" : "#7a7030",
+      border: isDark ? "#b09830" : "#b8b06a",
+      text:   isDark ? "#e0c040" : "#7a7030",
     };
   }
 
