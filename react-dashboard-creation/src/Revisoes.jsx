@@ -37,19 +37,19 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     const n = parseFloat(total);
     if (isNaN(n)) return null;
     if (n >= 100)  return {
-      bg:     isDark ? "#141f1a" : "#f0faf5",
-      border: isDark ? "#3daa78" : "#6bbf96",
+      bg:     isDark ? "#1a1d1b" : "#f0faf5",
+      border: isDark ? "#254d38" : "#6bbf96",
       text:   isDark ? "#4ecb8d" : "#2e7d5a",
     };
     if (n <= -100) return {
-      bg:     isDark ? "#1a1212" : "#faf0f0",
-      border: isDark ? "#c05858" : "#c47878",
-      text:   isDark ? "#f06b6b" : "#a04040",
+      bg:     isDark ? "#1d1a1a" : "#faf0f0",
+      border: isDark ? "#4d2525" : "#c47878",
+      text:   isDark ? "#c05858" : "#a04040",
     };
     return {
-      bg:     isDark ? "#1a1a0e" : "#fafaf0",
-      border: isDark ? "#b09830" : "#b8b06a",
-      text:   isDark ? "#e0c040" : "#7a7030",
+      bg:     isDark ? "#1a1c1e" : "#f0f2f5",
+      border: isDark ? "#7a8a9a" : "#7a8a9a",
+      text:   isDark ? "#a0b0c0" : "#4a6070",
     };
   }
 
