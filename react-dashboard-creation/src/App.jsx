@@ -13,6 +13,7 @@ const DIAS_SEMANA   = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
 const MESES_PT      = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const ACCENT_LIGHT  = "#2563EB";
 const ACCENT_DARK   = "#38BDF8";
+const ACCENT        = ACCENT_LIGHT; // fallback para componentes externos
 
 const LIGHT = {
   bg:"#f4f5f7", surface:"#ffffff", border:"#ebebeb", border2:"#e0e0e0",
