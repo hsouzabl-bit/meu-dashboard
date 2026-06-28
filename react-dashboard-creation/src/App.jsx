@@ -269,6 +269,11 @@ export default function App(){
         <Estudos th={th}/>
       </div>
     );
+    if(activeNav === "Objetivos") return (
+      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+        <Objetivos th={th} dark={dark} setDark={setDark}/>
+      </div>
+    );
     if(activeNav === "Revisões") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column",width:"100%"}}>
         <Revisoes
@@ -478,6 +483,7 @@ export default function App(){
             {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
             {label:"Estudos",      icon:<Ico.BookOpen s={17} c="currentColor"/>},
             {label:"Revisões",     icon:<Ico.Calendar s={17} c="currentColor"/>},
+            {label:"Objetivos",    icon:<Ico.Target   s={17} c="currentColor"/>},
             {label:"Registros",    icon:<Ico.Book     s={17} c="currentColor"/>},
             {label:"Hábitos",      icon:<Ico.Check    s={17} c="currentColor"/>},
             {label:"Replays",      icon:<Ico.Repeat   s={17} c="currentColor"/>},
