@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 const GAS_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 const ACCENT_LIGHT = "#2563EB";
-const ACCENT_DARK  = "#38BDF8";
+const ACCENT_DARK  = "#2563EB";
 const IcoMoon = ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
 const IcoSun  = ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
 
@@ -65,12 +65,12 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   const [painelTipo, setPainelTipo] = useState("diario");
   const [formDados, setFormDados]   = useState({});
   const [formDirty, setFormDirty]   = useState(false);
+  const [linksIon2, setLinksIon2]   = useState([]); // [{id, descricao, url}]
 
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [updateForm, setUpdateForm]         = useState({ titulo: "", descricao: "" });
   const [expandedUpdate, setExpandedUpdate] = useState(null);
 
-  // Sincroniza com props quando chegam do cache
   useEffect(() => { if (revisoesProp?.length)   setRevisoes(revisoesProp);   }, [revisoesProp]);
   useEffect(() => { if (updatesProp?.length)    setUpdates(updatesProp);     }, [updatesProp]);
   useEffect(() => { if (tradesPorDataProp && Object.keys(tradesPorDataProp).length) setTradesPorData(tradesPorDataProp); }, [tradesPorDataProp]);
@@ -101,7 +101,6 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     return `${a}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
   }
 
-  // Retorna o domingo da semana de uma data qualquer (para agrupar Seg–Sáb)
   function domingoAnterior(dataStr) {
     const dt = new Date(dataStr + "T12:00:00");
     const dom = new Date(dt);
@@ -109,39 +108,26 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     return isoData(dom.getFullYear(), dom.getMonth(), dom.getDate());
   }
 
-  // Calcula o resumo semanal ION 2 para um sábado específico (Seg a Sex daquela semana)
   function resumoSemanalIon2(sabadoStr) {
     const sabado = new Date(sabadoStr + "T12:00:00");
     let totalRes = 0, totalOps = 0, somaAcerto = 0, diasAcerto = 0, totalErros = 0, diasComDados = 0;
-
-    for (let offset = -5; offset <= -1; offset++) { // Seg(-5) a Sex(-1) em relação ao Sáb
+    for (let offset = -5; offset <= -1; offset++) {
       const dt = new Date(sabado);
       dt.setDate(sabado.getDate() + offset);
       const dataStr = isoData(dt.getFullYear(), dt.getMonth(), dt.getDate());
       const trades  = tradesPorData[dataStr] || {};
       const ion2    = trades["ION 2"] || trades["ion 2"] || null;
       const rev     = revisaoPorData[dataStr] || null;
-
       const rIon2 = parseFloat(rev?.resultadoIon2 ?? ion2?.resultado ?? "NaN");
       if (!isNaN(rIon2)) { totalRes += rIon2; diasComDados++; }
-
       const ops = parseFloat(ion2?.trades ?? "NaN");
       if (!isNaN(ops)) totalOps += ops;
-
       const ac = parseFloat(ion2?.taxaAcerto ?? "NaN");
       if (!isNaN(ac)) { somaAcerto += ac; diasAcerto++; }
-
       const er = parseFloat(ion2?.erros ?? "NaN");
       if (!isNaN(er)) totalErros += er;
     }
-
-    return {
-      totalRes,
-      totalOps: totalOps || 0,
-      acertoMedio: diasAcerto > 0 ? Math.round(somaAcerto / diasAcerto) : null,
-      totalErros: totalErros || 0,
-      diasComDados,
-    };
+    return { totalRes, totalOps: totalOps || 0, acertoMedio: diasAcerto > 0 ? Math.round(somaAcerto / diasAcerto) : null, totalErros: totalErros || 0, diasComDados };
   }
 
   function abrirDia(dataStr) {
@@ -166,6 +152,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       resumoMide2:      saved.resumoMide2      ?? "",
       revisaoDetalhada: rev.revisaoDetalhada   ?? "",
     });
+    setLinksIon2(saved.linksIon2 || []);
     setFormDirty(false);
   }
 
@@ -179,6 +166,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       resumoCurto:      saved.resumoCurto    ?? "",
       revisaoDetalhada: rev.revisaoDetalhada ?? "",
     });
+    setLinksIon2([]);
     setFormDirty(false);
   }
 
@@ -190,6 +178,21 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
   function setField(key, val) {
     setFormDados(p => ({ ...p, [key]: val }));
+    setFormDirty(true);
+  }
+
+  function addLink() {
+    setLinksIon2(p => [...p, { id: gerarId(), descricao: "", url: "" }]);
+    setFormDirty(true);
+  }
+
+  function updateLink(id, campo, valor) {
+    setLinksIon2(p => p.map(l => l.id === id ? { ...l, [campo]: valor } : l));
+    setFormDirty(true);
+  }
+
+  function removeLink(id) {
+    setLinksIon2(p => p.filter(l => l.id !== id));
     setFormDirty(true);
   }
 
@@ -211,6 +214,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
         errosIon2:   formDados.errosIon2   ?? "",
         resumoIon2:  formDados.resumoIon2  ?? "",
         resumoCurto: formDados.resumoCurto ?? "",
+        linksIon2:   linksIon2.filter(l => l.url || l.descricao),
       }),
       revisaoDetalhada: formDados.revisaoDetalhada ?? "",
     };
@@ -277,7 +281,6 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     fontFamily: "'Plus Jakarta Sans','Inter',sans-serif",
   };
 
-  // Calcula resumo mensal ION 2 (todos os dias úteis do mês)
   function resumoMensalIon2() {
     const total = new Date(ano, mes + 1, 0).getDate();
     let totalRes = 0, totalOps = 0, somaAcerto = 0, diasAcerto = 0, totalErros = 0, diasComDados = 0;
@@ -307,11 +310,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
     DIAS_SEMANA.forEach((d, i) => (
       cells.push(
-        <div key={`h${i}`} style={{
-          textAlign: "center", fontSize: 12, fontWeight: 700,
-          color: textMuted, padding: "8px 0",
-          letterSpacing: "0.05em", textTransform: "uppercase",
-        }}>{d}</div>
+        <div key={`h${i}`} style={{ textAlign: "center", fontSize: 12, fontWeight: 700, color: textMuted, padding: "8px 0", letterSpacing: "0.05em", textTransform: "uppercase" }}>{d}</div>
       )
     ));
 
@@ -325,179 +324,90 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       const isHoje   = dataStr === hojeISO();
       const isAberto = painelDia === dataStr;
 
-      // ── SÁBADO: card de resumo semanal ──────────────────────────────────
       if (isSab) {
         const sem = resumoSemanalIon2(dataStr);
         const temDados = sem.diasComDados > 0;
         const cores = temDados ? corResultado(sem.totalRes) : null;
-        const sabBg = isDark
-          ? (cores ? cores.bg : ACCENT + "08")
-          : (cores ? cores.bg : ACCENT + "08");
+        const sabBg = cores ? cores.bg : ACCENT + "08";
         const sabBorder = cores ? cores.border : ACCENT + "33";
 
         cells.push(
-          <div key={d} style={{
-            background: sabBg,
-            border: `2px solid ${sabBorder}`,
-            borderRadius: 10,
-            padding: "11px 12px 10px",
-            cursor: "default",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: 5,
-            boxSizing: "border-box",
-            overflow: "hidden",
-          }}>
-            {/* número + badge SEM */}
+          <div key={d} style={{ background: sabBg, border: `2px solid ${sabBorder}`, borderRadius: 10, padding: "11px 12px 10px", cursor: "default", height: "100%", display: "flex", flexDirection: "column", gap: 5, boxSizing: "border-box", overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 13, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : textMuted }}>{d}</span>
-              <span style={{
-                fontSize: 9, fontWeight: 800, color: ACCENT,
-                background: ACCENT + "18", borderRadius: 4, padding: "1px 6px",
-                letterSpacing: "0.04em", textTransform: "uppercase",
-              }}>semana</span>
+              <span style={{ fontSize: 9, fontWeight: 800, color: ACCENT, background: ACCENT + "18", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.04em", textTransform: "uppercase" }}>semana</span>
             </div>
-
             {temDados ? (
               <>
-                {/* total ION 2 */}
-                <div style={{ fontSize: 15, fontWeight: 800, color: cores ? cores.text : textMuted, lineHeight: 1.1, marginTop: 2 }}>
-                  {fmtVal(sem.totalRes)}
-                </div>
-                {/* label */}
-                <div style={{ fontSize: 9, fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  ION 2 · {sem.diasComDados}d
-                </div>
-                {/* divider */}
+                <div style={{ fontSize: 15, fontWeight: 800, color: cores ? cores.text : textMuted, lineHeight: 1.1, marginTop: 2 }}>{fmtVal(sem.totalRes)}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.06em" }}>ION 2 · {sem.diasComDados}d</div>
                 <div style={{ height: 1, background: isDark ? sabBorder : "#ddd", margin: "1px 0" }} />
-                {/* stats */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                  {sem.totalOps > 0 && (
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 10, color: textMuted }}>Ops</span>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: text }}>{sem.totalOps}</span>
-                    </div>
-                  )}
-                  {sem.acertoMedio !== null && (
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 10, color: textMuted }}>Acerto</span>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: text }}>{sem.acertoMedio}%</span>
-                    </div>
-                  )}
-                  {sem.totalErros > 0 && (
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 10, color: textMuted }}>Erros</span>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: isDark ? "#c05858" : "#a04040" }}>{sem.totalErros}</span>
-                    </div>
-                  )}
+                  {sem.totalOps > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 10, color: textMuted }}>Ops</span><span style={{ fontSize: 10, fontWeight: 700, color: text }}>{sem.totalOps}</span></div>}
+                  {sem.acertoMedio !== null && <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 10, color: textMuted }}>Acerto</span><span style={{ fontSize: 10, fontWeight: 700, color: text }}>{sem.acertoMedio}%</span></div>}
+                  {sem.totalErros > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 10, color: textMuted }}>Erros</span><span style={{ fontSize: 10, fontWeight: 700, color: isDark ? "#c05858" : "#a04040" }}>{sem.totalErros}</span></div>}
                 </div>
               </>
             ) : (
-              <div style={{ fontSize: 10, color: textMuted, marginTop: 4, lineHeight: 1.4 }}>
-                Sem dados<br/>na semana
-              </div>
+              <div style={{ fontSize: 10, color: textMuted, marginTop: 4, lineHeight: 1.4 }}>Sem dados<br/>na semana</div>
             )}
           </div>
         );
         continue;
       }
 
-      // ── DOMINGO ──────────────────────────────────────────────────────────
       if (isDom) {
         const revSem = semanasPorDom[dataStr] || null;
         const temSem = !!revSem;
-        const bgCard = isDom && temSem ? ACCENT + "15" : cardBg;
-        const bdCard = isAberto ? ACCENT : isHoje ? ACCENT + "88" : isDom && temSem ? ACCENT + "55" : border;
+        const bgCard = temSem ? ACCENT + "15" : cardBg;
+        const bdCard = isAberto ? ACCENT : isHoje ? ACCENT + "88" : temSem ? ACCENT + "55" : border;
 
         cells.push(
-          <div key={d}
-            onClick={() => abrirSemana(dataStr)}
-            style={{
-              background: isAberto ? ACCENT + "22" : bgCard,
-              border: `2px solid ${bdCard}`,
-              borderRadius: 10, padding: "11px 12px 10px",
-              cursor: "pointer", height: "100%",
-              transition: "border-color .15s, background .15s",
-              display: "flex", flexDirection: "column", gap: 5,
-              userSelect: "none", boxSizing: "border-box", overflow: "hidden",
-            }}
-          >
+          <div key={d} onClick={() => abrirSemana(dataStr)} style={{ background: isAberto ? ACCENT + "22" : bgCard, border: `2px solid ${bdCard}`, borderRadius: 10, padding: "11px 12px 10px", cursor: "pointer", height: "100%", transition: "border-color .15s, background .15s", display: "flex", flexDirection: "column", gap: 5, userSelect: "none", boxSizing: "border-box", overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 13, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : textMuted }}>{d}</span>
-              <span style={{
-                fontSize: 9, fontWeight: 700,
-                background: temSem ? ACCENT + "22" : "transparent",
-                color: temSem ? ACCENT : textMuted,
-                borderRadius: 4, padding: "1px 5px",
-                border: temSem ? "none" : `1px dashed ${border2}`,
-              }}>sem</span>
+              <span style={{ fontSize: 9, fontWeight: 700, background: temSem ? ACCENT + "22" : "transparent", color: temSem ? ACCENT : textMuted, borderRadius: 4, padding: "1px 5px", border: temSem ? "none" : `1px dashed ${border2}` }}>sem</span>
             </div>
-            {isDom && temSem && (() => {
+            {temSem && (() => {
               let preview = "";
               try { preview = JSON.parse(revSem.resumoCurto || "{}").resumoCurto || ""; } catch {}
               if (!preview) preview = revSem.resumoCurto || "";
-              return preview ? (
-                <div style={{
-                  fontSize: 10, color: textMuted, lineHeight: 1.4, marginTop: 2,
-                  overflow: "hidden", display: "-webkit-box",
-                  WebkitLineClamp: 3, WebkitBoxOrient: "vertical",
-                }}>{preview}</div>
-              ) : null;
+              return preview ? <div style={{ fontSize: 10, color: textMuted, lineHeight: 1.4, marginTop: 2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>{preview}</div> : null;
             })()}
           </div>
         );
         continue;
       }
 
-      // ── DIAS ÚTEIS (Seg–Sex) ─────────────────────────────────────────────
       const rev    = revisaoPorData[dataStr];
       const tradesHoje = tradesPorData[dataStr] || {};
       const ion2dia    = tradesHoje["ION 2"] || tradesHoje["ion 2"] || null;
-
       const rIon2    = parseFloat(rev?.resultadoIon2 ?? ion2dia?.resultado ?? "NaN");
       const temDados = !isNaN(rIon2);
       const semTrades = !ion2dia && !rev;
       const cores    = temDados ? corResultado(rIon2) : null;
-
-      const bgCard  = semTrades
-        ? (isDark ? "#2a2a2a" : "#e8e8e8")
-        : isAberto ? ACCENT + "22" : (cores ? cores.bg : cardBg);
-      const bdCard  = isAberto ? ACCENT : semTrades
-        ? (isDark ? "#404040" : "#c0c0c0")
-        : cores ? cores.border : isHoje ? ACCENT + "88" : border;
-
-      const opsIon2 = ion2dia?.trades     ?? null;
+      const bgCard  = semTrades ? (isDark ? "#2a2a2a" : "#e8e8e8") : isAberto ? ACCENT + "22" : (cores ? cores.bg : cardBg);
+      const bdCard  = isAberto ? ACCENT : semTrades ? (isDark ? "#404040" : "#c0c0c0") : cores ? cores.border : isHoje ? ACCENT + "88" : border;
+      const opsIon2 = ion2dia?.trades ?? null;
       const acIon2  = ion2dia?.taxaAcerto ?? null;
-      const erIon2  = ion2dia?.erros      ?? null;
+      const erIon2  = ion2dia?.erros ?? null;
+
+      // verificar se tem links salvos
+      let temLinks = false;
+      try { temLinks = (JSON.parse(rev?.resumoCurto || "{}").linksIon2 || []).length > 0; } catch {}
 
       cells.push(
-        <div
-          key={d}
-          onClick={() => abrirDia(dataStr)}
-          style={{
-            background: bgCard,
-            border: `2px solid ${bdCard}`,
-            borderRadius: 10, padding: "11px 12px 10px",
-            cursor: "pointer", height: "100%",
-            transition: "border-color .15s, background .15s",
-            display: "flex", flexDirection: "column", gap: 5,
-            userSelect: "none", boxSizing: "border-box", overflow: "hidden",
-          }}
-        >
+        <div key={d} onClick={() => abrirDia(dataStr)} style={{ background: bgCard, border: `2px solid ${bdCard}`, borderRadius: 10, padding: "11px 12px 10px", cursor: "pointer", height: "100%", transition: "border-color .15s, background .15s", display: "flex", flexDirection: "column", gap: 5, userSelect: "none", boxSizing: "border-box", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: 13, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : semTrades ? (isDark ? "#666" : "#999") : text }}>{d}</span>
-            {semTrades ? (
-              <span style={{
-                fontSize: 9, fontWeight: 800,
-                color: isDark ? "#666" : "#999",
-                background: isDark ? "#333" : "#d4d4d4",
-                borderRadius: 4, padding: "1px 5px",
-                letterSpacing: "0.04em", textTransform: "uppercase",
-              }}>sem trades</span>
-            ) : (
-              rev && <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
-            )}
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              {temLinks && <span title="Tem links" style={{ fontSize: 9, color: ACCENT }}>🔗</span>}
+              {semTrades ? (
+                <span style={{ fontSize: 9, fontWeight: 800, color: isDark ? "#666" : "#999", background: isDark ? "#333" : "#d4d4d4", borderRadius: 4, padding: "1px 5px", letterSpacing: "0.04em", textTransform: "uppercase" }}>sem trades</span>
+              ) : (
+                rev && <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
+              )}
+            </div>
           </div>
 
           {semTrades ? (
@@ -514,21 +424,13 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
             </>
           ) : (
             <>
-              {temDados && (
-                <div style={{ fontSize: 14, fontWeight: 800, color: cores ? cores.text : textMuted, lineHeight: 1.2, marginTop: 2 }}>
-                  {fmtVal(rIon2)}
-                </div>
-              )}
-
+              {temDados && <div style={{ fontSize: 14, fontWeight: 800, color: cores ? cores.text : textMuted, lineHeight: 1.2, marginTop: 2 }}>{fmtVal(rIon2)}</div>}
               {(ion2dia || rev) && (
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.04em" }}>ION 2</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: !isNaN(rIon2) && rIon2 >= 0 ? (isDark ? "#3daa78" : "#2e7d5a") : (isDark ? "#c05858" : "#a04040") }}>
-                    {fmtVal(rIon2)}
-                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: !isNaN(rIon2) && rIon2 >= 0 ? (isDark ? "#3daa78" : "#2e7d5a") : (isDark ? "#c05858" : "#a04040") }}>{fmtVal(rIon2)}</span>
                 </div>
               )}
-
               {ion2dia && (
                 <>
                   <div style={{ height: 1, background: border, margin: "2px 0" }} />
@@ -545,8 +447,6 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       );
     }
 
-    // ── CARD MENSAL — após o último sábado ───────────────────────────────
-    // Preenche células vazias até completar a linha, depois adiciona o card ocupando 7 colunas
     const totalCells = primeiro + total;
     const resto = totalCells % 7;
     if (resto !== 0) {
@@ -555,24 +455,18 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
     const sem = resumoMensalIon2();
     const coresMes = sem.diasComDados > 0 ? corResultado(sem.totalRes) : null;
-    const mesBg    = coresMes ? coresMes.bg : (isDark ? ACCENT + "08" : ACCENT + "08");
+    const mesBg    = coresMes ? coresMes.bg : ACCENT + "08";
     const mesBd    = coresMes ? coresMes.border : ACCENT + "44";
 
     cells.push(
       <div key="card-mensal" style={{ gridColumn: "1 / -1", background: mesBg, border: `2px solid ${mesBd}`, borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 140 }}>
           <span style={{ fontSize: 9, fontWeight: 800, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.07em" }}>Resumo do mês · ION 2</span>
-          <span style={{ fontSize: 22, fontWeight: 800, color: coresMes ? coresMes.text : textMuted, lineHeight: 1.1 }}>
-            {sem.diasComDados > 0 ? fmtVal(sem.totalRes) : "—"}
-          </span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: coresMes ? coresMes.text : textMuted, lineHeight: 1.1 }}>{sem.diasComDados > 0 ? fmtVal(sem.totalRes) : "—"}</span>
           <span style={{ fontSize: 11, color: textMuted }}>{sem.diasComDados} dias com trades</span>
         </div>
         <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
-          {[
-            ["Ops", sem.totalOps > 0 ? sem.totalOps : "—"],
-            ["Acerto médio", sem.acertoMedio !== null ? `${sem.acertoMedio}%` : "—"],
-            ["Erros", sem.totalErros > 0 ? sem.totalErros : "—"],
-          ].map(([label, val]) => (
+          {[["Ops", sem.totalOps > 0 ? sem.totalOps : "—"],["Acerto médio", sem.acertoMedio !== null ? `${sem.acertoMedio}%` : "—"],["Erros", sem.totalErros > 0 ? sem.totalErros : "—"]].map(([label, val]) => (
             <div key={label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
               <span style={{ fontSize: 18, fontWeight: 800, color: label === "Erros" && sem.totalErros > 0 ? (isDark ? "#c05858" : "#a04040") : text }}>{val}</span>
@@ -617,6 +511,43 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
             {campo("Erros", keyErros, "number", "ex: 2")}
           </div>
           {campo(`Resumo ${conta}`, keyResumo, "textarea", "O que funcionou? O que errou?", 2)}
+
+          {/* Seção de links */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <label style={{ ...labelStyle, marginBottom: 0 }}>Links {conta}</label>
+              <button onClick={addLink} style={{ background: "none", border: `1px dashed ${ACCENT}`, color: ACCENT, borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Link</button>
+            </div>
+            {linksIon2.length === 0 && (
+              <div style={{ fontSize: 12, color: textMuted, padding: "8px 0" }}>Nenhum link adicionado.</div>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {linksIon2.map(link => (
+                <div key={link.id} style={{ background: cardBg, border: `1px solid ${border2}`, borderRadius: 8, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <input
+                      value={link.descricao}
+                      onChange={e => updateLink(link.id, "descricao", e.target.value)}
+                      placeholder="Descrição do link..."
+                      style={{ ...inputStyle, flex: 1 }}
+                    />
+                    <button onClick={() => removeLink(link.id)} style={{ background: "none", border: "none", cursor: "pointer", color: textMuted, fontSize: 18, lineHeight: 1, padding: "0 4px", flexShrink: 0 }}>×</button>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <input
+                      value={link.url}
+                      onChange={e => updateLink(link.id, "url", e.target.value)}
+                      placeholder="https://..."
+                      style={{ ...inputStyle, flex: 1, fontSize: 12, color: textMuted }}
+                    />
+                    {link.url && (
+                      <a href={link.url} target="_blank" rel="noreferrer" style={{ color: ACCENT, fontSize: 12, flexShrink: 0, textDecoration: "none", fontWeight: 600 }}>↗</a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       );
     }
@@ -640,7 +571,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
           {painelTipo === "diario" && (
             <>
-              {contaBlock("ION 2",  "resultadoIon2",  "qtdOpsIon2",  "acertoIon2",  "errosIon2",  "resumoIon2")}
+              {contaBlock("ION 2", "resultadoIon2", "qtdOpsIon2", "acertoIon2", "errosIon2", "resumoIon2")}
               {campo("Revisão detalhada", "revisaoDetalhada", "textarea", "Análise técnica e emocional aprofundada, lições, próximos passos...", 5)}
             </>
           )}
@@ -702,7 +633,6 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
             const isExp = expandedUpdate === upd.id;
             const dtStr = (() => {
               if (!upd.data) return "—";
-              // defende contra número serial do Sheets ou string inválida
               const raw = upd.data.toString();
               if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
                 const dt = new Date(raw + "T12:00:00");
@@ -734,12 +664,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   }
 
   return (
-    <div style={{
-      flex: 1, padding: "36px 40px 56px", overflowY: "auto", minWidth: 0,
-      width: "100%", maxWidth: "calc(75vw - 240px)", boxSizing: "border-box",
-      fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: text,
-      position: "relative",
-    }}>
+    <div style={{ flex: 1, padding: "36px 40px 56px", overflowY: "auto", minWidth: 0, width: "100%", maxWidth: "calc(75vw - 240px)", boxSizing: "border-box", fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: text, position: "relative" }}>
       {painelDia && (
         <div onClick={fecharPainel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 199 }} />
       )}
