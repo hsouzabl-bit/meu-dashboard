@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Estatisticas from "./Estatisticas";
 import Estudos from "./Estudos";
 import Revisoes from "./Revisoes";
+import Objetivos from "./Objetivos";
 
 const API_URL    = "https://script.google.com/macros/s/AKfycbzBEgswS-Jy8HvgYOQITuS6YgRrT7am5DlR3Mhd6KC4sTpl_Xg5It7XBnIKdr1QWfzi/exec";
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
