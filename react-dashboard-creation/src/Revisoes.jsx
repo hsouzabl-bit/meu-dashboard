@@ -493,7 +493,21 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
         <div key={key}>
           <label style={labelStyle}>{label}</label>
           {tipo === "textarea"
-            ? <textarea value={formDados[key] || ""} placeholder={placeholder} onChange={e => setField(key, e.target.value)} rows={rows} style={{ ...inputStyle, resize: "vertical" }} />
+            ? <textarea
+                value={formDados[key] || ""}
+                placeholder={placeholder}
+                onChange={e => {
+                  setField(key, e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = e.target.scrollHeight + "px";
+                }}
+                onFocus={e => {
+                  e.target.style.height = "auto";
+                  e.target.style.height = e.target.scrollHeight + "px";
+                }}
+                rows={rows}
+                style={{ ...inputStyle, resize: "none", overflow: "hidden" }}
+              />
             : <input type={tipo} value={formDados[key] || ""} placeholder={placeholder} onChange={e => setField(key, e.target.value)} style={inputStyle} />
           }
         </div>
