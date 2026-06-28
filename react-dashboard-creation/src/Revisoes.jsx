@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 const GAS_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 const ACCENT_LIGHT = "#2563EB";
@@ -488,25 +488,37 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
     const existente = painelTipo === "diario" ? revisaoPorData[painelDia] : semanasPorDom[painelDia];
 
+function AutoTextarea({ value, placeholder, onChange, rows, style }) {
+      const ref = React.useRef(null);
+      React.useEffect(() => {
+        if (ref.current) {
+          ref.current.style.height = "auto";
+          ref.current.style.height = ref.current.scrollHeight + "px";
+        }
+      }, [value]);
+      return (
+        <textarea
+          ref={ref}
+          value={value}
+          placeholder={placeholder}
+          onChange={onChange}
+          rows={rows}
+          style={{ ...style, resize: "none", overflow: "hidden" }}
+        />
+      );
+    }
+
     function campo(label, key, tipo = "text", placeholder = "", rows = 3) {
       return (
         <div key={key}>
           <label style={labelStyle}>{label}</label>
           {tipo === "textarea"
-            ? <textarea
+            ? <AutoTextarea
                 value={formDados[key] || ""}
                 placeholder={placeholder}
-                onChange={e => {
-                  setField(key, e.target.value);
-                  e.target.style.height = "auto";
-                  e.target.style.height = e.target.scrollHeight + "px";
-                }}
-                onFocus={e => {
-                  e.target.style.height = "auto";
-                  e.target.style.height = e.target.scrollHeight + "px";
-                }}
+                onChange={e => setField(key, e.target.value)}
                 rows={rows}
-                style={{ ...inputStyle, resize: "none", overflow: "hidden" }}
+                style={inputStyle}
               />
             : <input type={tipo} value={formDados[key] || ""} placeholder={placeholder} onChange={e => setField(key, e.target.value)} style={inputStyle} />
           }
