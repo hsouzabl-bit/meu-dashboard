@@ -3,6 +3,7 @@ import Estatisticas from "./Estatisticas";
 import Estudos from "./Estudos";
 import Revisoes from "./Revisoes";
 import Objetivos from "./Objetivos";
+import PlanoTrade from './PlanoTrade';
 
 const API_URL    = "https://script.google.com/macros/s/AKfycbwHp4j2xXWBeQF9OcLghTy8tvcNN6tvKNX8hyE_3Dq_Z9x5Sz5fp9UGIPVFkJ9LN4v-/exec";
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
@@ -289,6 +290,11 @@ export default function App(){
         />
       </div>
     );
+    if(activeNav === "Plano de Trade") return (
+      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+        <PlanoTrade th={th}/>
+      </div>
+    );
     return (
       <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
@@ -481,6 +487,14 @@ export default function App(){
         <nav style={{flex:1,padding:"0 12px",display:"flex",flexDirection:"column",gap:2}}>
           {[
             {label:"Dashboard",    icon:<Ico.Target   s={17} c="currentColor"/>},
+            {label:"Plano de Trade", icon:(
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="6" y="3" width="12" height="18" rx="2"/>
+                <path d="M9 3h6v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V3z"/>
+                <path d="m9 11 1.5 1.5L14 9"/>
+                <line x1="9" y1="16" x2="15" y2="16"/>
+              </svg>
+            )},
             {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
             {label:"Estudos",      icon:<Ico.BookOpen s={17} c="currentColor"/>},
             {label:"Revisões",     icon:<Ico.Calendar s={17} c="currentColor"/>},
