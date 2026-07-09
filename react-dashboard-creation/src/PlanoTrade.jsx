@@ -460,17 +460,18 @@ export default function PlanoTrade({ th }) {
         </Field>
         <Field label="Princípios-guia" theme={theme}>
           <Quote theme={theme}>
-            Profissionais pensam, sentem e agem diferente de perdedores. Mudar é difícil, mas
-            virar profissional exige comprometimento com essa mudança de postura.
+            PROFESSIONALS think, feel and act differently than losers. 
+            Changing is hard, but if you want to be a professional trader, 
+            you must commit to change your personality.
           </Quote>
           <Quote theme={theme}>
-            Ir all-in no trading é fazer o que sei ser necessário para ter sucesso. Não vou
-            chegar lá mais rápido sendo exceção — preciso cortar a ideia de que "é diferente"
-            pra mim e realmente me comprometer.
+            Deciding to go ALL IN in trading is about doing what you know is NECESSARY in order to be successful. 
+            You won't be there QUICKER, you're NOT THE EXCEPTION. 
+            You need to cut the idea that "its different" for you and actually COMPROMISE.
           </Quote>
           <Quote theme={theme}>
-            No mercado, humildade é essencial — e às vezes a pessoa mais humilde que acho
-            que sou ainda precisa melhorar muito.
+            No mercado, você precisa ser muito humilde — e às vezes, a pessoa mais humilde que você
+            acha que é, ainda precisa melhorar muito.
           </Quote>
         </Field>
       </Accordion>
