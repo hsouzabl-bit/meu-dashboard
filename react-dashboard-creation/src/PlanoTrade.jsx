@@ -20,6 +20,8 @@ import React, { useState } from "react";
   ---------------------------------------------------------------
 */
 
+const ACCENT = "#4ecb8d";
+
 const FALLBACK_THEME = {
   bg: "#0f1115",
   card: "#171a21",
@@ -27,18 +29,18 @@ const FALLBACK_THEME = {
   border: "#2a2f3a",
   text: "#eef1f6",
   textMuted: "#9aa3b2",
-  accent: "#4ecb8d",
+  accent: ACCENT,
 };
 
 function useTheme(th) {
   return {
     bg: th?.bg ?? FALLBACK_THEME.bg,
-    card: th?.card ?? FALLBACK_THEME.card,
-    cardAlt: th?.cardAlt ?? th?.card ?? FALLBACK_THEME.cardAlt,
+    card: th?.cardBg ?? th?.surface ?? FALLBACK_THEME.card,
+    cardAlt: th?.bg ?? FALLBACK_THEME.cardAlt,
     border: th?.border ?? FALLBACK_THEME.border,
     text: th?.text ?? FALLBACK_THEME.text,
-    textMuted: th?.textMuted ?? th?.muted ?? FALLBACK_THEME.textMuted,
-    accent: th?.accent ?? FALLBACK_THEME.accent,
+    textMuted: th?.textMuted ?? th?.textSub ?? FALLBACK_THEME.textMuted,
+    accent: ACCENT,
   };
 }
 
@@ -413,11 +415,12 @@ export default function PlanoTrade({ th }) {
   return (
     <div
       style={{
-        maxWidth: "calc(75vw - 240px)",
+        width: "100%",
         margin: "0 auto",
-        padding: "24px 0 60px",
+        padding: "24px 32px 60px",
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         color: theme.text,
+        boxSizing: "border-box",
       }}
     >
       <style>{`
