@@ -178,6 +178,8 @@ export default function App(){
   const [activeNav,setActiveNav]     = useState("Dashboard");
   const [dark,setDark]               = useState(true); // dark como padrão agora
   const [sidebarExpandido,setSidebarExpandido] = useState(false);
+  const [seqExpandido, setSeqExpandido] = useState(false);
+
   const [diaSel,setDiaSel]           = useState(null);
   const hoje = new Date();
   const [mesVis,setMesVis]       = useState(hoje.getMonth());
@@ -652,84 +654,32 @@ useEffect(()=>{
             </div>
           </div>
         </div>
-        <div style={{display:"flex",gap:16,marginBottom:18,alignItems:"flex-start"}}>
-          <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
-              <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase"}}>Calendário de Consistência</span>
-              <div style={{display:"flex",gap:14,fontSize:11,color:th.textMuted}}>
-                {[[ACCENT_ATUAL,"Perfeito"],["#d1a53d","Quase"],["#d9776b","Fraco"],["#94a3b8","—"]].map(([c,l])=>(
-                  <span key={l} style={{display:"flex",alignItems:"center",gap:5}}>
-                    <span style={{width:9,height:9,borderRadius:3,background:c,display:"inline-block"}}/>{l}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-              <span style={{fontWeight:700,fontSize:15,color:th.text}}>{MESES_PT[mesVis]} de {anoVis}</span>
-              <div style={{display:"flex",gap:4}}>
-                <button onClick={()=>{setDiaSel(null);if(mesVis===0){setMesVis(11);setAnoVis(a=>a-1);}else setMesVis(m=>m-1);}} style={{border:`1px solid ${th.border2}`,background:th.surface,borderRadius:7,width:30,height:30,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:th.text}}>‹</button>
-                <button onClick={()=>{setDiaSel(null);if(mesVis===11){setMesVis(0);setAnoVis(a=>a+1);}else setMesVis(m=>m+1);}} style={{border:`1px solid ${th.border2}`,background:th.surface,borderRadius:7,width:30,height:30,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:th.text}}>›</button>
-              </div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:5,marginBottom:5}}>
-              {DIAS_SEMANA.map(ds=><div key={ds} style={{textAlign:"center",fontSize:11,fontWeight:700,color:th.textMuted,padding:"4px 0"}}>{ds}</div>)}
-            </div>
-            {semanas.map((sem,si)=>(
-              <div key={si} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:5,marginBottom:5}}>
-                {sem.map((cel,di)=>(
-                  <div key={di}
-                    onClick={()=>{if(cel.num)setDiaSel(diaSel===cel.num?null:cel.num);}}
-                    style={{
-                      background:cel.num?(th.calDayBg[cel.tipo]||th.calDayBg[0]):"transparent",
-                      border:cel.num===diaSel?`2px solid ${ACCENT_ATUAL}`:`1px solid ${cel.num?(th.calDayBorder[cel.tipo]||"transparent"):"transparent"}`,
-                      borderRadius:9,padding:"13px 0",textAlign:"center",fontSize:13,
-                      fontWeight:cel.num===diaSel?800:500,
-                      color:cel.num?(cel.tipo===null?th.textMuted:th.text):"transparent",
-                      cursor:cel.num?"pointer":"default",
-                      opacity:cel.num?1:0,
-                      transition:"all 0.15s",
-                    }}>
-                    {cel.num||""}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
 
-          <div style={{background:th.cardBg,borderRadius:14,padding:"22px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1,minWidth:260,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:16}}>Sequências Atuais</div>
-            {loading?Array(3).fill(0).map((_,i)=><div key={i} style={{padding:"10px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>)
-              :[
-                {label:"Estudo 4h",        dias:seq[0]?.dias||0, pr:seq[0]?.pr||0, icon:<Ico.Clock  s={15} c={th.textMuted}/>},
-                {label:"Leitura 6 páginas",dias:seq[1]?.dias||0, pr:seq[1]?.pr||0, icon:<Ico.Book   s={15} c={th.textMuted}/>},
-                {label:"Vídeo aulas 30min",dias:seq[2]?.dias||0, pr:seq[2]?.pr||0, icon:<Ico.Camera s={15} c={th.textMuted}/>},
-              ].map(s=>(
-                <div key={s.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
-                  <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>{s.icon}{s.label}</span>
-                  <span style={{display:"flex",alignItems:"center",gap:12}}>
-                    <span style={{fontSize:14}}>
-                      <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{s.dias}</span>
-                      <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
-                    </span>
-                    <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {s.pr||0}</span>
+        <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
+          <div onClick={()=>setSeqExpandido(v=>!v)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
+            <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase"}}>Sequências Atuais</span>
+            <span style={{color:th.textMuted,fontSize:13}}>{seqExpandido?"▲":"▼"}</span>
+          </div>
+          {seqExpandido && (
+            <div style={{marginTop:16}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
+                <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.Clock s={15} c={th.textMuted}/>Estudo 4h</span>
+                <span style={{display:"flex",alignItems:"center",gap:12}}>
+                  <span style={{fontSize:14}}>
+                    <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{seq[0]?.dias||0}</span>
+                    <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
                   </span>
-                </div>
-              ))
-            }
-            <div style={{fontWeight:700,fontSize:10,color:th.textMuted,letterSpacing:1,textTransform:"uppercase",margin:"18px 0 10px"}}>Rotinas de Mercado</div>
-            {loading?Array(7).fill(0).map((_,i)=><div key={i} style={{padding:"9px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>)
-              :rotinas.map(r=>(
-                <div key={r.nome} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${th.border}`}}>
-                  <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>
-                    {r.dias>0?<Ico.Check s={14} c={ACCENT_ATUAL}/>:<Ico.X s={14} c="#f87171"/>}
-                    {r.nome}
-                  </span>
-                  <span style={{display:"flex",alignItems:"center",gap:12}}>
-                    <span style={{fontSize:14}}>
-                      <span style={{fontWeight:800,color:r.dias>0?ACCENT_ATUAL:th.textMuted}}>{r.dias}</span>
-                      <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
-                    </span>
-                    <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {r.pr||0}</span>
+                  <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {seq[0]?.pr||0}</span>
+                </span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0"}}>
+                <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.Repeat s={15} c={th.textMuted}/>Replays (mês)</span>
+                <span style={{fontSize:14,fontWeight:800,color:ACCENT_ATUAL}}>{cardReplays}</span>
+              </div>
+            </div>
+          )}
+        </div>
+        
                   </span>
                 </div>
               ))
@@ -737,43 +687,17 @@ useEffect(()=>{
           </div>
         </div>
 
-        <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
-          <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:16}}>
-              Progresso das Metas
-              <span style={{fontWeight:500,fontSize:12,color:th.textMuted,textTransform:"none",letterSpacing:0,marginLeft:8}}>(acumulado no ano)</span>
-            </div>
-            {loading?Array(4).fill(0).map((_,i)=><div key={i} style={{padding:"13px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>):<>
-              <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend    s={16} c={ACCENT_ATUAL}/>} value={`${m.horasEstudo??0}h`}   meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT_ATUAL}/>
-              <ProgressBar th={th} label="Páginas lidas"   icon={<Ico.BookOpen s={16} c={ACCENT_ATUAL}/>} value={m.paginasLidas??0}         meta={METAS_ANUAIS.paginasLidas}      pctVal={pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)} color={ACCENT_ATUAL}/>
-              <ProgressBar th={th} label="Vídeo aulas"     icon={<Ico.Play     s={16} c={ACCENT_ATUAL}/>} value={minParaHM((m.videoAulasH??0)*60+(m.videoAulasM??0))} meta={`${METAS_ANUAIS.videoAulas}h`} pctVal={pct((m.videoAulasH??0)*60+(m.videoAulasM??0),METAS_ANUAIS.videoAulas*60)} color={ACCENT_ATUAL}/>
-              <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat   s={16} c={ACCENT_ATUAL}/>} value={m.replays??0}              meta={METAS_ANUAIS.replays}           pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT_ATUAL}/>
-            </>}
+<div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
+          <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:16}}>
+            Progresso das Metas
+            <span style={{fontWeight:500,fontSize:12,color:th.textMuted,textTransform:"none",letterSpacing:0,marginLeft:8}}>(acumulado no ano)</span>
           </div>
-
-          <div style={{background:th.cardBg,borderRadius:14,padding:"22px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1,minWidth:260,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:18}}>Resumo do Mês</div>
-            {loading?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{Array(4).fill(0).map((_,i)=><Skeleton key={i} h={70} th={th}/>)}</div>
-              :<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                {[
-                  {label:"Dias perfeitos",    val:resumo.diasPerfeitos??0,      color:ACCENT_ATUAL},
-                  {label:"Quase perfeitos",   val:resumo.diasQuasePerfeitos??0, color:"#d1a53d"},
-                  {label:"Dias fracos",       val:resumo.diasFracos??0,         color:"#d9776b"},
-                  {label:"Não registrados",   val:resumo.diasNaoRegistrados??0, color:th.textMuted},
-                ].map(item=>(
-                  <div key={item.label} style={{textAlign:"center",padding:"16px 8px",borderRadius:12,background:th.resumeBg,border:`1px solid ${th.border}`}}>
-                    <div style={{fontSize:11,color:th.textMuted,marginBottom:6,fontWeight:500}}>{item.label}</div>
-                    <div style={{fontSize:32,fontWeight:800,color:item.color,lineHeight:1}}>{item.val}</div>
-                    <div style={{fontSize:12,color:th.textMuted,marginTop:5}}>{totalDiasMes>0?Math.round((item.val/totalDiasMes)*100):0}%</div>
-                  </div>
-                ))}
-              </div>
-            }
-          </div>
+          {loading?Array(2).fill(0).map((_,i)=><div key={i} style={{padding:"13px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>):<>
+            <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend  s={16} c={ACCENT_ATUAL}/>} value={`${m.horasEstudo??0}h`} meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT_ATUAL}/>
+            <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat s={16} c={ACCENT_ATUAL}/>} value={m.replays??0}          meta={METAS_ANUAIS.replays}            pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT_ATUAL}/>
+          </>}
         </div>
       </main>
-    );
-  };
 
   return(
     <div style={{background:th.bg,minHeight:"100vh",padding:"22px 26px",fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s"}}>
