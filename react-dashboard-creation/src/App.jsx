@@ -191,6 +191,43 @@ export default function App(){
     const week1=new Date(d.getFullYear(),0,4);
     return { ano:d.getFullYear(), semana:1+Math.round(((d-week1)/86400000-3+(week1.getDay()+6)%7)/7) };
   }
+  const [planoSemana, setPlanoSemana] = useState([]);
+  const [pontosAtencao, setPontosAtencao] = useState([]);
+  const [novoPlano, setNovoPlano] = useState("");
+  const [novoPonto, setNovoPonto] = useState("");
+  const [chaveSemanaAtual, setChaveSemanaAtual] = useState("");
+
+  function salvarDashboardSemanalApp(novoPlanoArr, novosPontosArr){
+    const { ano, semana } = semanaISOApp(new Date());
+    const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
+    const payload = { chave, ano, semana, planoSemana: novoPlanoArr, pontosAtencao: novosPontosArr };
+    fetch(`${API_DIARIO}?action=salvarDashboardSemanal&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(()=>{});
+  }
+
+  function addPlanoItem(){
+    if(!novoPlano.trim()) return;
+    const novo = [...planoSemana, { id: Date.now(), texto: novoPlano.trim() }];
+    setPlanoSemana(novo);
+    setNovoPlano("");
+    salvarDashboardSemanalApp(novo, pontosAtencao);
+  }
+  function removePlanoItem(id){
+    const novo = planoSemana.filter(p=>p.id!==id);
+    setPlanoSemana(novo);
+    salvarDashboardSemanalApp(novo, pontosAtencao);
+  }
+  function addPontoItem(){
+    if(!novoPonto.trim()) return;
+    const novo = [...pontosAtencao, { id: Date.now(), texto: novoPonto.trim() }];
+    setPontosAtencao(novo);
+    setNovoPonto("");
+    salvarDashboardSemanalApp(planoSemana, novo);
+  }
+  function removePontoItem(id){
+    const novo = pontosAtencao.filter(p=>p.id!==id);
+    setPontosAtencao(novo);
+    salvarDashboardSemanalApp(planoSemana, novo);
+  }
 
   const th = dark ? DARK : LIGHT;
   const ACCENT_ATUAL = dark ? ACCENT_DARK : ACCENT_LIGHT;
@@ -250,6 +287,18 @@ useEffect(()=>{
       .then(j=>{
         const found=(j.objetivos||[]).find(o=>o.chave===chave);
         setObjetivosSemanaAtual(found||null);
+      })
+      .catch(()=>{});
+
+   fetch(`${API_DIARIO}?action=lerDashboardSemanal`)
+      .then(r=>r.json())
+      .then(j=>{
+        const { ano, semana } = semanaISOApp(new Date());
+        const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
+        setChaveSemanaAtual(chave);
+        const found = (j.semanas||[]).find(s=>s.chave===chave);
+        setPlanoSemana(found?.planoSemana || []);
+        setPontosAtencao(found?.pontosAtencao || []);
       })
       .catch(()=>{});
   },[]);
@@ -562,6 +611,47 @@ useEffect(()=>{
             </div>
           </div>
         )}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:18}}>
+          <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+              <Ico.Clipboard s={16} c={ACCENT_ATUAL}/>
+              <span style={{fontWeight:700,fontSize:12,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.06em"}}>Plano da Semana</span>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
+              {planoSemana.map(p=>(
+                <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
+                  <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1}}>{p.texto}</span>
+                  <span onClick={()=>removePlanoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
+                </div>
+              ))}
+              {planoSemana.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum item ainda.</div>}
+            </div>
+            <div style={{display:"flex",gap:6}}>
+              <input value={novoPlano} onChange={e=>setNovoPlano(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlanoItem()} placeholder="Novo item do plano..." style={{flex:1,fontSize:13,padding:"8px 12px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",background:th.resumeBg,color:th.text}}/>
+              <button onClick={addPlanoItem} style={{background:ACCENT_ATUAL,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button>
+            </div>
+          </div>
+
+          <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+              <span style={{width:18,height:18,borderRadius:"50%",background:"#c68888",color:"#1a1219",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>!</span>
+              <span style={{fontWeight:700,fontSize:12,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em"}}>Pontos de Atenção</span>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
+              {pontosAtencao.map(p=>(
+                <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
+                  <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1}}>{p.texto}</span>
+                  <span onClick={()=>removePontoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
+                </div>
+              ))}
+              {pontosAtencao.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum ponto ainda.</div>}
+            </div>
+            <div style={{display:"flex",gap:6}}>
+              <input value={novoPonto} onChange={e=>setNovoPonto(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPontoItem()} placeholder="Novo ponto de atenção..." style={{flex:1,fontSize:13,padding:"8px 12px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",background:th.resumeBg,color:th.text}}/>
+              <button onClick={addPontoItem} style={{background:th.resumeBg,color:"#c68888",border:`1px solid ${th.border2}`,borderRadius:8,padding:"8px 16px",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button>
+            </div>
+          </div>
+        </div>
         <div style={{display:"flex",gap:16,marginBottom:18,alignItems:"flex-start"}}>
           <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
