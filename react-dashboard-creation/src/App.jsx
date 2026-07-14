@@ -26,10 +26,10 @@ const LIGHT = {
 };
 // Paleta navy escura aprovada nos mockups — fundo bem escuro, cards levemente mais claros
 const DARK = {
-  bg:"#050506", surface:"#100E14", border:"#1f1e28", border2:"#282634",
-  text:"#f2f2f5", textSub:"#c4c3cc", textMuted:"#807f8c",
-  navActiveBg:"#1a2036", cardBg:"#131219", cardShadow:"0 1px 6px rgba(0,0,0,0.5)",
-  resumeBg:"#161520", skeletonA:"#1f1e28", skeletonB:"#282634",
+  bg:"#050506", surface:"#17151d", border:"#2a2833", border2:"#343240",
+  text:"#f2f2f5", textSub:"#c4c3cc", textMuted:"#8f8e9c",
+  navActiveBg:"#1e2440", cardBg:"#1a1820", cardShadow:"0 1px 6px rgba(0,0,0,0.5)",
+  resumeBg:"#211f28", skeletonA:"#2a2833", skeletonB:"#343240",
   calDayBg:{ 1:"#182420", 2:"#211f18", 3:"#211a1a", 0:"#161520" },
   calDayBorder:{ 1:"#3d6b52", 2:"#6b6142", 3:"#6b4444", 0:"transparent" },
 };
@@ -438,14 +438,15 @@ useEffect(()=>{
               </div>
             </div>
             {(dadosDiario?.graficoION2?.length||0) > 0 ? (
-              <svg viewBox="0 0 480 170" style={{width:"100%",height:170}}>
+{(dadosDiario?.graficoION2?.length||0) > 0 ? (
+              <svg viewBox="0 0 600 200" style={{width:"100%",height:"auto",display:"block"}}>
                 {(() => {
                   const pontosMes = dadosDiario.graficoION2.filter(p=>p.data.startsWith(`${anoVis}-${String(mesVis+1).padStart(2,"0")}`));
-                  if(pontosMes.length < 2) return <text x="240" y="85" textAnchor="middle" fontSize="12" fill={th.textMuted}>Dados insuficientes no mês</text>;
+                  if(pontosMes.length < 2) return <text x="300" y="100" textAnchor="middle" fontSize="13" fill={th.textMuted}>Dados insuficientes no mês</text>;
                   const vals = pontosMes.map(p=>p.valor);
                   const maxV = Math.max(...vals,0), minV = Math.min(...vals,0);
                   const range = (maxV-minV)||1;
-                  const padL=38,padR=10,padT=14,padB=20,W=480,H=170;
+                  const padL=48,padR=14,padT=18,padB=26,W=600,H=200;
                   const plotW=W-padL-padR, plotH=H-padT-padB;
                   const pts = pontosMes.map((p,i)=>({
                     ...p,
@@ -457,10 +458,20 @@ useEffect(()=>{
                   return (
                     <>
                       <line x1={padL} y1={zeroY} x2={W-padR} y2={zeroY} stroke={th.border2} strokeWidth="1" strokeDasharray="3,3"/>
+                      {[minV,(minV+maxV)/2,maxV].map((v,i)=>{
+                        const y = padT+plotH-((v-minV)/range)*plotH;
+                        return <text key={i} x={padL-8} y={y+4} textAnchor="end" fontSize="11" fill={th.textMuted}>{Math.round(v)}</text>;
+                      })}
                       <path d={`${linePath} L${pts[pts.length-1].x},${zeroY} L${pts[0].x},${zeroY} Z`} fill={ACCENT_ATUAL} opacity="0.08"/>
-                      <path d={linePath} fill="none" stroke={ACCENT_ATUAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d={linePath} fill="none" stroke={ACCENT_ATUAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                       {pts.map((p,i)=>(
-                        <circle key={i} cx={p.x} cy={p.y} r="3" fill={ACCENT_ATUAL} stroke={th.cardBg} strokeWidth="1.5"/>
+                        <g key={i}>
+                          <circle cx={p.x} cy={p.y} r="3.5" fill={ACCENT_ATUAL} stroke={th.cardBg} strokeWidth="2"/>
+                          {(i===pts.length-1 || i%3===0) && (
+                            <text x={p.x} y={p.y-10} textAnchor="middle" fontSize="11" fontWeight="700" fill={th.text}>{p.valor>=0?"+":""}{Math.round(p.valor)}</text>
+                          )}
+                          <text x={p.x} y={H-6} textAnchor="middle" fontSize="10" fill={th.textMuted}>{p.data.slice(8,10)}/{p.data.slice(5,7)}</text>
+                        </g>
                       ))}
                     </>
                   );
@@ -468,12 +479,12 @@ useEffect(()=>{
               </svg>
             ) : <div style={{padding:"40px 0",textAlign:"center",color:th.textMuted,fontSize:12}}>Carregando gráfico...</div>}
 
-            {setupsMesLista.length>0 && (
-              <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
+  {setupsMesLista.length>0 && (
+              <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
                 {setupsMesLista.map(s=>(
-                  <div key={s.nome} style={{flex:1,minWidth:100,background:th.resumeBg,borderRadius:8,padding:"6px 10px",border:`1px solid ${th.border}`}}>
-                    <div style={{fontSize:10,fontWeight:600,color:th.textMuted}}>{s.nome}</div>
-                    <div style={{fontSize:11,fontWeight:800,color:s.financ>=0?"#2f7d52":"#a83f31"}}>{s.wr}% · {s.financ>=0?"+":"−"}{Math.abs(s.financ).toFixed(0)}</div>
+                  <div key={s.nome} style={{flex:1,minWidth:130,background:th.resumeBg,borderRadius:10,padding:"12px 16px",border:`1px solid ${th.border}`}}>
+                    <div style={{fontSize:12,fontWeight:600,color:th.textMuted,marginBottom:4}}>{s.nome}</div>
+                    <div style={{fontSize:15,fontWeight:800,color:s.financ>=0?"#2f7d52":"#a83f31"}}>{s.wr}% · {s.financ>=0?"+":"−"}{Math.abs(s.financ).toFixed(0)}</div>
                   </div>
                 ))}
               </div>
@@ -481,34 +492,36 @@ useEffect(()=>{
           </div>
 
           <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative"}}>
-            <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:10,display:"block"}}>{MESES_PT[mesVis]}</span>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
+<span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,display:"block"}}>{MESES_PT[mesVis]}</span>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:5}}>
               {miniCalDias.map(({dia,r})=>{
                 const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1c2e24":"#eaf7f0") : (dark?"#2c1c1a":"#fbeceb"));
                 return (
                   <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
-                    style={{aspectRatio:"1",borderRadius:5,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
+                    style={{aspectRatio:"1",borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
                     {dia}
                   </div>
                 );
               })}
             </div>
-            {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 2"] && (() => {
+{diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 2"] && (() => {
               const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
               const r = tradesPorData[key]["ION 2"];
               return (
-                <div style={{position:"absolute",top:46,right:8,left:8,background:th.cardBg,borderRadius:12,padding:"14px 16px",boxShadow:"0 8px 24px rgba(0,0,0,0.3)",border:`1px solid ${th.border}`,zIndex:10}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                    <span style={{fontSize:12,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
-                    <span onClick={()=>setDiaSel(null)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
+                <>
+                  <div onClick={()=>setDiaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
+                  <div style={{position:"absolute",top:52,right:8,left:8,background:th.cardBg,borderRadius:14,padding:"18px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.4)",border:`1px solid ${th.border}`,zIndex:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                      <span style={{fontSize:14,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
+                    </div>
+                    <div style={{display:"flex",gap:16,marginBottom:14}}>
+                      <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?"#2f7d52":"#a83f31"}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
+                      <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
+                      <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
+                    </div>
+                    <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer"}}>Mais detalhes →</div>
                   </div>
-                  <div style={{display:"flex",gap:12,marginBottom:10}}>
-                    <div><div style={{fontSize:15,fontWeight:800,color:r.resultado>=0?"#2f7d52":"#a83f31"}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:10,color:th.textMuted}}>Resultado</div></div>
-                    <div><div style={{fontSize:15,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:10,color:th.textMuted}}>Operações</div></div>
-                    <div><div style={{fontSize:15,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:10,color:th.textMuted}}>Acerto</div></div>
-                  </div>
-                  <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:11,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer"}}>Mais detalhes →</div>
-                </div>
+                </>
               );
             })()}
           </div>
