@@ -182,6 +182,15 @@ export default function App(){
   const hoje = new Date();
   const [mesVis,setMesVis]       = useState(hoje.getMonth());
   const [anoVis,setAnoVis]       = useState(hoje.getFullYear());
+  const [dadosMes, setDadosMes] = useState(null);
+  const [objetivosSemanaAtual, setObjetivosSemanaAtual] = useState(null);
+
+  function semanaISOApp(date){
+    const d=new Date(date); d.setHours(0,0,0,0);
+    d.setDate(d.getDate()+3-(d.getDay()+6)%7);
+    const week1=new Date(d.getFullYear(),0,4);
+    return { ano:d.getFullYear(), semana:1+Math.round(((d-week1)/86400000-3+(week1.getDay()+6)%7)/7) };
+  }
 
   const th = dark ? DARK : LIGHT;
   const ACCENT_ATUAL = dark ? ACCENT_DARK : ACCENT_LIGHT;
@@ -222,10 +231,27 @@ export default function App(){
     setLoadingRevisoes(false);
   };
 
-  useEffect(()=>{
+useEffect(()=>{
     carregar();
     carregarDiario();
     carregarRevisoes();
+
+    const ini = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-01`;
+    const fim = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+    fetch(`${API_DIARIO}?inicio=${ini}&fim=${fim}`)
+      .then(r=>r.json())
+      .then(j=>{ if(!j.erro) setDadosMes(j); })
+      .catch(()=>{});
+
+    const {ano,semana} = semanaISOApp(new Date());
+    const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
+    fetch(`${API_DIARIO}?action=lerObjetivos`)
+      .then(r=>r.json())
+      .then(j=>{
+        const found=(j.objetivos||[]).find(o=>o.chave===chave);
+        setObjetivosSemanaAtual(found||null);
+      })
+      .catch(()=>{});
   },[]);
 
   const m         = dados?.metricas    || {};
@@ -317,6 +343,46 @@ export default function App(){
       </div>
     );
     return (
+      const GRUPO_SETUP = { TRM:"#6B8CC4", FQ:"#B98FC2", TC:"#5FA8AE" };
+    function corWRDash(wr){
+      if(wr>=60) return dark?{bg:"#182420",border:"#3d6b52",text:"#7fb89a"}:{bg:"#eaf7f0",border:"#5cb583",text:"#2f7d52"};
+      if(wr>=45) return dark?{bg:"#211f18",border:"#6b6142",text:"#c2b184"}:{bg:"#fbf6e6",border:"#d1a53d",text:"#8a6f1a"};
+      return dark?{bg:"#211a1a",border:"#6b4444",text:"#c68888"}:{bg:"#fbeceb",border:"#d9776b",text:"#a83f31"};
+    }
+    function classificarSetup(nome){
+      const n = (nome||"").toLowerCase();
+      if(n === "trm") return {grupo:"TRM", label:"TRM"};
+      if(n === "fq") return {grupo:"FQ", label:"FQ"};
+      if(n.includes("meio de mov")) return {grupo:"TC", label:"TC Meio de Mov."};
+      if(n.includes("supertrend")) return {grupo:"TC", label:"TC Supertrend"};
+      if(n.includes("pós bo")||n.includes("pos bo")) return {grupo:"TC", label:"TC Pós BO"};
+      if(n.includes("pré bo")||n.includes("pre bo")) return {grupo:"TC", label:"TC Pré BO"};
+      return null;
+    }
+    const setupsClassificados = {};
+    (dadosDiario?.setups||[]).forEach(s=>{
+      const c = classificarSetup(s.nome);
+      if(c) setupsClassificados[c.label] = { ...s, ...c };
+    });
+    const setupsLinhasDash = [
+      [setupsClassificados["TRM"], setupsClassificados["TC Pré BO"]],
+      [setupsClassificados["FQ"], setupsClassificados["TC Pós BO"]],
+      [setupsClassificados["TC Meio de Mov."], setupsClassificados["TC Supertrend"]],
+    ];
+    const setupsMesLista = (dadosMes?.setups||[]).map(s=>{
+      const c = classificarSetup(s.nome);
+      return c ? { nome:c.label, wr:s.taxaAcerto, financ:s.financTotal } : null;
+    }).filter(Boolean);
+    const financMes = dadosMes?.contas?.["ION 2"]?.financTotal ?? null;
+    const wrMes = dadosMes?.contas?.["ION 2"]?.taxaAcerto ?? null;
+
+    const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
+    const miniCalDias = [];
+    for(let d=1; d<=diasNoMesAtual; d++){
+      const dataStr = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+      const r = tradesPorData[dataStr]?.["ION 2"] || tradesPorData[dataStr]?.["ion 2"] || null;
+      miniCalDias.push({ dia:d, dataStr, r });
+    }
       <main style={{flex:1,padding:"0 8px 40px",overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
           <div>
@@ -359,6 +425,130 @@ export default function App(){
           </div>
         )}
 
+        <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:16,marginBottom:18}}>
+          <div style={{background:th.cardBg,borderRadius:14,padding:"20px 22px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <span style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em"}}>Resultados do Mês</span>
+              <div style={{display:"flex",alignItems:"baseline",gap:8}}>
+                <span style={{fontSize:18,fontWeight:800,color:financMes==null?th.textMuted:(financMes>=0?"#2f7d52":"#a83f31")}}>
+                  {financMes==null?"—":(financMes>=0?"+":"−")+"R$ "+Math.abs(financMes).toFixed(0)}
+                </span>
+                <span style={{fontSize:11,color:th.textMuted}}>{wrMes!=null?`WR ${wrMes}%`:""}</span>
+              </div>
+            </div>
+            {(dadosDiario?.graficoION2?.length||0) > 0 ? (
+              <svg viewBox="0 0 480 170" style={{width:"100%",height:170}}>
+                {(() => {
+                  const pontosMes = dadosDiario.graficoION2.filter(p=>p.data.startsWith(`${anoVis}-${String(mesVis+1).padStart(2,"0")}`));
+                  if(pontosMes.length < 2) return <text x="240" y="85" textAnchor="middle" fontSize="12" fill={th.textMuted}>Dados insuficientes no mês</text>;
+                  const vals = pontosMes.map(p=>p.valor);
+                  const maxV = Math.max(...vals,0), minV = Math.min(...vals,0);
+                  const range = (maxV-minV)||1;
+                  const padL=38,padR=10,padT=14,padB=20,W=480,H=170;
+                  const plotW=W-padL-padR, plotH=H-padT-padB;
+                  const pts = pontosMes.map((p,i)=>({
+                    ...p,
+                    x: padL+(i/(pontosMes.length-1))*plotW,
+                    y: padT+plotH-((p.valor-minV)/range)*plotH,
+                  }));
+                  const zeroY = padT+plotH-((0-minV)/range)*plotH;
+                  const linePath = pts.map((p,i)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ");
+                  return (
+                    <>
+                      <line x1={padL} y1={zeroY} x2={W-padR} y2={zeroY} stroke={th.border2} strokeWidth="1" strokeDasharray="3,3"/>
+                      <path d={`${linePath} L${pts[pts.length-1].x},${zeroY} L${pts[0].x},${zeroY} Z`} fill={ACCENT_ATUAL} opacity="0.08"/>
+                      <path d={linePath} fill="none" stroke={ACCENT_ATUAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      {pts.map((p,i)=>(
+                        <circle key={i} cx={p.x} cy={p.y} r="3" fill={ACCENT_ATUAL} stroke={th.cardBg} strokeWidth="1.5"/>
+                      ))}
+                    </>
+                  );
+                })()}
+              </svg>
+            ) : <div style={{padding:"40px 0",textAlign:"center",color:th.textMuted,fontSize:12}}>Carregando gráfico...</div>}
+
+            {setupsMesLista.length>0 && (
+              <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
+                {setupsMesLista.map(s=>(
+                  <div key={s.nome} style={{flex:1,minWidth:100,background:th.resumeBg,borderRadius:8,padding:"6px 10px",border:`1px solid ${th.border}`}}>
+                    <div style={{fontSize:10,fontWeight:600,color:th.textMuted}}>{s.nome}</div>
+                    <div style={{fontSize:11,fontWeight:800,color:s.financ>=0?"#2f7d52":"#a83f31"}}>{s.wr}% · {s.financ>=0?"+":"−"}{Math.abs(s.financ).toFixed(0)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative"}}>
+            <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:10,display:"block"}}>{MESES_PT[mesVis]}</span>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
+              {miniCalDias.map(({dia,r})=>{
+                const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1c2e24":"#eaf7f0") : (dark?"#2c1c1a":"#fbeceb"));
+                return (
+                  <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
+                    style={{aspectRatio:"1",borderRadius:5,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
+                    {dia}
+                  </div>
+                );
+              })}
+            </div>
+            {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 2"] && (() => {
+              const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
+              const r = tradesPorData[key]["ION 2"];
+              return (
+                <div style={{position:"absolute",top:46,right:8,left:8,background:th.cardBg,borderRadius:12,padding:"14px 16px",boxShadow:"0 8px 24px rgba(0,0,0,0.3)",border:`1px solid ${th.border}`,zIndex:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                    <span style={{fontSize:12,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
+                    <span onClick={()=>setDiaSel(null)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
+                  </div>
+                  <div style={{display:"flex",gap:12,marginBottom:10}}>
+                    <div><div style={{fontSize:15,fontWeight:800,color:r.resultado>=0?"#2f7d52":"#a83f31"}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:10,color:th.textMuted}}>Resultado</div></div>
+                    <div><div style={{fontSize:15,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:10,color:th.textMuted}}>Operações</div></div>
+                    <div><div style={{fontSize:15,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:10,color:th.textMuted}}>Acerto</div></div>
+                  </div>
+                  <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:11,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer"}}>Mais detalhes →</div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        <div style={{marginBottom:18}}>
+          <div style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Status dos Setups</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {setupsLinhasDash.map((linha,li)=>(
+              <div key={li} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                {linha.map((s,ci)=> s ? (
+                  <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`}}>
+                    <span style={{fontSize:12.5,fontWeight:700,color:th.text}}>{s.label}</span>
+                    <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                      <span style={{fontSize:11,fontWeight:700,color:corWRDash(s.taxaAcerto).text,background:corWRDash(s.taxaAcerto).bg,border:`1px solid ${corWRDash(s.taxaAcerto).border}`,borderRadius:20,padding:"1px 8px"}}>{s.taxaAcerto}%</span>
+                      <span style={{fontSize:10,color:th.textMuted}}>n={s.trades}</span>
+                    </div>
+                  </div>
+                ) : <div key={ci} style={{padding:"10px 14px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:11,color:th.textMuted,display:"flex",alignItems:"center"}}>Sem dados ainda</div>)}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {objetivosSemanaAtual && (objetivosSemanaAtual.objetivos||[]).length>0 && (
+          <div style={{marginBottom:18,background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <span style={{fontSize:14}}>🎯</span>
+              <span style={{fontWeight:700,fontSize:11.5,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.06em"}}>Objetivos da Semana</span>
+            </div>
+            <div style={{fontSize:10,color:th.textMuted,marginBottom:10}}>Sincronizado com a aba Objetivos</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
+              {objetivosSemanaAtual.objetivos.map(o=>(
+                <div key={o.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5,opacity:o.feito?0.55:1}}>
+                  <span style={{fontSize:10,fontWeight:700,padding:"1px 8px",borderRadius:20,background:th.navActiveBg,color:ACCENT_ATUAL,width:"fit-content"}}>{o.categoria}</span>
+                  <span style={{fontSize:12,color:th.text,textDecoration:o.feito?"line-through":"none",lineHeight:1.4}}>{o.texto}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div style={{display:"flex",gap:16,marginBottom:18,alignItems:"flex-start"}}>
           <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
