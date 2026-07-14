@@ -342,8 +342,8 @@ useEffect(()=>{
         <PlanoTrade th={th}/>
       </div>
     );
-    return (
-      const GRUPO_SETUP = { TRM:"#6B8CC4", FQ:"#B98FC2", TC:"#5FA8AE" };
+
+    const GRUPO_SETUP = { TRM:"#6B8CC4", FQ:"#B98FC2", TC:"#5FA8AE" };
     function corWRDash(wr){
       if(wr>=60) return dark?{bg:"#182420",border:"#3d6b52",text:"#7fb89a"}:{bg:"#eaf7f0",border:"#5cb583",text:"#2f7d52"};
       if(wr>=45) return dark?{bg:"#211f18",border:"#6b6142",text:"#c2b184"}:{bg:"#fbf6e6",border:"#d1a53d",text:"#8a6f1a"};
@@ -375,7 +375,6 @@ useEffect(()=>{
     }).filter(Boolean);
     const financMes = dadosMes?.contas?.["ION 2"]?.financTotal ?? null;
     const wrMes = dadosMes?.contas?.["ION 2"]?.taxaAcerto ?? null;
-
     const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
     const miniCalDias = [];
     for(let d=1; d<=diasNoMesAtual; d++){
@@ -383,6 +382,8 @@ useEffect(()=>{
       const r = tradesPorData[dataStr]?.["ION 2"] || tradesPorData[dataStr]?.["ion 2"] || null;
       miniCalDias.push({ dia:d, dataStr, r });
     }
+
+    return (
       <main style={{flex:1,padding:"0 8px 40px",overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
           <div>
