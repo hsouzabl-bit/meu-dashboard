@@ -13,7 +13,7 @@ const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:600, videoAulas:60, replay
 const DIAS_SEMANA   = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
 const MESES_PT      = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const ACCENT_LIGHT  = "#2563EB";
-const ACCENT_DARK   = "#6940c0";
+const ACCENT_DARK   = "#4C74C9"; // navy blue, aprovado no mockup
 const ACCENT        = ACCENT_LIGHT; // fallback para componentes externos
 
 const LIGHT = {
@@ -24,13 +24,14 @@ const LIGHT = {
   calDayBg:{ 1:"#e6faf2", 2:"#fff8e1", 3:"#fce4ec", 0:"#f5f5f5" },
   calDayBorder:{ 1:"#a7e9c9", 2:"#ffe082", 3:"#f48fb1", 0:"transparent" },
 };
+// Paleta navy escura aprovada nos mockups — fundo bem escuro, cards levemente mais claros
 const DARK = {
-  bg:"#111111", surface:"#161616", border:"#252525", border2:"#2e2e2e",
-  text:"#f0f2f5", textSub:"#c0c8d4", textMuted:"#707070",
-  navActiveBg:"#0d1a2e", cardBg:"#1c1c1c", cardShadow:"0 1px 6px rgba(0,0,0,0.5)",
-  resumeBg:"#111111", skeletonA:"#252525", skeletonB:"#2e2e2e",
-  calDayBg:{ 1:"#1a3028", 2:"#2d2710", 3:"#2d1420", 0:"#1e1e1e" },
-  calDayBorder:{ 1:"#2d6b4f", 2:"#856404", 3:"#8b3252", 0:"transparent" },
+  bg:"#050506", surface:"#100E14", border:"#1f1e28", border2:"#282634",
+  text:"#f2f2f5", textSub:"#c4c3cc", textMuted:"#807f8c",
+  navActiveBg:"#1a2036", cardBg:"#131219", cardShadow:"0 1px 6px rgba(0,0,0,0.5)",
+  resumeBg:"#161520", skeletonA:"#1f1e28", skeletonB:"#282634",
+  calDayBg:{ 1:"#182420", 2:"#211f18", 3:"#211a1a", 0:"#161520" },
+  calDayBorder:{ 1:"#3d6b52", 2:"#6b6142", 3:"#6b4444", 0:"transparent" },
 };
 
 function pct(v,total){ return !total?0:Math.min(100,Math.round((v/total)*100)); }
@@ -63,6 +64,12 @@ const Ico = {
   Moon:    ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
   Sun:     ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
   Calendar:({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  Growth:  ({s=19,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h20"/><rect x="3" y="15" width="3.2" height="5" rx="0.4"/><rect x="8.4" y="11" width="3.2" height="9" rx="0.4"/><rect x="13.8" y="7.5" width="3.2" height="12.5" rx="0.4"/><path d="M3 9.5c3-0.3 6-1.6 8.2-4C13 3.7 15 2.5 17.5 2.2"/><path d="M13.5 2.4l4-0.3 0.3 4"/></svg>,
+  Search:  ({s=16,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  Bell:    ({s=16,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
+  Expand:  ({s=14,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+  Collapse:({s=14,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
+  Clipboard:({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>,
 };
 
 function Skeleton({w="100%",h=20,r=6,th}){
@@ -106,7 +113,7 @@ function ProgressBar({label,icon,value,meta,pctVal,color,th}){
   );
 }
 
-function OntemCard({ontem,ontemData,th}){
+function OntemCard({ontem,ontemData,th,accent}){
   if(!ontem) return(
     <div style={{background:th.cardBg,borderRadius:14,padding:"16px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18}}>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -125,10 +132,10 @@ function OntemCard({ontem,ontemData,th}){
   return(
     <div style={{background:th.cardBg,borderRadius:14,padding:"16px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-        <Ico.Calendar s={14} c={ACCENT}/>
+        <Ico.Calendar s={14} c={accent}/>
         <span style={{fontSize:11,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Meu Dia Ontem</span>
         <span style={{fontSize:11,color:th.textMuted,marginLeft:2}}>— {ontemData}</span>
-        <span style={{marginLeft:8,fontSize:11,fontWeight:600,color:ACCENT,background:th.navActiveBg,padding:"2px 10px",borderRadius:20,border:`1px solid ${ACCENT}33`}}>{ontem.tipo}</span>
+        <span style={{marginLeft:8,fontSize:11,fontWeight:600,color:accent,background:th.navActiveBg,padding:"2px 10px",borderRadius:20,border:`1px solid ${accent}33`}}>{ontem.tipo}</span>
       </div>
       <div style={{display:"flex",gap:0,alignItems:"stretch"}}>
         <div style={{display:"flex",gap:8,flex:1}}>
@@ -146,7 +153,7 @@ function OntemCard({ontem,ontemData,th}){
         <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",alignContent:"center",flex:1.2}}>
           {ontem.habitos.map(h=>(
             <div key={h.nome} style={{display:"flex",alignItems:"center",gap:6,minWidth:"45%"}}>
-              {h.feito?<Ico.Check s={13} c={ACCENT}/>:<Ico.X s={13} c="#f87171"/>}
+              {h.feito?<Ico.Check s={13} c={accent}/>:<Ico.X s={13} c="#f87171"/>}
               <span style={{fontSize:12,color:h.feito?th.text:th.textMuted,fontWeight:h.feito?500:400}}>{h.nome}</span>
             </div>
           ))}
@@ -157,12 +164,10 @@ function OntemCard({ontem,ontemData,th}){
 }
 
 export default function App(){
-  // ── dados do GAS Estudos (Dashboard) ──
   const [dados,setDados]         = useState(null);
   const [erro,setErro]           = useState(null);
   const [loading,setLoading]     = useState(true);
 
-  // ── dados do GAS Diário (Estatísticas + Revisões) — cache central ──
   const [dadosDiario, setDadosDiario]         = useState(null);
   const [loadingDiario, setLoadingDiario]     = useState(true);
   const [revisoes, setRevisoes]               = useState([]);
@@ -170,17 +175,17 @@ export default function App(){
   const [tradesPorData, setTradesPorData]     = useState({});
   const [loadingRevisoes, setLoadingRevisoes] = useState(true);
 
-  const [activeNav,setActiveNav] = useState("Dashboard");
-  const [dark,setDark]           = useState(false);
-  const [diaSel,setDiaSel]       = useState(null);
+  const [activeNav,setActiveNav]     = useState("Dashboard");
+  const [dark,setDark]               = useState(true); // dark como padrão agora
+  const [sidebarExpandido,setSidebarExpandido] = useState(false);
+  const [diaSel,setDiaSel]           = useState(null);
   const hoje = new Date();
   const [mesVis,setMesVis]       = useState(hoje.getMonth());
   const [anoVis,setAnoVis]       = useState(hoje.getFullYear());
 
   const th = dark ? DARK : LIGHT;
-  const ACCENT = dark ? ACCENT_DARK : ACCENT_LIGHT;
+  const ACCENT_ATUAL = dark ? ACCENT_DARK : ACCENT_LIGHT;
 
-  // Carrega GAS Estudos (Dashboard)
   const carregar=()=>{
     setLoading(true);
     fetch(API_URL)
@@ -189,7 +194,6 @@ export default function App(){
       .catch(e=>{setErro(e.message);setLoading(false);});
   };
 
-  // Carrega GAS Diário — estatísticas
   const carregarDiario=(ini="",fi="")=>{
     setLoadingDiario(true);
     let url = API_DIARIO;
@@ -203,7 +207,6 @@ export default function App(){
       .catch(()=>setLoadingDiario(false));
   };
 
-  // Carrega GAS Diário — revisões (3 fetches em paralelo)
   const carregarRevisoes=async()=>{
     setLoadingRevisoes(true);
     try {
@@ -219,7 +222,6 @@ export default function App(){
     setLoadingRevisoes(false);
   };
 
-  // Carrega tudo na inicialização em paralelo
   useEffect(()=>{
     carregar();
     carregarDiario();
@@ -252,6 +254,25 @@ export default function App(){
   const metaP=modoDia?6:METAS_MENSAIS.paginasLidas;
   const metaV=modoDia?30:METAS_MENSAIS.videoAulas*60;
   const metaR=modoDia?1:METAS_MENSAIS.replays;
+
+  const navItems = [
+    {label:"Dashboard",      icon:<Ico.Target    s={18} c="currentColor"/>},
+    {label:"Plano de Trade", icon:<Ico.Clipboard s={18} c="currentColor"/>},
+    {label:"Estatísticas",   icon:<Ico.Trend     s={18} c="currentColor"/>},
+    {label:"Revisões",       icon:<Ico.Calendar  s={18} c="currentColor"/>},
+    {label:"Objetivos",      icon:<Ico.Target    s={18} c="currentColor"/>},
+    {label:"Estudos",        icon:<Ico.BookOpen  s={18} c="currentColor"/>},
+    {label:"Registros",      icon:<Ico.Book      s={18} c="currentColor"/>},
+    {label:"Hábitos",        icon:<Ico.Check     s={18} c="currentColor"/>},
+    {label:"Replays",        icon:<Ico.Repeat    s={18} c="currentColor"/>},
+  ];
+
+  const topNav = [
+    { label:"Overview", target:"Dashboard", href:null },
+    { label:"Diário",   target:null, href:"https://docs.google.com/spreadsheets/d/1tUS99Um-CjNX7mBpa4pXGzBsnb9jLPGes1UL7qJSUDI/edit" },
+    { label:"Studies",  target:null, href:"https://app.notion.com/p/Studies-292c21dc2bf88080a4f3d4610f8f7944" },
+    { label:"Reviews",  target:"Revisões", href:null },
+  ];
 
   const renderMain = () => {
     if(activeNav === "Estatísticas") return (
@@ -296,18 +317,14 @@ export default function App(){
       </div>
     );
     return (
-      <main style={{flex:1,padding:"36px 52px 56px",overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+      <main style={{flex:1,padding:"0 8px 40px",overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
           <div>
-            <h1 style={{fontSize:28,fontWeight:800,color:th.text,margin:0}}>Dashboard</h1>
+            <h1 style={{fontSize:26,fontWeight:700,color:th.text,margin:0,letterSpacing:"-0.02em"}}>Dashboard</h1>
             <p style={{fontSize:13,color:th.textMuted,margin:"4px 0 0"}}>Visão geral da sua evolução</p>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             {loading&&<span style={{fontSize:12,color:th.textMuted}}>Carregando...</span>}
-            <button onClick={()=>setDark(d=>!d)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:9,border:`1px solid ${th.border2}`,background:th.surface,cursor:"pointer",color:th.textSub,fontSize:12,fontWeight:600}}>
-              {dark?<Ico.Sun s={14} c={th.textSub}/>:<Ico.Moon s={14} c={th.textSub}/>}
-              {dark?"Claro":"Escuro"}
-            </button>
             <div style={{display:"flex",alignItems:"center",gap:7,border:`1px solid ${th.border2}`,borderRadius:9,padding:"8px 14px",background:th.surface,fontSize:13,color:th.text}}>
               <Ico.Calendar s={14} c={th.textMuted}/> {dataFormatada}
             </div>
@@ -325,29 +342,29 @@ export default function App(){
               <Skeleton h={12} w="55%" th={th}/><Skeleton h={32} w="70%" th={th}/><Skeleton h={8} th={th}/>
             </div>
           )):<>
-            <MetricCard th={th} icon={<Ico.Target s={20} c={ACCENT}/>} color={ACCENT} label={modoDia?"Tipo do dia":"Dia Perfeito"} value={modoDia?(cardTipo||"—"):(m.diaPerfeitoAtual??0)} unit="" sub={modoDia?undefined:`Melhor sequência: ${m.melhorSequencia??0} dias`}/>
-            <MetricCard th={th} icon={<Ico.Trend  s={20} c={ACCENT}/>} color={ACCENT} label="Horas de Estudo" value={modoDia?minParaHM((cardHoras||0)*60):`${cardHoras}h`} unit="" sub={`Meta: ${modoDia?"4h/dia":`${metaH}h/mês`}`} pctVal={pct(modoDia?(cardHoras||0)*60:cardHoras*60,metaH*60)} barColor={ACCENT}/>
-            <MetricCard th={th} icon={<Ico.BookOpen s={20} c={ACCENT}/>} color={ACCENT} label="Páginas Lidas" value={cardPaginas} unit="" sub={`Meta: ${modoDia?"6/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT}/>
-            <MetricCard th={th} icon={<Ico.Play   s={20} c={ACCENT}/>} color={ACCENT} label="Vídeo Aulas" value={minParaHM(cardVideo)} unit="" sub={`Meta: ${modoDia?"30min/dia":`${metaV/60}h/mês`}`} pctVal={pct(cardVideo,metaV)} barColor={ACCENT}/>
-            <MetricCard th={th} icon={<Ico.Repeat s={20} c={ACCENT}/>} color={ACCENT} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT}/>
+            <MetricCard th={th} icon={<Ico.Target s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label={modoDia?"Tipo do dia":"Dia Perfeito"} value={modoDia?(cardTipo||"—"):(m.diaPerfeitoAtual??0)} unit="" sub={modoDia?undefined:`Melhor sequência: ${m.melhorSequencia??0} dias`}/>
+            <MetricCard th={th} icon={<Ico.Trend  s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Horas de Estudo" value={modoDia?minParaHM((cardHoras||0)*60):`${cardHoras}h`} unit="" sub={`Meta: ${modoDia?"4h/dia":`${metaH}h/mês`}`} pctVal={pct(modoDia?(cardHoras||0)*60:cardHoras*60,metaH*60)} barColor={ACCENT_ATUAL}/>
+            <MetricCard th={th} icon={<Ico.BookOpen s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Páginas Lidas" value={cardPaginas} unit="" sub={`Meta: ${modoDia?"6/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT_ATUAL}/>
+            <MetricCard th={th} icon={<Ico.Play   s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Vídeo Aulas" value={minParaHM(cardVideo)} unit="" sub={`Meta: ${modoDia?"30min/dia":`${metaV/60}h/mês`}`} pctVal={pct(cardVideo,metaV)} barColor={ACCENT_ATUAL}/>
+            <MetricCard th={th} icon={<Ico.Repeat s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT_ATUAL}/>
           </>}
         </div>
 
-        {!loading && <OntemCard ontem={ontem} ontemData={ontemData} th={th}/>}
+        {!loading && <OntemCard ontem={ontem} ontemData={ontemData} th={th} accent={ACCENT_ATUAL}/>}
 
         {modoDia&&(
           <div style={{background:dark?"#1a3028":"#f0fdf8",border:`1px solid ${dark?"#2d6b4f":"#a7e9c9"}`,borderRadius:10,padding:"10px 18px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:13,color:ACCENT,fontWeight:600}}>📅 Exibindo dados de {String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}/{anoVis}</span>
-            <button onClick={()=>setDiaSel(null)} style={{fontSize:12,color:ACCENT,background:"none",border:`1px solid ${ACCENT}`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontWeight:600}}>Voltar ao mês</button>
+            <span style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:600}}>📅 Exibindo dados de {String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}/{anoVis}</span>
+            <button onClick={()=>setDiaSel(null)} style={{fontSize:12,color:ACCENT_ATUAL,background:"none",border:`1px solid ${ACCENT_ATUAL}`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontWeight:600}}>Voltar ao mês</button>
           </div>
         )}
 
         <div style={{display:"flex",gap:16,marginBottom:18,alignItems:"flex-start"}}>
           <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
-              <span style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase"}}>Calendário de Consistência</span>
+              <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase"}}>Calendário de Consistência</span>
               <div style={{display:"flex",gap:14,fontSize:11,color:th.textMuted}}>
-                {[[ACCENT,"Perfeito"],["#fbbf24","Quase"],["#f87171","Fraco"],["#94a3b8","—"]].map(([c,l])=>(
+                {[[ACCENT_ATUAL,"Perfeito"],["#d1a53d","Quase"],["#d9776b","Fraco"],["#94a3b8","—"]].map(([c,l])=>(
                   <span key={l} style={{display:"flex",alignItems:"center",gap:5}}>
                     <span style={{width:9,height:9,borderRadius:3,background:c,display:"inline-block"}}/>{l}
                   </span>
@@ -371,7 +388,7 @@ export default function App(){
                     onClick={()=>{if(cel.num)setDiaSel(diaSel===cel.num?null:cel.num);}}
                     style={{
                       background:cel.num?(th.calDayBg[cel.tipo]||th.calDayBg[0]):"transparent",
-                      border:cel.num===diaSel?`2px solid ${ACCENT}`:`1px solid ${cel.num?(th.calDayBorder[cel.tipo]||"transparent"):"transparent"}`,
+                      border:cel.num===diaSel?`2px solid ${ACCENT_ATUAL}`:`1px solid ${cel.num?(th.calDayBorder[cel.tipo]||"transparent"):"transparent"}`,
                       borderRadius:9,padding:"13px 0",textAlign:"center",fontSize:13,
                       fontWeight:cel.num===diaSel?800:500,
                       color:cel.num?(cel.tipo===null?th.textMuted:th.text):"transparent",
@@ -387,7 +404,7 @@ export default function App(){
           </div>
 
           <div style={{background:th.cardBg,borderRadius:14,padding:"22px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1,minWidth:260,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:16}}>Sequências Atuais</div>
+            <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:16}}>Sequências Atuais</div>
             {loading?Array(3).fill(0).map((_,i)=><div key={i} style={{padding:"10px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>)
               :[
                 {label:"Estudo 4h",        dias:seq[0]?.dias||0, pr:seq[0]?.pr||0, icon:<Ico.Clock  s={15} c={th.textMuted}/>},
@@ -398,7 +415,7 @@ export default function App(){
                   <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>{s.icon}{s.label}</span>
                   <span style={{display:"flex",alignItems:"center",gap:12}}>
                     <span style={{fontSize:14}}>
-                      <span style={{fontWeight:800,color:ACCENT}}>{s.dias}</span>
+                      <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{s.dias}</span>
                       <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
                     </span>
                     <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {s.pr||0}</span>
@@ -411,12 +428,12 @@ export default function App(){
               :rotinas.map(r=>(
                 <div key={r.nome} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${th.border}`}}>
                   <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}>
-                    {r.dias>0?<Ico.Check s={14} c={ACCENT}/>:<Ico.X s={14} c="#f87171"/>}
+                    {r.dias>0?<Ico.Check s={14} c={ACCENT_ATUAL}/>:<Ico.X s={14} c="#f87171"/>}
                     {r.nome}
                   </span>
                   <span style={{display:"flex",alignItems:"center",gap:12}}>
                     <span style={{fontSize:14}}>
-                      <span style={{fontWeight:800,color:r.dias>0?ACCENT:th.textMuted}}>{r.dias}</span>
+                      <span style={{fontWeight:800,color:r.dias>0?ACCENT_ATUAL:th.textMuted}}>{r.dias}</span>
                       <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
                     </span>
                     <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {r.pr||0}</span>
@@ -429,26 +446,26 @@ export default function App(){
 
         <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
           <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1.6,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:16}}>
+            <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:16}}>
               Progresso das Metas
               <span style={{fontWeight:500,fontSize:12,color:th.textMuted,textTransform:"none",letterSpacing:0,marginLeft:8}}>(acumulado no ano)</span>
             </div>
             {loading?Array(4).fill(0).map((_,i)=><div key={i} style={{padding:"13px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>):<>
-              <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend    s={16} c={ACCENT}/>} value={`${m.horasEstudo??0}h`}   meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT}/>
-              <ProgressBar th={th} label="Páginas lidas"   icon={<Ico.BookOpen s={16} c={ACCENT}/>} value={m.paginasLidas??0}         meta={METAS_ANUAIS.paginasLidas}      pctVal={pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)} color={ACCENT}/>
-              <ProgressBar th={th} label="Vídeo aulas"     icon={<Ico.Play     s={16} c={ACCENT}/>} value={minParaHM((m.videoAulasH??0)*60+(m.videoAulasM??0))} meta={`${METAS_ANUAIS.videoAulas}h`} pctVal={pct((m.videoAulasH??0)*60+(m.videoAulasM??0),METAS_ANUAIS.videoAulas*60)} color={ACCENT}/>
-              <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat   s={16} c={ACCENT}/>} value={m.replays??0}              meta={METAS_ANUAIS.replays}           pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT}/>
+              <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend    s={16} c={ACCENT_ATUAL}/>} value={`${m.horasEstudo??0}h`}   meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT_ATUAL}/>
+              <ProgressBar th={th} label="Páginas lidas"   icon={<Ico.BookOpen s={16} c={ACCENT_ATUAL}/>} value={m.paginasLidas??0}         meta={METAS_ANUAIS.paginasLidas}      pctVal={pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)} color={ACCENT_ATUAL}/>
+              <ProgressBar th={th} label="Vídeo aulas"     icon={<Ico.Play     s={16} c={ACCENT_ATUAL}/>} value={minParaHM((m.videoAulasH??0)*60+(m.videoAulasM??0))} meta={`${METAS_ANUAIS.videoAulas}h`} pctVal={pct((m.videoAulasH??0)*60+(m.videoAulasM??0),METAS_ANUAIS.videoAulas*60)} color={ACCENT_ATUAL}/>
+              <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat   s={16} c={ACCENT_ATUAL}/>} value={m.replays??0}              meta={METAS_ANUAIS.replays}           pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT_ATUAL}/>
             </>}
           </div>
 
           <div style={{background:th.cardBg,borderRadius:14,padding:"22px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,flex:1,minWidth:260,transition:"background 0.3s,border 0.3s"}}>
-            <div style={{fontWeight:800,fontSize:12,letterSpacing:0.8,color:th.text,textTransform:"uppercase",marginBottom:18}}>Resumo do Mês</div>
+            <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:18}}>Resumo do Mês</div>
             {loading?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{Array(4).fill(0).map((_,i)=><Skeleton key={i} h={70} th={th}/>)}</div>
               :<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                 {[
-                  {label:"Dias perfeitos",    val:resumo.diasPerfeitos??0,      color:ACCENT},
-                  {label:"Quase perfeitos",   val:resumo.diasQuasePerfeitos??0, color:"#fbbf24"},
-                  {label:"Dias fracos",       val:resumo.diasFracos??0,         color:"#f87171"},
+                  {label:"Dias perfeitos",    val:resumo.diasPerfeitos??0,      color:ACCENT_ATUAL},
+                  {label:"Quase perfeitos",   val:resumo.diasQuasePerfeitos??0, color:"#d1a53d"},
+                  {label:"Dias fracos",       val:resumo.diasFracos??0,         color:"#d9776b"},
                   {label:"Não registrados",   val:resumo.diasNaoRegistrados??0, color:th.textMuted},
                 ].map(item=>(
                   <div key={item.label} style={{textAlign:"center",padding:"16px 8px",borderRadius:12,background:th.resumeBg,border:`1px solid ${th.border}`}}>
@@ -466,70 +483,90 @@ export default function App(){
   };
 
   return(
-    <div style={{display:"flex",minHeight:"100vh",width:"100%",background:th.bg,fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s,color 0.3s"}}>
+    <div style={{background:th.bg,minHeight:"100vh",padding:"22px 26px",fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
         *{box-sizing:border-box;} button{font-family:inherit;} body{margin:0;display:block;min-width:unset;min-height:unset;}
       `}</style>
 
-      <aside style={{width:240,background:th.surface,borderRight:`1px solid ${th.border}`,display:"flex",flexDirection:"column",padding:"28px 0",flexShrink:0,position:"sticky",top:0,height:"100vh",overflowY:"auto",transition:"background 0.3s,border 0.3s"}}>
-        <div style={{padding:"0 24px 28px",display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:40,height:40,borderRadius:11,background:`linear-gradient(135deg,${ACCENT},${dark?'#1a9ed4':'#1a4bc4'})`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <Ico.Target s={20} c="#fff"/>
+      {/* TOP FLOATING PILL NAV */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <Ico.Growth c={ACCENT_ATUAL} s={19}/>
           </div>
-          <div>
-            <div style={{fontWeight:800,fontSize:12,color:th.text,letterSpacing:0.5}}>EVOLUÇÃO DIÁRIA</div>
-            <div style={{fontSize:10,color:th.textMuted,marginTop:2}}>Foco • Consistência • Resultado</div>
-          </div>
+          <span style={{fontWeight:700,fontSize:14,color:th.text}}>Evolução Diária</span>
         </div>
 
-        <nav style={{flex:1,padding:"0 12px",display:"flex",flexDirection:"column",gap:2}}>
-          {[
-            {label:"Dashboard",    icon:<Ico.Target   s={17} c="currentColor"/>},
-            {label:"Plano de Trade", icon:(
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="6" y="3" width="12" height="18" rx="2"/>
-                <path d="M9 3h6v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V3z"/>
-                <path d="m9 11 1.5 1.5L14 9"/>
-                <line x1="9" y1="16" x2="15" y2="16"/>
-              </svg>
-            )},
-            {label:"Estatísticas", icon:<Ico.Trend    s={17} c="currentColor"/>},
-            {label:"Estudos",      icon:<Ico.BookOpen s={17} c="currentColor"/>},
-            {label:"Revisões",     icon:<Ico.Calendar s={17} c="currentColor"/>},
-            {label:"Objetivos",    icon:<Ico.Target   s={17} c="currentColor"/>},
-            {label:"Registros",    icon:<Ico.Book     s={17} c="currentColor"/>},
-            {label:"Hábitos",      icon:<Ico.Check    s={17} c="currentColor"/>},
-            {label:"Replays",      icon:<Ico.Repeat   s={17} c="currentColor"/>},
-          ].map(item=>(
-            <button key={item.label} onClick={()=>setActiveNav(item.label)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:9,border:"none",cursor:"pointer",background:activeNav===item.label?th.navActiveBg:"transparent",color:activeNav===item.label?ACCENT:th.textSub,fontWeight:activeNav===item.label?700:500,fontSize:14,textAlign:"left",width:"100%",transition:"all 0.15s"}}>
-              {item.icon}<span>{item.label}</span>
-            </button>
-          ))}
+        <nav style={{display:"flex",gap:10}}>
+          {topNav.map(n=>{
+            const isActiveTarget = n.target && activeNav===n.target;
+            const content=(
+              <div onClick={()=>n.target && setActiveNav(n.target)} style={{
+                padding:"9px 22px",borderRadius:24,fontSize:12.5,fontWeight:600,whiteSpace:"nowrap",cursor:"pointer",
+                background:isActiveTarget?ACCENT_ATUAL:th.surface,
+                border:`1px solid ${isActiveTarget?ACCENT_ATUAL:th.border}`,
+                color:isActiveTarget?"#fff":th.textMuted,
+              }}>
+                {n.label}
+              </div>
+            );
+            return n.href
+              ? <a key={n.label} href={n.href} target="_blank" rel="noreferrer" style={{textDecoration:"none"}}>{content}</a>
+              : <div key={n.label}>{content}</div>;
+          })}
         </nav>
 
-        <div style={{padding:"20px 24px 0",borderTop:`1px solid ${th.border}`,margin:"16px 12px 0"}}>
-          <div style={{fontSize:26,color:ACCENT,lineHeight:1,marginBottom:6,fontWeight:800}}>"</div>
-          <p style={{fontSize:12,color:th.textSub,lineHeight:1.7,margin:0}}>Disciplina é fazer o que você sabe que é certo mesmo quando você não quer.</p>
-          <p style={{fontSize:11,color:th.textMuted,marginTop:8,marginBottom:0}}>– Luciano / Al Brooks Técnico</p>
-        </div>
-
-        <div style={{padding:"16px 24px 0",margin:"0 12px"}}>
-          <div style={{fontSize:10,fontWeight:700,color:th.textMuted,letterSpacing:1,marginBottom:8,textTransform:"uppercase"}}>Check-in Diário</div>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-            <div style={{width:22,height:22,borderRadius:"50%",background:dados?.checkinHoje?ACCENT:th.border2,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              {dados?.checkinHoje&&<Ico.Check s={12} c="#fff"/>}
-            </div>
-            <span style={{fontSize:13,color:dados?.checkinHoje?th.text:th.textMuted}}>{dados?.checkinHoje?"Feito hoje!":"Não registrado"}</span>
-          </div>
-          <button style={{width:"100%",padding:"9px 0",borderRadius:9,border:`1.5px solid ${th.border2}`,background:th.surface,color:th.text,fontWeight:600,fontSize:13,cursor:"pointer"}}>
-            {dados?.checkinHoje?"Ver registro de hoje":"Fazer check-in agora"}
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <button onClick={()=>setDark(d=>!d)} style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} title={dark?"Tema claro":"Tema escuro"}>
+            {dark?<Ico.Sun s={15} c={th.textMuted}/>:<Ico.Moon s={15} c={th.textMuted}/>}
           </button>
+          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+            <Ico.Search c={th.textMuted}/>
+          </div>
+          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+            <Ico.Bell c={th.textMuted}/>
+          </div>
         </div>
-      </aside>
+      </div>
 
-      {renderMain()}
+      <div style={{display:"flex",gap:16}}>
+
+        {/* SIDEBAR FLUTUANTE — expansível, estica até o fim */}
+        <aside style={{
+          width:sidebarExpandido?210:68, background:th.surface, borderRadius:30, border:`1px solid ${th.border}`,
+          padding:sidebarExpandido?"18px 12px":"18px 0", display:"flex", flexDirection:"column",
+          alignItems:sidebarExpandido?"stretch":"center", gap:3, flexShrink:0,
+          transition:"width 0.2s ease",
+        }}>
+          {navItems.map(item=>{
+            const ativo = activeNav===item.label;
+            return (
+              <button key={item.label} onClick={()=>setActiveNav(item.label)} title={sidebarExpandido?undefined:item.label} style={{
+                display:"flex",alignItems:"center",gap:sidebarExpandido?10:0,justifyContent:sidebarExpandido?"flex-start":"center",
+                width:sidebarExpandido?"100%":42,height:sidebarExpandido?"auto":42,padding:sidebarExpandido?"10px 14px":0,
+                borderRadius:sidebarExpandido?14:16,border:"none",cursor:"pointer",
+                background:ativo?ACCENT_ATUAL:"transparent",color:ativo?"#fff":th.textMuted,
+                fontSize:13,fontWeight:ativo?600:500,
+              }}>
+                {item.icon}
+                {sidebarExpandido && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+
+          <div style={{flex:1}}/>
+
+          <div style={{marginTop:sidebarExpandido?12:8,borderTop:`1px solid ${th.border}`,paddingTop:sidebarExpandido?12:8,display:"flex",justifyContent:"center"}}>
+            <div onClick={()=>setSidebarExpandido(v=>!v)} style={{width:32,height:32,borderRadius:12,background:th.resumeBg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+              {sidebarExpandido?<Ico.Collapse c={th.textMuted}/>:<Ico.Expand c={th.textMuted}/>}
+            </div>
+          </div>
+        </aside>
+
+        {renderMain()}
+      </div>
     </div>
   );
 }
