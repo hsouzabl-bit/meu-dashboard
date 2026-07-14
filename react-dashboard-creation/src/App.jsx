@@ -438,7 +438,6 @@ useEffect(()=>{
               </div>
             </div>
             {(dadosDiario?.graficoION2?.length||0) > 0 ? (
-{(dadosDiario?.graficoION2?.length||0) > 0 ? (
               <svg viewBox="0 0 600 200" style={{width:"100%",height:"auto",display:"block"}}>
                 {(() => {
                   const pontosMes = dadosDiario.graficoION2.filter(p=>p.data.startsWith(`${anoVis}-${String(mesVis+1).padStart(2,"0")}`));
