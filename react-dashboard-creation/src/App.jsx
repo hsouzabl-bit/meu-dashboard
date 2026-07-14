@@ -679,15 +679,8 @@ useEffect(()=>{
             </div>
           )}
         </div>
-        
-                  </span>
-                </div>
-              ))
-            }
-          </div>
-        </div>
 
-<div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
+        <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
           <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:16}}>
             Progresso das Metas
             <span style={{fontWeight:500,fontSize:12,color:th.textMuted,textTransform:"none",letterSpacing:0,marginLeft:8}}>(acumulado no ano)</span>
