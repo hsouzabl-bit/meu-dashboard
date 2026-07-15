@@ -9,7 +9,7 @@ const API_URL    = "https://script.google.com/macros/s/AKfycbwHp4j2xXWBeQF9OcLgh
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 
 const METAS_MENSAIS = { horasEstudo:80, paginasLidas:100, videoAulas:10, replays:20 };
-const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:600, videoAulas:60, replays:120 };
+const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:500, videoAulas:60, replays:120 };
 const DIAS_SEMANA   = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
 const MESES_PT      = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const ACCENT_LIGHT  = "#2563EB";
@@ -328,7 +328,7 @@ useEffect(()=>{
   const cardReplays = modoDia?(detalhe.replays||0):(m.replaysMes||0);
   const cardTipo    = modoDia?(detalhe.tipo||""):null;
   const metaH=modoDia?4:METAS_MENSAIS.horasEstudo;
-  const metaP=modoDia?6:METAS_MENSAIS.paginasLidas;
+  const metaP=modoDia?3:METAS_MENSAIS.paginasLidas;
   const metaV=modoDia?30:METAS_MENSAIS.videoAulas*60;
   const metaR=modoDia?1:METAS_MENSAIS.replays;
 
@@ -462,6 +462,7 @@ useEffect(()=>{
             </div>
           )):<>
             <MetricCard th={th} icon={<Ico.Trend  s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Horas de Estudo" value={modoDia?minParaHM((cardHoras||0)*60):`${cardHoras}h`} unit="" sub={`Meta: ${modoDia?"4h/dia":`${metaH}h/mês`}`} pctVal={pct(modoDia?(cardHoras||0)*60:cardHoras*60,metaH*60)} barColor={ACCENT_ATUAL}/>
+        <MetricCard th={th} icon={<Ico.BookOpen s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Backtests" value={cardPaginas} unit="" sub={`Meta: ${modoDia?"3/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT_ATUAL}/>
             <MetricCard th={th} icon={<Ico.Repeat s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT_ATUAL}/>
           </>}
         </div>
@@ -634,6 +635,7 @@ useEffect(()=>{
           </div>
           {loading?Array(2).fill(0).map((_,i)=><div key={i} style={{padding:"13px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>):<>
             <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend  s={16} c={ACCENT_ATUAL}/>} value={`${m.horasEstudo??0}h`} meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT_ATUAL}/>
+            <ProgressBar th={th} label="Backtests"       icon={<Ico.BookOpen s={16} c={ACCENT_ATUAL}/>} value={m.paginasLidas??0} meta={METAS_ANUAIS.paginasLidas}      pctVal={pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)} color={ACCENT_ATUAL}/>
             <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat s={16} c={ACCENT_ATUAL}/>} value={m.replays??0}          meta={METAS_ANUAIS.replays}            pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT_ATUAL}/>
 </>}
         </div>
