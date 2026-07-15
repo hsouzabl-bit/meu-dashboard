@@ -178,6 +178,8 @@ export default function App(){
   const [dark,setDark]               = useState(true);
   const [sidebarExpandido,setSidebarExpandido] = useState(true);
   const [metasExpandido, setMetasExpandido] = useState(false);
+    const [seqExpandido, setSeqExpandido] = useState(false);
+
 
   const [diaSel,setDiaSel]           = useState(null);
   const hoje = new Date();
