@@ -502,167 +502,170 @@ export default function App(){
             )}
 
 {/* Resultados do Mês + Status dos Setups | Calendário + (Hoje / Não devo+Intenção) */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:18,alignItems:"start"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gridAutoRows:"auto",gap:16,marginBottom:18}}>
 
-              {/* Coluna A: Resultados do Mês + Status dos Setups */}
-              <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                <div style={{background:th.cardBg,borderRadius:14,padding:"20px 22px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                    <span style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em"}}>Resultados do Mês</span>
-                    <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-                      <span style={{fontSize:18,fontWeight:800,color:financMes==null?th.textMuted:(financMes>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31"))}}>
-                        {financMes==null?"—":(financMes>=0?"+":"−")+"R$ "+Math.abs(financMes).toFixed(0)}
-                      </span>
-                      <span style={{fontSize:11,color:th.textMuted}}>{wrMes!=null?`WR ${wrMes}%`:""}</span>
-                    </div>
+              {/* Linha 1, Coluna A: Resultados do Mês */}
+              <div style={{background:th.cardBg,borderRadius:14,padding:"20px 22px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,display:"flex",flexDirection:"column",height:"100%"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <span style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em"}}>Resultados do Mês</span>
+                  <div style={{display:"flex",alignItems:"baseline",gap:8}}>
+                    <span style={{fontSize:18,fontWeight:800,color:financMes==null?th.textMuted:(financMes>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31"))}}>
+                      {financMes==null?"—":(financMes>=0?"+":"−")+"R$ "+Math.abs(financMes).toFixed(0)}
+                    </span>
+                    <span style={{fontSize:11,color:th.textMuted}}>{wrMes!=null?`WR ${wrMes}%`:""}</span>
                   </div>
-                  {(dadosDiario?.graficoION2?.length||0) > 0 ? (
-                    <svg viewBox="0 0 600 200" style={{width:"100%",height:"auto",display:"block"}}>
-                      {(() => {
-                        const pontosMes = dadosDiario.graficoION2.filter(p=>p.data.startsWith(`${anoVis}-${String(mesVis+1).padStart(2,"0")}`));
-                        if(pontosMes.length < 2) return <text x="300" y="100" textAnchor="middle" fontSize="13" fill={th.textMuted}>Dados insuficientes no mês</text>;
-                        const vals = pontosMes.map(p=>p.valor);
-                        const maxV = Math.max(...vals,0), minV = Math.min(...vals,0);
-                        const range = (maxV-minV)||1;
-                        const padL=48,padR=14,padT=18,padB=26,W=600,H=200;
-                        const plotW=W-padL-padR, plotH=H-padT-padB;
-                        const pts = pontosMes.map((p,i)=>({
-                          ...p,
-                          x: padL+(i/(pontosMes.length-1))*plotW,
-                          y: padT+plotH-((p.valor-minV)/range)*plotH,
-                        }));
-                        const zeroY = padT+plotH-((0-minV)/range)*plotH;
-                        const linePath = pts.map((p,i)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ");
-                        return (
-                          <>
-                            <line x1={padL} y1={zeroY} x2={W-padR} y2={zeroY} stroke={th.border2} strokeWidth="1" strokeDasharray="3,3"/>
-                            {[minV,(minV+maxV)/2,maxV].map((v,i)=>{
-                              const y = padT+plotH-((v-minV)/range)*plotH;
-                              return <text key={i} x={padL-8} y={y+4} textAnchor="end" fontSize="11" fill={th.textMuted}>{Math.round(v)}</text>;
-                            })}
-                            <path d={`${linePath} L${pts[pts.length-1].x},${zeroY} L${pts[0].x},${zeroY} Z`} fill={ACCENT_ATUAL} opacity="0.08"/>
-                            <path d={linePath} fill="none" stroke={ACCENT_ATUAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            {pts.map((p,i)=>(
-                              <g key={i}>
-                                <circle cx={p.x} cy={p.y} r="3.5" fill={ACCENT_ATUAL} stroke={th.cardBg} strokeWidth="2"/>
-                                {(i===pts.length-1 || i%3===0) && (
-                                  <text x={p.x} y={p.y-10} textAnchor="middle" fontSize="11" fontWeight="700" fill={th.text}>{p.valor>=0?"+":""}{Math.round(p.valor)}</text>
-                                )}
-                                <text x={p.x} y={H-6} textAnchor="middle" fontSize="10" fill={th.textMuted}>{p.data.slice(8,10)}/{p.data.slice(5,7)}</text>
-                              </g>
-                            ))}
-                          </>
-                        );
-                      })()}
-                    </svg>
-                  ) : <div style={{padding:"40px 0",textAlign:"center",color:th.textMuted,fontSize:12}}>Carregando gráfico...</div>}
-
-                  {setupsMesLista.length>0 && (
-                    <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
-                      {setupsMesLista.map(s=>(
-                        <div key={s.nome} style={{flex:1,minWidth:130,background:th.resumeBg,borderRadius:10,padding:"12px 16px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:4}}>
-                          <div style={{fontSize:13,fontWeight:700,color:th.text}}>{s.nome}</div>
-                          <div style={{fontSize:12,color:th.textMuted}}>WR {s.wr}%</div>
-                          <div style={{fontSize:15,fontWeight:800,color:s.financ>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{s.financ>=0?"+":"−"}R$ {Math.abs(s.financ).toFixed(0)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
+                {(dadosDiario?.graficoION2?.length||0) > 0 ? (
+                  <svg viewBox="0 0 600 200" style={{width:"100%",height:"auto",display:"block"}}>
+                    {(() => {
+                      const pontosMes = dadosDiario.graficoION2.filter(p=>p.data.startsWith(`${anoVis}-${String(mesVis+1).padStart(2,"0")}`));
+                      if(pontosMes.length < 2) return <text x="300" y="100" textAnchor="middle" fontSize="13" fill={th.textMuted}>Dados insuficientes no mês</text>;
+                      const vals = pontosMes.map(p=>p.valor);
+                      const maxV = Math.max(...vals,0), minV = Math.min(...vals,0);
+                      const range = (maxV-minV)||1;
+                      const padL=48,padR=14,padT=18,padB=26,W=600,H=200;
+                      const plotW=W-padL-padR, plotH=H-padT-padB;
+                      const pts = pontosMes.map((p,i)=>({
+                        ...p,
+                        x: padL+(i/(pontosMes.length-1))*plotW,
+                        y: padT+plotH-((p.valor-minV)/range)*plotH,
+                      }));
+                      const zeroY = padT+plotH-((0-minV)/range)*plotH;
+                      const linePath = pts.map((p,i)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ");
+                      return (
+                        <>
+                          <line x1={padL} y1={zeroY} x2={W-padR} y2={zeroY} stroke={th.border2} strokeWidth="1" strokeDasharray="3,3"/>
+                          {[minV,(minV+maxV)/2,maxV].map((v,i)=>{
+                            const y = padT+plotH-((v-minV)/range)*plotH;
+                            return <text key={i} x={padL-8} y={y+4} textAnchor="end" fontSize="11" fill={th.textMuted}>{Math.round(v)}</text>;
+                          })}
+                          <path d={`${linePath} L${pts[pts.length-1].x},${zeroY} L${pts[0].x},${zeroY} Z`} fill={ACCENT_ATUAL} opacity="0.08"/>
+                          <path d={linePath} fill="none" stroke={ACCENT_ATUAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          {pts.map((p,i)=>(
+                            <g key={i}>
+                              <circle cx={p.x} cy={p.y} r="3.5" fill={ACCENT_ATUAL} stroke={th.cardBg} strokeWidth="2"/>
+                              {(i===pts.length-1 || i%3===0) && (
+                                <text x={p.x} y={p.y-10} textAnchor="middle" fontSize="11" fontWeight="700" fill={th.text}>{p.valor>=0?"+":""}{Math.round(p.valor)}</text>
+                              )}
+                              <text x={p.x} y={H-6} textAnchor="middle" fontSize="10" fill={th.textMuted}>{p.data.slice(8,10)}/{p.data.slice(5,7)}</text>
+                            </g>
+                          ))}
+                        </>
+                      );
+                    })()}
+                  </svg>
+                ) : <div style={{padding:"40px 0",textAlign:"center",color:th.textMuted,fontSize:12}}>Carregando gráfico...</div>}
 
-                <div>
-                  <div style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Status dos Setups</div>
-                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                    {setupsLinhasDash.map((linha,li)=>(
-                      <div key={li} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                        {linha.map((s,ci)=> s ? (
-                          <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`}}>
-                            <span style={{fontSize:11.5,fontWeight:700,color:th.text}}>{s.label}</span>
-                            <div style={{display:"flex",gap:5,alignItems:"center"}}>
-                              <span style={{fontSize:10,fontWeight:700,color:corWRDash(s.taxaAcerto).text,background:corWRDash(s.taxaAcerto).bg,border:`1px solid ${corWRDash(s.taxaAcerto).border}`,borderRadius:20,padding:"1px 6px"}}>{s.taxaAcerto}%</span>
-                              <span style={{fontSize:9,color:th.textMuted}}>n={s.trades}</span>
-                            </div>
+                {setupsMesLista.length>0 && (
+                  <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
+                    {setupsMesLista.map(s=>(
+                      <div key={s.nome} style={{flex:1,minWidth:130,background:th.resumeBg,borderRadius:10,padding:"12px 16px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:4}}>
+                        <div style={{fontSize:13,fontWeight:700,color:th.text}}>{s.nome}</div>
+                        <div style={{fontSize:12,color:th.textMuted}}>WR {s.wr}%</div>
+                        <div style={{fontSize:15,fontWeight:800,color:s.financ>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{s.financ>=0?"+":"−"}R$ {Math.abs(s.financ).toFixed(0)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Linha 1, Coluna B: Calendário — mesma linha do grid, estica pra mesma altura automaticamente */}
+              <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative",display:"flex",flexDirection:"column",height:"100%"}}>
+                <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:10,display:"block"}}>{MESES_PT[mesVis]}</span>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
+                  {DIAS_SEMANA.map(ds=>(
+                    <div key={ds} style={{textAlign:"center",fontSize:10,fontWeight:700,color:th.textMuted,padding:"2px 0"}}>{ds}</div>
+                  ))}
+                </div>
+                <div style={{flex:1,display:"grid",gridTemplateColumns:"repeat(7,1fr)",gridTemplateRows:`repeat(${Math.ceil(miniCalDias.length/7)},1fr)`,gap:4}}>
+                  {miniCalDias.map(({dia,r},idx)=>{
+                    if(dia===null) return <div key={`vazio-${idx}`}/>;
+                    const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
+                    return (
+                      <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
+                        style={{borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
+                        {dia}
+                      </div>
+                    );
+                  })}
+                </div>
+                {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 2"] && (() => {
+                  const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
+                  const r = tradesPorData[key]["ION 2"];
+                  return (
+                    <>
+                      <div onClick={()=>setDiaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
+                      <div style={{position:"absolute",top:52,right:8,left:8,background:th.cardBg,borderRadius:14,padding:"18px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.4)",border:`1px solid ${th.border}`,zIndex:10}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                          <span style={{fontSize:14,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
+                        </div>
+                        <div style={{display:"flex",gap:16,marginBottom:14}}>
+                          <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
+                          <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
+                          <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
+                        </div>
+                        <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer"}}>Mais detalhes →</div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Linha 2, Coluna A: Status dos Setups */}
+              <div>
+                <div style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Status dos Setups</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {setupsLinhasDash.map((linha,li)=>(
+                    <div key={li} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                      {linha.map((s,ci)=> s ? (
+                        <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`}}>
+                          <span style={{fontSize:11.5,fontWeight:700,color:th.text}}>{s.label}</span>
+                          <div style={{display:"flex",gap:5,alignItems:"center"}}>
+                            <span style={{fontSize:10,fontWeight:700,color:corWRDash(s.taxaAcerto).text,background:corWRDash(s.taxaAcerto).bg,border:`1px solid ${corWRDash(s.taxaAcerto).border}`,borderRadius:20,padding:"1px 6px"}}>{s.taxaAcerto}%</span>
+                            <span style={{fontSize:9,color:th.textMuted}}>n={s.trades}</span>
                           </div>
-                        ) : <div key={ci} style={{padding:"8px 12px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:10,color:th.textMuted,display:"flex",alignItems:"center"}}>Sem dados</div>)}
+                        </div>
+                      ) : <div key={ci} style={{padding:"8px 12px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:10,color:th.textMuted,display:"flex",alignItems:"center"}}>Sem dados</div>)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Linha 2, Coluna B: Hoje | Não devo + Intenção */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+                  <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
+                  <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
+                    {checklistHoje.map(item=>(
+                      <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                        <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
+                        <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
 
-              {/* Coluna B: Calendário grande em cima, Hoje + (Não devo/Intenção) embaixo */}
-              <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative"}}>
-                  <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,display:"block"}}>{MESES_PT[mesVis]}</span>
-<div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>
-                    {miniCalDias.map(({dia,r})=>{
-                      const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
-                      return (
-                        <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
-                          style={{height:60,borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
-                          {dia}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 2"] && (() => {
-                    const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-                    const r = tradesPorData[key]["ION 2"];
-                    return (
-                      <>
-                        <div onClick={()=>setDiaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
-                        <div style={{position:"absolute",top:52,right:8,left:8,background:th.cardBg,borderRadius:14,padding:"18px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.4)",border:`1px solid ${th.border}`,zIndex:10}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                            <span style={{fontSize:14,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
-                          </div>
-                          <div style={{display:"flex",gap:16,marginBottom:14}}>
-                            <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
-                            <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
-                            <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
-                          </div>
-                          <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer"}}>Mais detalhes →</div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {/* Linha abaixo do calendário: Hoje | Não devo + Intenção empilhados */}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                  <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
-                    <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
-                    <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
-                      {checklistHoje.map(item=>(
-                        <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-                          <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
-                          <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
-                        </div>
-                      ))}
-                    </div>
+                <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                  <div style={{flex:1,background:th.cardBg,borderRadius:14,padding:"14px 16px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F",display:"flex",flexDirection:"column"}}>
+                    <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
+                    <textarea
+                      value={naoDevoHoje}
+                      onChange={e=>setNaoDevoHoje(e.target.value)}
+                      onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
+                      placeholder="O que evitar hoje..."
+                      style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                    />
                   </div>
 
-                  <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                    <div style={{flex:1,background:th.cardBg,borderRadius:14,padding:"14px 16px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F",display:"flex",flexDirection:"column"}}>
-                      <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
-                      <textarea
-                        value={naoDevoHoje}
-                        onChange={e=>setNaoDevoHoje(e.target.value)}
-                        onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-                        placeholder="O que evitar hoje..."
-                        style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                      />
-                    </div>
-
-                    <div style={{flex:1,background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"14px 16px",border:`1px solid ${ACCENT_ATUAL}33`,display:"flex",flexDirection:"column"}}>
-                      <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
-                      <textarea
-                        value={intencaoHoje}
-                        onChange={e=>setIntencaoHoje(e.target.value)}
-                        onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-                        placeholder="Foco de hoje..."
-                        style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                      />
-                    </div>
+                  <div style={{flex:1,background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"14px 16px",border:`1px solid ${ACCENT_ATUAL}33`,display:"flex",flexDirection:"column"}}>
+                    <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
+                    <textarea
+                      value={intencaoHoje}
+                      onChange={e=>setIntencaoHoje(e.target.value)}
+                      onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
+                      placeholder="Foco de hoje..."
+                      style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                    />
                   </div>
                 </div>
               </div>
