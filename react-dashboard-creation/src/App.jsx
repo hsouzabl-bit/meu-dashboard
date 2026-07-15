@@ -447,11 +447,24 @@ export default function App(){
       if(n.includes("pré bo")||n.includes("pre bo")) return {grupo:"TC", label:"TC Pré BO"};
       return null;
     }
-    const setupsClassificados = {};
+const setupsClassificados = {};
     (dadosDiario?.setups||[]).forEach(s=>{
       const c = classificarSetup(s.nome);
       if(c) setupsClassificados[c.label] = { ...s, ...c };
     });
+    // Soma o financeiro de ION 2 + ION 3 por setup
+    const financPorSetup = {};
+    ["ION 2","ION 3"].forEach(conta=>{
+      (dadosDiario?.setupsPorConta?.[conta]||[]).forEach(s=>{
+        const c = classificarSetup(s.nome);
+        if(!c) return;
+        financPorSetup[c.label] = (financPorSetup[c.label]||0) + (s.financTotal||0);
+      });
+    });
+    Object.keys(setupsClassificados).forEach(label=>{
+      setupsClassificados[label].financTotal = financPorSetup[label] || 0;
+    });
+    
     const setupsLinhasDash = [
       [setupsClassificados["TRM"], setupsClassificados["TC Pré BO"]],
       [setupsClassificados["FQ"], setupsClassificados["TC Pós BO"]],
@@ -701,10 +714,14 @@ export default function App(){
                       {linha.map((s,ci)=> s ? (
                         <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`,height:"100%",boxSizing:"border-box"}}>
                           <span style={{fontSize:11.5,fontWeight:700,color:th.text}}>{s.label}</span>
-                          <div style={{display:"flex",gap:5,alignItems:"center"}}>
-                            <span style={{fontSize:10,fontWeight:700,color:corWRDash(s.taxaAcerto).text,background:corWRDash(s.taxaAcerto).bg,border:`1px solid ${corWRDash(s.taxaAcerto).border}`,borderRadius:20,padding:"1px 6px"}}>{s.taxaAcerto}%</span>
-                            <span style={{fontSize:9,color:th.textMuted}}>n={s.trades}</span>
+<div style={{display:"flex",flexDirection:"column",gap:2,alignItems:"flex-end"}}>
+                            <div style={{display:"flex",gap:5,alignItems:"center"}}>
+                              <span style={{fontSize:10,fontWeight:700,color:corWRDash(s.taxaAcerto).text,background:corWRDash(s.taxaAcerto).bg,border:`1px solid ${corWRDash(s.taxaAcerto).border}`,borderRadius:20,padding:"1px 6px"}}>{s.taxaAcerto}%</span>
+                              <span style={{fontSize:9,color:th.textMuted}}>n={s.trades}</span>
+                            </div>
+                            <span style={{fontSize:10,fontWeight:700,color:s.financTotal>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{s.financTotal>=0?"+":"−"}R$ {Math.abs(s.financTotal).toFixed(0)}</span>
                           </div>
+                          
                         </div>
                       ) : <div key={ci} style={{padding:"8px 12px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:10,color:th.textMuted,display:"flex",alignItems:"center",height:"100%",boxSizing:"border-box"}}>Sem dados</div>)}
                     </div>
