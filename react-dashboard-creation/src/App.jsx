@@ -594,14 +594,17 @@ export default function App(){
               <div style={{display:"flex",flexDirection:"column",gap:14}}>
                 <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative"}}>
                   <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,display:"block"}}>{MESES_PT[mesVis]}</span>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>
+<div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>
                     {miniCalDias.map(({dia,r})=>{
                       const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
                       return (
                         <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
-                          style={{aspectRatio:"1",borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
+                          style={{height:30,borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
                           {dia}
                         </div>
+                      );
+                    })}
+                  </div>
                       );
                     })}
                   </div>
