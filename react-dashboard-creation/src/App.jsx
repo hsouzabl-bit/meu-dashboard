@@ -434,8 +434,9 @@ useEffect(()=>{
       miniCalDias.push({ dia:d, dataStr, r });
     }
 
-    return (
-      <main style={{flex:1,padding:"0 8px 40px",overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+   return (
+      <div style={{display:"flex",gap:16,width:"100%",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+      <main style={{flex:1,padding:"0 8px 40px",overflowY:"auto",minWidth:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
           <div>
             <h1 style={{fontSize:26,fontWeight:700,color:th.text,margin:0,letterSpacing:"-0.02em"}}>Dashboard</h1>
@@ -596,64 +597,7 @@ useEffect(()=>{
           </div>
         </div>
 
-        {objetivosSemanaAtual && (objetivosSemanaAtual.objetivos||[]).length>0 && (
-          <div style={{marginBottom:18,background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-              <span style={{fontSize:14}}>🎯</span>
-              <span style={{fontWeight:700,fontSize:11.5,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.06em"}}>Objetivos da Semana</span>
-            </div>
-            <div style={{fontSize:10,color:th.textMuted,marginBottom:10}}>Sincronizado com a aba Objetivos</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
-              {objetivosSemanaAtual.objetivos.map(o=>(
-                <div key={o.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5,opacity:o.feito?0.55:1}}>
-                  <span style={{fontSize:10,fontWeight:700,padding:"1px 8px",borderRadius:20,background:th.navActiveBg,color:ACCENT_ATUAL,width:"fit-content"}}>{o.categoria}</span>
-                  <span style={{fontSize:12,color:th.text,textDecoration:o.feito?"line-through":"none",lineHeight:1.4}}>{o.texto}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:18}}>
-          <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-              <Ico.Clipboard s={16} c={ACCENT_ATUAL}/>
-              <span style={{fontWeight:700,fontSize:12,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.06em"}}>Plano da Semana</span>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
-              {planoSemana.map(p=>(
-                <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
-                  <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1}}>{p.texto}</span>
-                  <span onClick={()=>removePlanoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
-                </div>
-              ))}
-              {planoSemana.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum item ainda.</div>}
-            </div>
-            <div style={{display:"flex",gap:6}}>
-              <input value={novoPlano} onChange={e=>setNovoPlano(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlanoItem()} placeholder="Novo item do plano..." style={{flex:1,fontSize:13,padding:"8px 12px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",background:th.resumeBg,color:th.text}}/>
-              <button onClick={addPlanoItem} style={{background:ACCENT_ATUAL,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button>
-            </div>
-          </div>
-
-          <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-              <span style={{width:18,height:18,borderRadius:"50%",background:"#c68888",color:"#1a1219",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>!</span>
-              <span style={{fontWeight:700,fontSize:12,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em"}}>Pontos de Atenção</span>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
-              {pontosAtencao.map(p=>(
-                <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
-                  <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1}}>{p.texto}</span>
-                  <span onClick={()=>removePontoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
-                </div>
-              ))}
-              {pontosAtencao.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum ponto ainda.</div>}
-            </div>
-            <div style={{display:"flex",gap:6}}>
-              <input value={novoPonto} onChange={e=>setNovoPonto(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPontoItem()} placeholder="Novo ponto de atenção..." style={{flex:1,fontSize:13,padding:"8px 12px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",background:th.resumeBg,color:th.text}}/>
-              <button onClick={addPontoItem} style={{background:th.resumeBg,color:"#c68888",border:`1px solid ${th.border2}`,borderRadius:8,padding:"8px 16px",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button>
-            </div>
-          </div>
-        </div>
+        
 
         <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
           <div onClick={()=>setSeqExpandido(v=>!v)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
@@ -697,6 +641,67 @@ useEffect(()=>{
 </>}
         </div>
       </main>
+
+      <aside style={{width:260,flexShrink:0,display:"flex",flexDirection:"column",gap:14}}>
+        <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+            <Ico.Clipboard s={16} c={ACCENT_ATUAL}/>
+            <span style={{fontWeight:700,fontSize:12,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.06em"}}>Plano da Semana</span>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
+            {planoSemana.map(p=>(
+              <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
+                <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1}}>{p.texto}</span>
+                <span onClick={()=>removePlanoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
+              </div>
+            ))}
+            {planoSemana.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum item ainda.</div>}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <textarea value={novoPlano} onChange={e=>setNovoPlano(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlanoItem()} placeholder="Novo item do plano..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
+            <button onClick={addPlanoItem} style={{background:ACCENT_ATUAL,color:"#fff",border:"none",borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
+          </div>
+        </div>
+
+        <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+            <span style={{width:16,height:16,borderRadius:"50%",background:"#c68888",color:"#1a1219",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>!</span>
+            <span style={{fontWeight:700,fontSize:12,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em"}}>Pontos de Atenção</span>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
+            {pontosAtencao.map(p=>(
+              <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
+                <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1}}>{p.texto}</span>
+                <span onClick={()=>removePontoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
+              </div>
+            ))}
+            {pontosAtencao.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum ponto ainda.</div>}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <textarea value={novoPonto} onChange={e=>setNovoPonto(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPontoItem()} placeholder="Novo ponto..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
+            <button onClick={addPontoItem} style={{background:th.resumeBg,color:"#c68888",border:`1px solid ${th.border2}`,borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
+          </div>
+        </div>
+
+        {objetivosSemanaAtual && (objetivosSemanaAtual.objetivos||[]).length>0 && (
+          <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <span style={{fontSize:13}}>🎯</span>
+              <span style={{fontWeight:700,fontSize:12,color:"#7fb89a",textTransform:"uppercase",letterSpacing:"0.06em"}}>Objetivos da Semana</span>
+            </div>
+            <div style={{fontSize:10,color:th.textMuted,marginBottom:10}}>Sincronizado com a aba Objetivos</div>
+            <div style={{display:"flex",flexDirection:"column",gap:7}}>
+              {objetivosSemanaAtual.objetivos.map(o=>(
+                <div key={o.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5,opacity:o.feito?0.55:1}}>
+                  <span style={{fontSize:10,fontWeight:700,padding:"1px 8px",borderRadius:20,background:th.navActiveBg,color:ACCENT_ATUAL,width:"fit-content"}}>{o.categoria}</span>
+                  <span style={{fontSize:12,color:th.text,textDecoration:o.feito?"line-through":"none",lineHeight:1.4}}>{o.texto}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </aside>
+      </div>
     );
   };
 
