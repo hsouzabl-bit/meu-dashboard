@@ -461,8 +461,8 @@ export default function App(){
       const c = classificarSetup(s.nome);
       return c ? { nome:c.label, wr:s.taxaAcerto, financ:s.financTotal } : null; 
     }).filter(Boolean);
-    const financMes = dadosMes?.contas?.["ION 2"]?.financTotal ?? null;
-    const wrMes = dadosMes?.contas?.["ION 2"]?.taxaAcerto ?? null;
+    const financMes = dadosMes?.contas?.["ION 3"]?.financTotal ?? null;
+    const wrMes = dadosMes?.contas?.["ION 3"]?.taxaAcerto ?? null;
 
     const streakDias = [];
     let cursor = new Date(hoje);
@@ -491,7 +491,7 @@ export default function App(){
     }
     for(let d=1; d<=diasNoMesAtual; d++){
       const dataStr = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-      const r = tradesPorData[dataStr]?.["ION 2"] || tradesPorData[dataStr]?.["ion 2"] || null;
+      const r = tradesPorData[dataStr]?.["ION 3"] || tradesPorData[dataStr]?.["ion 3"] || null;
       miniCalDias.push({ dia:d, dataStr, r });
     }
 
@@ -596,10 +596,10 @@ export default function App(){
                     <span style={{fontSize:11,color:th.textMuted}}>{wrMes!=null?`WR ${wrMes}%`:""}</span>
                   </div>
                 </div>
-                {(dadosDiario?.graficoION2?.length||0) > 0 ? (
+                {(dadosDiario?.graficoION3?.length||0) > 0 ? (
                   <svg viewBox="0 0 600 200" style={{width:"100%",height:"auto",display:"block"}}>
                     {(() => {
-                      const pontosMes = dadosDiario.graficoION2.filter(p=>p.data.startsWith(`${anoVis}-${String(mesVis+1).padStart(2,"0")}`));
+                      const pontosMes = dadosDiario.graficoION3.filter(p=>p.data.startsWith(`${anoVis}-${String(mesVis+1).padStart(2,"0")}`));
                       if(pontosMes.length < 2) return <text x="300" y="100" textAnchor="middle" fontSize="13" fill={th.textMuted}>Dados insuficientes no mês</text>;
                       const vals = pontosMes.map(p=>p.valor);
                       const maxV = Math.max(...vals,0), minV = Math.min(...vals,0);
@@ -670,9 +670,9 @@ export default function App(){
                     );
                   })}
                 </div>
-                {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 2"] && (() => {
+               {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 3"] && (() => {
                   const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-                  const r = tradesPorData[key]["ION 2"];
+                  const r = tradesPorData[key]["ION 3"];
                   return (
                     <>
                       <div onClick={()=>setDiaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
