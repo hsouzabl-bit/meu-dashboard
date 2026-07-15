@@ -530,10 +530,11 @@ useEffect(()=>{
 
   {setupsMesLista.length>0 && (
               <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
-                {setupsMesLista.map(s=>(
-                  <div key={s.nome} style={{flex:1,minWidth:130,background:th.resumeBg,borderRadius:10,padding:"12px 16px",border:`1px solid ${th.border}`}}>
-                    <div style={{fontSize:12,fontWeight:600,color:th.textMuted,marginBottom:4}}>{s.nome}</div>
-                    <div style={{fontSize:15,fontWeight:800,color:s.financ>=0?"#2f7d52":"#a83f31"}}>{s.wr}% · {s.financ>=0?"+":"−"}{Math.abs(s.financ).toFixed(0)}</div>
+{setupsMesLista.map(s=>(
+                  <div key={s.nome} style={{flex:1,minWidth:130,background:th.resumeBg,borderRadius:10,padding:"12px 16px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:4}}>
+                    <div style={{fontSize:13,fontWeight:700,color:th.text}}>{s.nome}</div>
+                    <div style={{fontSize:12,color:th.textMuted}}>WR {s.wr}%</div>
+                    <div style={{fontSize:15,fontWeight:800,color:s.financ>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{s.financ>=0?"+":"−"}R$ {Math.abs(s.financ).toFixed(0)}</div>
                   </div>
                 ))}
               </div>
