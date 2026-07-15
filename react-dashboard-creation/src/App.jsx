@@ -195,8 +195,10 @@ export default function App(){
   }
   const [planoSemana, setPlanoSemana] = useState([]);
   const [pontosAtencao, setPontosAtencao] = useState([]);
-  const [novoPlano, setNovoPlano] = useState("");
+const [novoPlano, setNovoPlano] = useState("");
   const [novoPonto, setNovoPonto] = useState("");
+  const [showFormPlano, setShowFormPlano] = useState(false);
+  const [showFormPonto, setShowFormPonto] = useState(false);
   const [chaveSemanaAtual, setChaveSemanaAtual] = useState("");
 
   function salvarDashboardSemanalApp(novoPlanoArr, novosPontosArr){
@@ -669,10 +671,17 @@ useEffect(()=>{
             ))}
             {planoSemana.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum item ainda.</div>}
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            <textarea value={novoPlano} onChange={e=>setNovoPlano(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlanoItem()} placeholder="Novo item do plano..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
-            <button onClick={addPlanoItem} style={{background:ACCENT_ATUAL,color:"#fff",border:"none",borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
-          </div>
+{showFormPlano ? (
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <textarea autoFocus value={novoPlano} onChange={e=>setNovoPlano(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlanoItem()} placeholder="Novo item do plano..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={()=>{addPlanoItem();setShowFormPlano(false);}} style={{flex:1,background:ACCENT_ATUAL,color:"#fff",border:"none",borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>Adicionar</button>
+                <button onClick={()=>{setShowFormPlano(false);setNovoPlano("");}} style={{background:"none",border:`1px solid ${th.border2}`,color:th.textMuted,borderRadius:8,padding:"7px 14px",fontSize:12,cursor:"pointer"}}>Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={()=>setShowFormPlano(true)} style={{background:"none",border:`1px dashed ${ACCENT_ATUAL}`,color:ACCENT_ATUAL,borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,cursor:"pointer",width:"100%"}}>+ Adicionar</button>
+          )}
         </div>
 
         <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
@@ -689,10 +698,17 @@ useEffect(()=>{
             ))}
             {pontosAtencao.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum ponto ainda.</div>}
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            <textarea value={novoPonto} onChange={e=>setNovoPonto(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPontoItem()} placeholder="Novo ponto..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
-            <button onClick={addPontoItem} style={{background:th.resumeBg,color:"#c68888",border:`1px solid ${th.border2}`,borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
-          </div>
+{showFormPonto ? (
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <textarea autoFocus value={novoPonto} onChange={e=>setNovoPonto(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPontoItem()} placeholder="Novo ponto..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={()=>{addPontoItem();setShowFormPonto(false);}} style={{flex:1,background:"#c68888",color:"#1a1219",border:"none",borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>Adicionar</button>
+                <button onClick={()=>{setShowFormPonto(false);setNovoPonto("");}} style={{background:"none",border:`1px solid ${th.border2}`,color:th.textMuted,borderRadius:8,padding:"7px 14px",fontSize:12,cursor:"pointer"}}>Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={()=>setShowFormPonto(true)} style={{background:"none",border:`1px dashed #c68888`,color:"#c68888",borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,cursor:"pointer",width:"100%"}}>+ Adicionar</button>
+          )}
         </div>
 
         {objetivosSemanaAtual && (objetivosSemanaAtual.objetivos||[]).length>0 && (
