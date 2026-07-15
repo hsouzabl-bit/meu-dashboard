@@ -502,7 +502,7 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
                 <MetricCard th={th} icon={<Ico.BookOpen s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Backtests" value={cardPaginas} unit="" sub={`Meta: ${modoDia?"3/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT_ATUAL}/>
 <MetricCard th={th} icon={<Ico.Repeat s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT_ATUAL}/>
 
-                <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
+<div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
                   <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>DSI</span>
                   <input
                     type="number"
@@ -520,6 +520,12 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
                       onBlur={()=>salvarDSIApp(dsiValor, dsiMeta)}
                       style={{fontSize:11,color:th.textMuted,background:"transparent",border:"none",outline:"none",width:50,padding:0,fontFamily:"inherit"}}
                     />
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
+                    <div style={{flex:1,background:th.resumeBg,borderRadius:4,height:5}}>
+                      <div style={{width:`${pct(Number(dsiValor)||0, Number(dsiMeta)||1)}%`,background:ACCENT_ATUAL,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
+                    </div>
+                    <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pct(Number(dsiValor)||0, Number(dsiMeta)||1)}%</span>
                   </div>
                 </div>
               </>}
