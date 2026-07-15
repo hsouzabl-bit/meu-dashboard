@@ -246,6 +246,12 @@ export default function App(){
   const [naoDevoHoje, setNaoDevoHoje] = useState("");
   const [intencaoHoje, setIntencaoHoje] = useState("");
   const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+  const [dsiValor, setDsiValor] = useState("0");
+  const [dsiMeta, setDsiMeta] = useState("0");
+
+  function salvarDSIApp(valor, meta){
+    fetch(`${API_DIARIO}?action=salvarDSI&dados=${encodeURIComponent(JSON.stringify({valor,meta}))}`).catch(()=>{});
+  }
 
   function salvarChecklistHojeApp(novoChecklist, novoNaoDevo, novaIntencao){
     const payload = { data: hojeStr, checklist: novoChecklist, naoDevo: novoNaoDevo, intencao: novaIntencao };
@@ -331,6 +337,13 @@ export default function App(){
       })
       .catch(()=>{});
 
+ fetch(`${API_DIARIO}?action=lerDSI`)
+      .then(r=>r.json())
+      .then(j=>{
+        setDsiValor(j.valor ?? "0");
+        setDsiMeta(j.meta ?? "0");
+      })
+      .catch(()=>{});
     fetch(`${API_DIARIO}?action=lerChecklistDiario`)
       .then(r=>r.json())
       .then(j=>{
@@ -487,8 +500,29 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
               )):<>
                 <MetricCard th={th} icon={<Ico.Trend  s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Horas de Estudo" value={modoDia?minParaHM((cardHoras||0)*60):`${cardHoras}h`} unit="" sub={`Meta: ${modoDia?"4h/dia":`${metaH}h/mês`}`} pctVal={pct(modoDia?(cardHoras||0)*60:cardHoras*60,metaH*60)} barColor={ACCENT_ATUAL}/>
                 <MetricCard th={th} icon={<Ico.BookOpen s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Backtests" value={cardPaginas} unit="" sub={`Meta: ${modoDia?"3/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT_ATUAL}/>
-                <MetricCard th={th} icon={<Ico.Repeat s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT_ATUAL}/>
-              </>}
+<MetricCard th={th} icon={<Ico.Repeat s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT_ATUAL}/>
+
+                <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
+                  <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>DSI</span>
+                  <input
+                    type="number"
+                    value={dsiValor}
+                    onChange={e=>setDsiValor(e.target.value)}
+                    onBlur={()=>salvarDSIApp(dsiValor, dsiMeta)}
+                    style={{fontSize:26,fontWeight:800,color:ACCENT_ATUAL,background:"transparent",border:"none",outline:"none",width:"100%",padding:0,fontFamily:"inherit"}}
+                  />
+                  <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:th.textMuted}}>
+                    Meta:
+                    <input
+                      type="number"
+                      value={dsiMeta}
+                      onChange={e=>setDsiMeta(e.target.value)}
+                      onBlur={()=>salvarDSIApp(dsiValor, dsiMeta)}
+                      style={{fontSize:11,color:th.textMuted,background:"transparent",border:"none",outline:"none",width:50,padding:0,fontFamily:"inherit"}}
+                    />
+                  </div>
+                </div>
+              </>}              </>}
               <div style={{flexShrink:0,marginLeft:8,display:"flex",flexDirection:"column",justifyContent:"center",gap:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:7,border:`1px solid ${th.border2}`,borderRadius:9,padding:"8px 14px",background:th.surface,fontSize:13,color:th.text,whiteSpace:"nowrap"}}>
                   <Ico.Calendar s={14} c={th.textMuted}/> {dataFormatada}
