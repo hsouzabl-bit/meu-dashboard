@@ -616,28 +616,28 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
                 })()}
               </div>
 
-              {/* Linha 2, Coluna A: Status dos Setups */}
-              <div>
+{/* Linha 2, Coluna A: Status dos Setups */}
+              <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
                 <div style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Status dos Setups</div>
-                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                <div style={{display:"flex",flexDirection:"column",gap:6,flex:1}}>
                   {setupsLinhasDash.map((linha,li)=>(
-                    <div key={li} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                    <div key={li} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,flex:1}}>
                       {linha.map((s,ci)=> s ? (
-                        <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`}}>
+                        <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`,height:"100%",boxSizing:"border-box"}}>
                           <span style={{fontSize:11.5,fontWeight:700,color:th.text}}>{s.label}</span>
                           <div style={{display:"flex",gap:5,alignItems:"center"}}>
                             <span style={{fontSize:10,fontWeight:700,color:corWRDash(s.taxaAcerto).text,background:corWRDash(s.taxaAcerto).bg,border:`1px solid ${corWRDash(s.taxaAcerto).border}`,borderRadius:20,padding:"1px 6px"}}>{s.taxaAcerto}%</span>
                             <span style={{fontSize:9,color:th.textMuted}}>n={s.trades}</span>
                           </div>
                         </div>
-                      ) : <div key={ci} style={{padding:"8px 12px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:10,color:th.textMuted,display:"flex",alignItems:"center"}}>Sem dados</div>)}
+                      ) : <div key={ci} style={{padding:"8px 12px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:10,color:th.textMuted,display:"flex",alignItems:"center",height:"100%",boxSizing:"border-box"}}>Sem dados</div>)}
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Linha 2, Coluna B: Hoje | Não devo + Intenção */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+{/* Linha 2, Coluna B: Hoje | Não devo + Intenção */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,height:"100%"}}>
                 <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
                   <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
                   <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
