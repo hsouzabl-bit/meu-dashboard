@@ -522,7 +522,7 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
                     />
                   </div>
                 </div>
-              </>}              </>}
+              </>}
               <div style={{flexShrink:0,marginLeft:8,display:"flex",flexDirection:"column",justifyContent:"center",gap:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:7,border:`1px solid ${th.border2}`,borderRadius:9,padding:"8px 14px",background:th.surface,fontSize:13,color:th.text,whiteSpace:"nowrap"}}>
                   <Ico.Calendar s={14} c={th.textMuted}/> {dataFormatada}
