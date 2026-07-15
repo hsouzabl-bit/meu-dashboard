@@ -605,9 +605,6 @@ export default function App(){
                       );
                     })}
                   </div>
-                      );
-                    })}
-                  </div>
                   {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 2"] && (() => {
                     const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
                     const r = tradesPorData[key]["ION 2"];
