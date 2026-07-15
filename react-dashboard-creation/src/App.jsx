@@ -642,37 +642,38 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,flex:1}}>
                   <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
                     <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
-                  <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
-                    {checklistHoje.map(item=>(
-                      <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-                        <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
-                        <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                  <div style={{flex:1,background:th.cardBg,borderRadius:14,padding:"14px 16px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F",display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
-                    <textarea
-                      value={naoDevoHoje}
-                      onChange={e=>setNaoDevoHoje(e.target.value)}
-                      onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-                      placeholder="O que evitar hoje..."
-                      style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                    />
+                    <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
+                      {checklistHoje.map(item=>(
+                        <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                          <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
+                          <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div style={{flex:1,background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"14px 16px",border:`1px solid ${ACCENT_ATUAL}33`,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
-                    <textarea
-                      value={intencaoHoje}
-                      onChange={e=>setIntencaoHoje(e.target.value)}
-                      onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-                      placeholder="Foco de hoje..."
-                      style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                    />
+                  <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                    <div style={{flex:1,background:th.cardBg,borderRadius:14,padding:"14px 16px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F",display:"flex",flexDirection:"column"}}>
+                      <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
+                      <textarea
+                        value={naoDevoHoje}
+                        onChange={e=>setNaoDevoHoje(e.target.value)}
+                        onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
+                        placeholder="O que evitar hoje..."
+                        style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                      />
+                    </div>
+
+                    <div style={{flex:1,background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"14px 16px",border:`1px solid ${ACCENT_ATUAL}33`,display:"flex",flexDirection:"column"}}>
+                      <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
+                      <textarea
+                        value={intencaoHoje}
+                        onChange={e=>setIntencaoHoje(e.target.value)}
+                        onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
+                        placeholder="Foco de hoje..."
+                        style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
