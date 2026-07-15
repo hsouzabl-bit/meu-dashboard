@@ -561,13 +561,15 @@ export default function App(){
 <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Discipline Streak</span>
-                <span style={{fontSize:12,fontWeight:700,color:streakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>🔥 {streakAtual}d</span>
+                <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:700,color:streakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>
+                  <Ico.Growth s={13} c={streakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}/> {streakAtual}d
+                </span>
               </div>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                 {streakDias.map((d,i)=>{
                   const cor = d.status===null ? "transparent" : d.status==="perfeito" ? (dark?"#1a7048":"#5cb583") : d.status==="quase" ? (dark?"#856404":"#d1a53d") : (dark?"#8a3a3a":"#d9776b");
                   return (
-                    <div key={i} title={d.dataObj.toLocaleDateString("pt-BR")} style={{width:24,height:24,borderRadius:6,background:cor,border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
+                    <div key={i} title={d.dataObj.toLocaleDateString("pt-BR")} style={{width:18,height:18,borderRadius:5,background:cor,border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
                   );
                 })}
               </div>
