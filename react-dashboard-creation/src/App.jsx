@@ -812,9 +812,94 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
                   <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat s={14} c={ACCENT_ATUAL}/>} value={m.replays??0}          meta={METAS_ANUAIS.replays}            pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT_ATUAL}/>
                 </div>
               )}
-            </div>
+</div>
           </aside>
-        
+        </div>
+      </div>
+    );
+  };
+
+  return(
+    <div style={{background:th.bg,minHeight:"100vh",padding:"22px 26px",fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s"}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        *{box-sizing:border-box;} button{font-family:inherit;} body{margin:0;display:block;min-width:unset;min-height:unset;}
+      `}</style>
+
+      {/* TOP FLOATING PILL NAV */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <Ico.Growth c={ACCENT_ATUAL} s={19}/>
+          </div>
+          <span style={{fontWeight:700,fontSize:14,color:th.text}}>Evolução Diária</span>
+        </div>
+
+        <nav style={{display:"flex",gap:10}}>
+          {topNav.map(n=>{
+            const isActiveTarget = n.target && activeNav===n.target;
+            const content=(
+              <div onClick={()=>n.target && setActiveNav(n.target)} style={{
+                padding:"9px 22px",borderRadius:24,fontSize:12.5,fontWeight:600,whiteSpace:"nowrap",cursor:"pointer",
+                background:isActiveTarget?ACCENT_ATUAL:th.surface,
+                border:`1px solid ${isActiveTarget?ACCENT_ATUAL:th.border}`,
+                color:isActiveTarget?"#fff":th.textMuted,
+              }}>
+                {n.label}
+              </div>
+            );
+            return n.href
+              ? <a key={n.label} href={n.href} target="_blank" rel="noreferrer" style={{textDecoration:"none"}}>{content}</a>
+              : <div key={n.label}>{content}</div>;
+          })}
+        </nav>
+
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <button onClick={()=>setDark(d=>!d)} style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} title={dark?"Tema claro":"Tema escuro"}>
+            {dark?<Ico.Sun s={15} c={th.textMuted}/>:<Ico.Moon s={15} c={th.textMuted}/>}
+          </button>
+          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+            <Ico.Search c={th.textMuted}/>
+          </div>
+          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+            <Ico.Bell c={th.textMuted}/>
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:28,alignItems:"flex-start"}}>
+
+        {/* SIDEBAR FLUTUANTE — não estica até o fim, altura pelo próprio conteúdo */}
+        <aside style={{
+          width:sidebarExpandido?230:74, background:th.surface, borderRadius:30, border:`1px solid ${th.border}`,
+          padding:sidebarExpandido?"18px 12px":"18px 0", display:"flex", flexDirection:"column",
+          alignItems:sidebarExpandido?"stretch":"center", gap:3, flexShrink:0,
+          transition:"width 0.2s ease",
+        }}>
+          {navItems.map(item=>{
+            const ativo = activeNav===item.label;
+            return (
+              <button key={item.label} onClick={()=>setActiveNav(item.label)} title={sidebarExpandido?undefined:item.label} style={{
+                display:"flex",alignItems:"center",gap:sidebarExpandido?10:0,justifyContent:sidebarExpandido?"flex-start":"center",
+                width:sidebarExpandido?"100%":46,height:sidebarExpandido?"auto":46,padding:sidebarExpandido?"11px 14px":0,
+                borderRadius:sidebarExpandido?14:16,border:"none",cursor:"pointer",
+                background:ativo?ACCENT_ATUAL:"transparent",color:ativo?"#fff":th.textMuted,
+                fontSize:14,fontWeight:ativo?600:500,
+              }}>
+                {item.icon}
+                {sidebarExpandido && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+
+          <div style={{marginTop:sidebarExpandido?12:8,borderTop:`1px solid ${th.border}`,paddingTop:sidebarExpandido?12:8,display:"flex",justifyContent:"center"}}>
+            <div onClick={()=>setSidebarExpandido(v=>!v)} style={{width:32,height:32,borderRadius:12,background:th.resumeBg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+              {sidebarExpandido?<Ico.Collapse c={th.textMuted}/>:<Ico.Expand c={th.textMuted}/>}
+            </div>
+          </div>
+        </aside>
+
         {renderMain()}
       </div>
     </div>
