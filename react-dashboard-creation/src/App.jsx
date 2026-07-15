@@ -544,7 +544,7 @@ useEffect(()=>{
 <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,display:"block"}}>{MESES_PT[mesVis]}</span>
             <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:5}}>
               {miniCalDias.map(({dia,r})=>{
-                const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1c2e24":"#eaf7f0") : (dark?"#2c1c1a":"#fbeceb"));
+                const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
                 return (
                   <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
                     style={{aspectRatio:"1",borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
