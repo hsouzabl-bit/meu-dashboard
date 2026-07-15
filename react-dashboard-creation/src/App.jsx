@@ -680,8 +680,9 @@ useEffect(()=>{
               </div>
             </div>
           ) : (
-            <button onClick={()=>setShowFormPlano(true)} style={{background:"none",border:`1px dashed ${ACCENT_ATUAL}`,color:ACCENT_ATUAL,borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,cursor:"pointer",width:"100%"}}>+ Adicionar</button>
-          )}
+<div style={{display:"flex",justifyContent:"flex-end"}}>
+              <button onClick={()=>setShowFormPlano(true)} style={{background:"none",border:`1px solid ${ACCENT_ATUAL}`,color:ACCENT_ATUAL,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
+            </div>          )}
         </div>
 
         <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
@@ -707,8 +708,9 @@ useEffect(()=>{
               </div>
             </div>
           ) : (
-            <button onClick={()=>setShowFormPonto(true)} style={{background:"none",border:`1px dashed #c68888`,color:"#c68888",borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,cursor:"pointer",width:"100%"}}>+ Adicionar</button>
-          )}
+<div style={{display:"flex",justifyContent:"flex-end"}}>
+              <button onClick={()=>setShowFormPonto(true)} style={{background:"none",border:`1px solid #c68888`,color:"#c68888",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
+            </div>          )}
         </div>
 
         {objetivosSemanaAtual && (objetivosSemanaAtual.objetivos||[]).length>0 && (
