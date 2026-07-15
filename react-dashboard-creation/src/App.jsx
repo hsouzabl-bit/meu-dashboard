@@ -177,7 +177,7 @@ export default function App(){
   const [activeNav,setActiveNav]     = useState("Dashboard");
   const [dark,setDark]               = useState(true);
   const [sidebarExpandido,setSidebarExpandido] = useState(true);
-  const [seqExpandido, setSeqExpandido] = useState(false);
+  const [metasExpandido, setMetasExpandido] = useState(false);
 
   const [diaSel,setDiaSel]           = useState(null);
   const hoje = new Date();
@@ -679,19 +679,7 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
               </div>
             </div>
 
-            {/* Progresso das Metas */}
-            <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
-              <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:16}}>
-                Progresso das Metas
-                <span style={{fontWeight:500,fontSize:12,color:th.textMuted,textTransform:"none",letterSpacing:0,marginLeft:8}}>(acumulado no ano)</span>
-              </div>
-              {loading?Array(2).fill(0).map((_,i)=><div key={i} style={{padding:"13px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>):<>
-                <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend  s={16} c={ACCENT_ATUAL}/>} value={`${m.horasEstudo??0}h`} meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT_ATUAL}/>
-                <ProgressBar th={th} label="Backtests"       icon={<Ico.BookOpen s={16} c={ACCENT_ATUAL}/>} value={m.paginasLidas??0} meta={METAS_ANUAIS.paginasLidas}      pctVal={pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)} color={ACCENT_ATUAL}/>
-                <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat s={16} c={ACCENT_ATUAL}/>} value={m.replays??0}          meta={METAS_ANUAIS.replays}            pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT_ATUAL}/>
-              </>}
-            </div>
-          </main>
+            </main>
 
           {/* Sidebar direita — não estica até o fim, só até a altura do próprio conteúdo */}
           <aside style={{width:340,flexShrink:0,display:"flex",flexDirection:"column",gap:14}}>
@@ -770,136 +758,63 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
                 </div>
               </div>
             )}
-                       {/* Sequências Atuais — colapsável */}
-            <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
+
+            <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`}}>
               <div onClick={()=>setSeqExpandido(v=>!v)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
-                <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase"}}>Sequências Atuais</span>
+                <span style={{fontWeight:700,fontSize:11,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Sequências Atuais</span>
                 <span style={{color:th.textMuted,fontSize:13}}>{seqExpandido?"▲":"▼"}</span>
               </div>
               {seqExpandido && (
-                <div style={{marginTop:16}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
-                    <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.Clock s={15} c={th.textMuted}/>Estudo 4h</span>
-                    <span style={{display:"flex",alignItems:"center",gap:12}}>
-                      <span style={{fontSize:14}}>
+                <div style={{marginTop:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${th.border}`}}>
+                    <span style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:th.textSub}}><Ico.Clock s={14} c={th.textMuted}/>Estudo 4h</span>
+                    <span style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:13}}>
                         <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{seq[0]?.dias||0}</span>
                         <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
                       </span>
-                      <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {seq[0]?.pr||0}</span>
+                      <span style={{fontSize:10,color:th.textMuted,minWidth:40,textAlign:"right"}}>PR: {seq[0]?.pr||0}</span>
                     </span>
                   </div>
-
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
-                    <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.BookOpen s={15} c={th.textMuted}/>3+ Backtests/dia</span>
-                    <span style={{display:"flex",alignItems:"center",gap:12}}>
-                      <span style={{fontSize:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${th.border}`}}>
+                    <span style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:th.textSub}}><Ico.BookOpen s={14} c={th.textMuted}/>3+ Backtests/dia</span>
+                    <span style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:13}}>
                         <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{seq[1]?.dias||0}</span>
                         <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
                       </span>
-                      <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {seq[1]?.pr||0}</span>
+                      <span style={{fontSize:10,color:th.textMuted,minWidth:40,textAlign:"right"}}>PR: {seq[1]?.pr||0}</span>
                     </span>
                   </div>
-
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0"}}>
-                    <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.Repeat s={15} c={th.textMuted}/>1 Replay por dia</span>
-                    <span style={{display:"flex",alignItems:"center",gap:12}}>
-                      <span style={{fontSize:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0"}}>
+                    <span style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:th.textSub}}><Ico.Repeat s={14} c={th.textMuted}/>1 Replay por dia</span>
+                    <span style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:13}}>
                         <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{rotinas.find(r=>r.nome.toLowerCase().includes("replay"))?.dias||0}</span>
                         <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
                       </span>
-                      <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {rotinas.find(r=>r.nome.toLowerCase().includes("replay"))?.pr||0}</span>
+                      <span style={{fontSize:10,color:th.textMuted,minWidth:40,textAlign:"right"}}>PR: {rotinas.find(r=>r.nome.toLowerCase().includes("replay"))?.pr||0}</span>
                     </span>
                   </div>
                 </div>
               )}
             </div>
-          </aside>
-        </div>
-      </div>
-    );
-  };
 
-  return(
-    <div style={{background:th.bg,minHeight:"100vh",padding:"22px 26px",fontFamily:"'Plus Jakarta Sans','Inter',sans-serif",transition:"background 0.3s"}}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        *{box-sizing:border-box;} button{font-family:inherit;} body{margin:0;display:block;min-width:unset;min-height:unset;}
-      `}</style>
-
-      {/* TOP FLOATING PILL NAV */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <Ico.Growth c={ACCENT_ATUAL} s={19}/>
-          </div>
-          <span style={{fontWeight:700,fontSize:14,color:th.text}}>Evolução Diária</span>
-        </div>
-
-        <nav style={{display:"flex",gap:10}}>
-          {topNav.map(n=>{
-            const isActiveTarget = n.target && activeNav===n.target;
-            const content=(
-              <div onClick={()=>n.target && setActiveNav(n.target)} style={{
-                padding:"9px 22px",borderRadius:24,fontSize:12.5,fontWeight:600,whiteSpace:"nowrap",cursor:"pointer",
-                background:isActiveTarget?ACCENT_ATUAL:th.surface,
-                border:`1px solid ${isActiveTarget?ACCENT_ATUAL:th.border}`,
-                color:isActiveTarget?"#fff":th.textMuted,
-              }}>
-                {n.label}
+            <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`}}>
+              <div onClick={()=>setMetasExpandido(v=>!v)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
+                <span style={{fontWeight:700,fontSize:11,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Progresso das Metas</span>
+                <span style={{color:th.textMuted,fontSize:13}}>{metasExpandido?"▲":"▼"}</span>
               </div>
-            );
-            return n.href
-              ? <a key={n.label} href={n.href} target="_blank" rel="noreferrer" style={{textDecoration:"none"}}>{content}</a>
-              : <div key={n.label}>{content}</div>;
-          })}
-        </nav>
-
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <button onClick={()=>setDark(d=>!d)} style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} title={dark?"Tema claro":"Tema escuro"}>
-            {dark?<Ico.Sun s={15} c={th.textMuted}/>:<Ico.Moon s={15} c={th.textMuted}/>}
-          </button>
-          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-            <Ico.Search c={th.textMuted}/>
-          </div>
-          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-            <Ico.Bell c={th.textMuted}/>
-          </div>
-        </div>
-      </div>
-
-      <div style={{display:"flex",gap:28,alignItems:"flex-start"}}>
-
-        {/* SIDEBAR FLUTUANTE — não estica até o fim, altura pelo próprio conteúdo */}
-        <aside style={{
-          width:sidebarExpandido?230:74, background:th.surface, borderRadius:30, border:`1px solid ${th.border}`,
-          padding:sidebarExpandido?"18px 12px":"18px 0", display:"flex", flexDirection:"column",
-          alignItems:sidebarExpandido?"stretch":"center", gap:3, flexShrink:0,
-          transition:"width 0.2s ease",
-        }}>
-          {navItems.map(item=>{
-            const ativo = activeNav===item.label;
-            return (
-              <button key={item.label} onClick={()=>setActiveNav(item.label)} title={sidebarExpandido?undefined:item.label} style={{
-                display:"flex",alignItems:"center",gap:sidebarExpandido?10:0,justifyContent:sidebarExpandido?"flex-start":"center",
-                width:sidebarExpandido?"100%":46,height:sidebarExpandido?"auto":46,padding:sidebarExpandido?"11px 14px":0,
-                borderRadius:sidebarExpandido?14:16,border:"none",cursor:"pointer",
-                background:ativo?ACCENT_ATUAL:"transparent",color:ativo?"#fff":th.textMuted,
-                fontSize:14,fontWeight:ativo?600:500,
-              }}>
-                {item.icon}
-                {sidebarExpandido && <span>{item.label}</span>}
-              </button>
-            );
-          })}
-
-          <div style={{marginTop:sidebarExpandido?12:8,borderTop:`1px solid ${th.border}`,paddingTop:sidebarExpandido?12:8,display:"flex",justifyContent:"center"}}>
-            <div onClick={()=>setSidebarExpandido(v=>!v)} style={{width:32,height:32,borderRadius:12,background:th.resumeBg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-              {sidebarExpandido?<Ico.Collapse c={th.textMuted}/>:<Ico.Expand c={th.textMuted}/>}
+              {metasExpandido && (
+                <div style={{marginTop:14}}>
+                  <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend  s={14} c={ACCENT_ATUAL}/>} value={`${m.horasEstudo??0}h`} meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT_ATUAL}/>
+                  <ProgressBar th={th} label="Backtests"       icon={<Ico.BookOpen s={14} c={ACCENT_ATUAL}/>} value={m.paginasLidas??0} meta={METAS_ANUAIS.paginasLidas}      pctVal={pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)} color={ACCENT_ATUAL}/>
+                  <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat s={14} c={ACCENT_ATUAL}/>} value={m.replays??0}          meta={METAS_ANUAIS.replays}            pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT_ATUAL}/>
+                </div>
+              )}
             </div>
-          </div>
-        </aside>
-
+          </aside>
+        
         {renderMain()}
       </div>
     </div>
