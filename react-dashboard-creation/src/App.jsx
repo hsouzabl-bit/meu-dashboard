@@ -587,8 +587,8 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
                     if(dia===null) return <div key={`vazio-${idx}`}/>;
                     const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
                     return (
-                      <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
-                        style={{borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
+                      <div key={dia} onClick={()=>setDiaSel(dia===diaSel?null:dia)}
+                        style={{borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:r?th.text:th.textMuted,cursor:"pointer",fontWeight:r?700:400}}>
                         {dia}
                       </div>
                     );
