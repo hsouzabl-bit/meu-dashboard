@@ -233,6 +233,29 @@ const [novoPlano, setNovoPlano] = useState("");
     salvarDashboardSemanalApp(planoSemana, novo);
   }
 
+  const [checklistHoje, setChecklistHoje] = useState([
+    { id:1, label:"Pré MKT Gráfico", done:false },
+    { id:2, label:"Pré MKT com Coach", done:false },
+    { id:3, label:"Disposição registrada", done:false },
+    { id:4, label:"Respiração 3-2-6", done:false },
+    { id:5, label:"Diário de trades", done:false },
+    { id:6, label:"Pós MKT com Coach", done:false },
+  ]);
+  const [naoDevoHoje, setNaoDevoHoje] = useState("");
+  const [intencaoHoje, setIntencaoHoje] = useState("");
+  const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+
+  function salvarChecklistHojeApp(novoChecklist, novoNaoDevo, novaIntencao){
+    const payload = { data: hojeStr, checklist: novoChecklist, naoDevo: novoNaoDevo, intencao: novaIntencao };
+    fetch(`${API_DIARIO}?action=salvarChecklistDiario&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(()=>{});
+  }
+
+  function toggleChecklistHoje(id){
+    const novo = checklistHoje.map(i=>i.id===id?{...i,done:!i.done}:i);
+    setChecklistHoje(novo);
+    salvarChecklistHojeApp(novo, naoDevoHoje, intencaoHoje);
+  }
+
   const th = dark ? DARK : LIGHT;
   const ACCENT_ATUAL = dark ? ACCENT_DARK : ACCENT_LIGHT;
 
@@ -303,6 +326,19 @@ useEffect(()=>{
         const found = (j.semanas||[]).find(s=>s.chave===chave);
         setPlanoSemana(found?.planoSemana || []);
         setPontosAtencao(found?.pontosAtencao || []);
+      })
+      .catch(()=>{});
+
+  fetch(`${API_DIARIO}?action=lerChecklistDiario`)
+      .then(r=>r.json())
+      .then(j=>{
+        const hojeChave = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+        const found = (j.dias||[]).find(d=>d.data===hojeChave);
+        if(found){
+          if(found.checklist?.length) setChecklistHoje(found.checklist);
+          setNaoDevoHoje(found.naoDevo||"");
+          setIntencaoHoje(found.intencao||"");
+        }
       })
       .catch(()=>{});
   },[]);
@@ -595,9 +631,46 @@ useEffect(()=>{
                 ) : <div key={ci} style={{padding:"10px 14px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:11,color:th.textMuted,display:"flex",alignItems:"center"}}>Sem dados ainda</div>)}
               </div>
             ))}
-          </div>
+          </div>  
         </div>
 
+        <div style={{display:"grid",gridTemplateColumns:"1.2fr 1fr 1fr",gap:14,marginBottom:18}}>
+          <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+            <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
+            <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
+              {checklistHoje.map(item=>(
+                <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                  <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
+                  <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F"}}>
+            <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
+            <textarea
+              value={naoDevoHoje}
+              onChange={e=>setNaoDevoHoje(e.target.value)}
+              onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
+              placeholder="O que evitar hoje..."
+              rows={5}
+              style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:13,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+            />
+          </div>
+
+          <div style={{background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"16px 18px",border:`1px solid ${ACCENT_ATUAL}33`}}>
+            <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
+            <textarea
+              value={intencaoHoje}
+              onChange={e=>setIntencaoHoje(e.target.value)}
+              onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
+              placeholder="Foco de hoje..."
+              rows={5}
+              style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:13,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+            />
+          </div>
+        </div>
         
 
         <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
