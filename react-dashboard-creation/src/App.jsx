@@ -444,7 +444,7 @@ export default function App(){
     ];
     const setupsMesLista = (dadosMes?.setups||[]).map(s=>{
       const c = classificarSetup(s.nome);
-      return c ? { nome:c.label, wr:s.taxaAcerto, financ:s.financTotal } : null;
+      return c ? { nome:c.label, wr:s.taxaAcerto, financ:s.financTotal } : null; 
     }).filter(Boolean);
     const financMes = dadosMes?.contas?.["ION 2"]?.financTotal ?? null;
     const wrMes = dadosMes?.contas?.["ION 2"]?.taxaAcerto ?? null;
