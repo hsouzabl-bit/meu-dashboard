@@ -599,7 +599,7 @@ export default function App(){
                       const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
                       return (
                         <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
-                          style={{height:30,borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
+                          style={{height:54,borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
                           {dia}
                         </div>
                       );
