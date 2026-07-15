@@ -435,7 +435,7 @@ useEffect(()=>{
     }
 
    return (
-      <div style={{display:"flex",gap:16,width:"100%",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+      <div style={{display:"flex",gap:16,width:"100%",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
       <main style={{flex:1,padding:"0 8px 40px",overflowY:"auto",minWidth:0}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
           <div>
@@ -455,16 +455,13 @@ useEffect(()=>{
 
         {erro&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"13px 18px",marginBottom:20,color:"#dc2626",fontSize:13}}>⚠️ {erro}</div>}
 
-        <div style={{display:"flex",gap:14,marginBottom:18,flexWrap:"nowrap"}}>
-          {loading?Array(5).fill(0).map((_,i)=>(
+<div style={{display:"flex",gap:14,marginBottom:18,flexWrap:"nowrap"}}>
+          {loading?Array(2).fill(0).map((_,i)=>(
             <div key={i} style={{flex:1,background:th.cardBg,borderRadius:14,padding:"20px 22px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:10}}>
               <Skeleton h={12} w="55%" th={th}/><Skeleton h={32} w="70%" th={th}/><Skeleton h={8} th={th}/>
             </div>
           )):<>
-            <MetricCard th={th} icon={<Ico.Target s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label={modoDia?"Tipo do dia":"Dia Perfeito"} value={modoDia?(cardTipo||"—"):(m.diaPerfeitoAtual??0)} unit="" sub={modoDia?undefined:`Melhor sequência: ${m.melhorSequencia??0} dias`}/>
             <MetricCard th={th} icon={<Ico.Trend  s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Horas de Estudo" value={modoDia?minParaHM((cardHoras||0)*60):`${cardHoras}h`} unit="" sub={`Meta: ${modoDia?"4h/dia":`${metaH}h/mês`}`} pctVal={pct(modoDia?(cardHoras||0)*60:cardHoras*60,metaH*60)} barColor={ACCENT_ATUAL}/>
-            <MetricCard th={th} icon={<Ico.BookOpen s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Páginas Lidas" value={cardPaginas} unit="" sub={`Meta: ${modoDia?"6/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT_ATUAL}/>
-            <MetricCard th={th} icon={<Ico.Play   s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Vídeo Aulas" value={minParaHM(cardVideo)} unit="" sub={`Meta: ${modoDia?"30min/dia":`${metaV/60}h/mês`}`} pctVal={pct(cardVideo,metaV)} barColor={ACCENT_ATUAL}/>
             <MetricCard th={th} icon={<Ico.Repeat s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT_ATUAL}/>
           </>}
         </div>
@@ -642,7 +639,7 @@ useEffect(()=>{
         </div>
       </main>
 
-      <aside style={{width:260,flexShrink:0,display:"flex",flexDirection:"column",gap:14}}>
+    <aside style={{width:340,flexShrink:0,display:"flex",flexDirection:"column",gap:14}}>
         <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
             <Ico.Clipboard s={16} c={ACCENT_ATUAL}/>
