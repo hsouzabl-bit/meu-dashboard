@@ -614,6 +614,18 @@ useEffect(()=>{
                   <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {seq[0]?.pr||0}</span>
                 </span>
               </div>
+
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
+                <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.BookOpen s={15} c={th.textMuted}/>3+ Backtests/dia</span>
+                <span style={{display:"flex",alignItems:"center",gap:12}}>
+                  <span style={{fontSize:14}}>
+                    <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{seq[1]?.dias||0}</span>
+                    <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
+                  </span>
+                  <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {seq[1]?.pr||0}</span>
+                </span>
+              </div>
+              
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0"}}>
                 <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.Repeat s={15} c={th.textMuted}/>1 Replay por dia</span>
                 <span style={{display:"flex",alignItems:"center",gap:12}}>
