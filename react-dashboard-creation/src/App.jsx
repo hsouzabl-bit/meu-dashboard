@@ -13,8 +13,8 @@ const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:500, videoAulas:60, replay
 const DIAS_SEMANA   = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
 const MESES_PT      = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const ACCENT_LIGHT  = "#2563EB";
-const ACCENT_DARK   = "#4C74C9"; // navy blue, aprovado no mockup
-const ACCENT        = ACCENT_LIGHT; // fallback para componentes externos
+const ACCENT_DARK   = "#4C74C9";
+const ACCENT        = ACCENT_LIGHT;
 
 const LIGHT = {
   bg:"#f4f5f7", surface:"#ffffff", border:"#ebebeb", border2:"#e0e0e0",
@@ -24,7 +24,6 @@ const LIGHT = {
   calDayBg:{ 1:"#e6faf2", 2:"#fff8e1", 3:"#fce4ec", 0:"#f5f5f5" },
   calDayBorder:{ 1:"#a7e9c9", 2:"#ffe082", 3:"#f48fb1", 0:"transparent" },
 };
-// Paleta navy escura aprovada nos mockups — fundo bem escuro, cards levemente mais claros
 const DARK = {
   bg:"#050506", surface:"#17151d", border:"#2a2833", border2:"#343240",
   text:"#f2f2f5", textSub:"#c4c3cc", textMuted:"#8f8e9c",
@@ -78,15 +77,15 @@ function Skeleton({w="100%",h=20,r=6,th}){
 
 function MetricCard({icon,color,label,value,unit,sub,pctVal,barColor,th}){
   return(
-    <div style={{background:th.cardBg,borderRadius:14,padding:"20px 22px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:6,transition:"background 0.3s,border 0.3s"}}>
+    <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5,transition:"background 0.3s,border 0.3s"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <span style={{fontSize:11,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>{label}</span>
+        <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>{label}</span>
         {icon}
       </div>
-      <div style={{fontSize:32,fontWeight:800,color,lineHeight:1.1}}>
-        {value}<span style={{fontSize:16,fontWeight:600}}>{unit}</span>
+      <div style={{fontSize:26,fontWeight:800,color,lineHeight:1.1}}>
+        {value}<span style={{fontSize:14,fontWeight:600}}>{unit}</span>
       </div>
-      {sub&&<div style={{fontSize:12,color:th.textMuted}}>{sub}</div>}
+      {sub&&<div style={{fontSize:11,color:th.textMuted}}>{sub}</div>}
       {pctVal!==undefined&&(
         <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
           <div style={{flex:1,background:th.resumeBg,borderRadius:4,height:5}}>
@@ -176,7 +175,7 @@ export default function App(){
   const [loadingRevisoes, setLoadingRevisoes] = useState(true);
 
   const [activeNav,setActiveNav]     = useState("Dashboard");
-  const [dark,setDark]               = useState(true); // dark como padrão agora
+  const [dark,setDark]               = useState(true);
   const [sidebarExpandido,setSidebarExpandido] = useState(false);
   const [seqExpandido, setSeqExpandido] = useState(false);
 
@@ -193,9 +192,10 @@ export default function App(){
     const week1=new Date(d.getFullYear(),0,4);
     return { ano:d.getFullYear(), semana:1+Math.round(((d-week1)/86400000-3+(week1.getDay()+6)%7)/7) };
   }
+
   const [planoSemana, setPlanoSemana] = useState([]);
   const [pontosAtencao, setPontosAtencao] = useState([]);
-const [novoPlano, setNovoPlano] = useState("");
+  const [novoPlano, setNovoPlano] = useState("");
   const [novoPonto, setNovoPonto] = useState("");
   const [showFormPlano, setShowFormPlano] = useState(false);
   const [showFormPonto, setShowFormPonto] = useState(false);
@@ -295,7 +295,7 @@ const [novoPlano, setNovoPlano] = useState("");
     setLoadingRevisoes(false);
   };
 
-useEffect(()=>{
+  useEffect(()=>{
     carregar();
     carregarDiario();
     carregarRevisoes();
@@ -317,7 +317,7 @@ useEffect(()=>{
       })
       .catch(()=>{});
 
-   fetch(`${API_DIARIO}?action=lerDashboardSemanal`)
+    fetch(`${API_DIARIO}?action=lerDashboardSemanal`)
       .then(r=>r.json())
       .then(j=>{
         const { ano, semana } = semanaISOApp(new Date());
@@ -329,7 +329,7 @@ useEffect(()=>{
       })
       .catch(()=>{});
 
-  fetch(`${API_DIARIO}?action=lerChecklistDiario`)
+    fetch(`${API_DIARIO}?action=lerChecklistDiario`)
       .then(r=>r.json())
       .then(j=>{
         const hojeChave = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
@@ -371,15 +371,15 @@ useEffect(()=>{
   const metaR=modoDia?1:METAS_MENSAIS.replays;
 
   const navItems = [
-    {label:"Dashboard",      icon:<Ico.Target    s={18} c="currentColor"/>},
-    {label:"Plano de Trade", icon:<Ico.Clipboard s={18} c="currentColor"/>},
-    {label:"Estatísticas",   icon:<Ico.Trend     s={18} c="currentColor"/>},
-    {label:"Revisões",       icon:<Ico.Calendar  s={18} c="currentColor"/>},
-    {label:"Objetivos",      icon:<Ico.Target    s={18} c="currentColor"/>},
-    {label:"Estudos",        icon:<Ico.BookOpen  s={18} c="currentColor"/>},
-    {label:"Registros",      icon:<Ico.Book      s={18} c="currentColor"/>},
-    {label:"Hábitos",        icon:<Ico.Check     s={18} c="currentColor"/>},
-    {label:"Replays",        icon:<Ico.Repeat    s={18} c="currentColor"/>},
+    {label:"Dashboard",      icon:<Ico.Target    s={19} c="currentColor"/>},
+    {label:"Plano de Trade", icon:<Ico.Clipboard s={19} c="currentColor"/>},
+    {label:"Estatísticas",   icon:<Ico.Trend     s={19} c="currentColor"/>},
+    {label:"Revisões",       icon:<Ico.Calendar  s={19} c="currentColor"/>},
+    {label:"Objetivos",      icon:<Ico.Target    s={19} c="currentColor"/>},
+    {label:"Estudos",        icon:<Ico.BookOpen  s={19} c="currentColor"/>},
+    {label:"Registros",      icon:<Ico.Book      s={19} c="currentColor"/>},
+    {label:"Hábitos",        icon:<Ico.Check     s={19} c="currentColor"/>},
+    {label:"Replays",        icon:<Ico.Repeat    s={19} c="currentColor"/>},
   ];
 
   const topNav = [
@@ -392,14 +392,7 @@ useEffect(()=>{
   const renderMain = () => {
     if(activeNav === "Estatísticas") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
-        <Estatisticas
-          th={th}
-          dark={dark}
-          setDark={setDark}
-          dadosCache={dadosDiario}
-          loadingCache={loadingDiario}
-          onRecarregar={carregarDiario}
-        />
+        <Estatisticas th={th} dark={dark} setDark={setDark} dadosCache={dadosDiario} loadingCache={loadingDiario} onRecarregar={carregarDiario}/>
       </div>
     );
     if(activeNav === "Estudos") return (
@@ -414,16 +407,7 @@ useEffect(()=>{
     );
     if(activeNav === "Revisões") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column",width:"100%"}}>
-        <Revisoes
-          th={th}
-          dark={dark}
-          setDark={setDark}
-          revisoesProp={revisoes}
-          updatesProp={updates}
-          tradesPorDataProp={tradesPorData}
-          loadingProp={loadingRevisoes}
-          onCarregar={carregarRevisoes}
-        />
+        <Revisoes th={th} dark={dark} setDark={setDark} revisoesProp={revisoes} updatesProp={updates} tradesPorDataProp={tradesPorData} loadingProp={loadingRevisoes} onCarregar={carregarRevisoes}/>
       </div>
     );
     if(activeNav === "Plano de Trade") return (
@@ -472,338 +456,349 @@ useEffect(()=>{
       miniCalDias.push({ dia:d, dataStr, r });
     }
 
-   return (
-      <div style={{display:"flex",gap:16,width:"100%",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
-      <main style={{flex:1,padding:"0 8px 40px",overflowY:"auto",minWidth:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
-          <div>
-            <h1 style={{fontSize:26,fontWeight:700,color:th.text,margin:0,letterSpacing:"-0.02em"}}>Dashboard</h1>
-            <p style={{fontSize:13,color:th.textMuted,margin:"4px 0 0"}}>Visão geral da sua evolução</p>
-          </div>
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            {loading&&<span style={{fontSize:12,color:th.textMuted}}>Carregando...</span>}
-            <div style={{display:"flex",alignItems:"center",gap:7,border:`1px solid ${th.border2}`,borderRadius:9,padding:"8px 14px",background:th.surface,fontSize:13,color:th.text}}>
-              <Ico.Calendar s={14} c={th.textMuted}/> {dataFormatada}
-            </div>
-            <button onClick={carregar} style={{border:`1px solid ${th.border2}`,borderRadius:9,padding:"8px 11px",background:th.surface,cursor:"pointer",display:"flex",alignItems:"center"}} title="Atualizar">
-              <Ico.Repeat s={15} c={th.textMuted}/>
-            </button>
-          </div>
+    return (
+      <div style={{width:"100%",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
+
+        {/* Header — título, fora do split de colunas */}
+        <div style={{marginBottom:16}}>
+          <h1 style={{fontSize:26,fontWeight:700,color:th.text,margin:0,letterSpacing:"-0.02em"}}>Dashboard</h1>
+          <p style={{fontSize:13,color:th.textMuted,margin:"4px 0 0"}}>Visão geral da sua evolução</p>
         </div>
 
         {erro&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"13px 18px",marginBottom:20,color:"#dc2626",fontSize:13}}>⚠️ {erro}</div>}
 
-<div style={{display:"flex",gap:14,marginBottom:18,flexWrap:"nowrap"}}>
-          {loading?Array(2).fill(0).map((_,i)=>(
-            <div key={i} style={{flex:1,background:th.cardBg,borderRadius:14,padding:"20px 22px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:10}}>
-              <Skeleton h={12} w="55%" th={th}/><Skeleton h={32} w="70%" th={th}/><Skeleton h={8} th={th}/>
-            </div>
-          )):<>
-            <MetricCard th={th} icon={<Ico.Trend  s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Horas de Estudo" value={modoDia?minParaHM((cardHoras||0)*60):`${cardHoras}h`} unit="" sub={`Meta: ${modoDia?"4h/dia":`${metaH}h/mês`}`} pctVal={pct(modoDia?(cardHoras||0)*60:cardHoras*60,metaH*60)} barColor={ACCENT_ATUAL}/>
-        <MetricCard th={th} icon={<Ico.BookOpen s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Backtests" value={cardPaginas} unit="" sub={`Meta: ${modoDia?"3/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT_ATUAL}/>
-            <MetricCard th={th} icon={<Ico.Repeat s={20} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT_ATUAL}/>
-          </>}
-        </div>
+        {/* Split de colunas — main + sidebar direita, alinhados a partir daqui */}
+        <div style={{display:"flex",gap:16,width:"100%",minWidth:0,alignItems:"flex-start"}}>
+          <main style={{flex:1,minWidth:0}}>
 
-        {!loading && <OntemCard ontem={ontem} ontemData={ontemData} th={th} accent={ACCENT_ATUAL}/>}
-
-        {modoDia&&(
-          <div style={{background:dark?"#1a3028":"#f0fdf8",border:`1px solid ${dark?"#2d6b4f":"#a7e9c9"}`,borderRadius:10,padding:"10px 18px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:600}}>📅 Exibindo dados de {String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}/{anoVis}</span>
-            <button onClick={()=>setDiaSel(null)} style={{fontSize:12,color:ACCENT_ATUAL,background:"none",border:`1px solid ${ACCENT_ATUAL}`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontWeight:600}}>Voltar ao mês</button>
-          </div>
-        )}
-
-        <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:16,marginBottom:18}}>
-          <div style={{background:th.cardBg,borderRadius:14,padding:"20px 22px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-              <span style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em"}}>Resultados do Mês</span>
-              <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-                <span style={{fontSize:18,fontWeight:800,color:financMes==null?th.textMuted:(financMes>=0?"#2f7d52":"#a83f31")}}>
-                  {financMes==null?"—":(financMes>=0?"+":"−")+"R$ "+Math.abs(financMes).toFixed(0)}
-                </span>
-                <span style={{fontSize:11,color:th.textMuted}}>{wrMes!=null?`WR ${wrMes}%`:""}</span>
+            {/* Metric cards + data/reload na mesma linha */}
+            <div style={{display:"flex",gap:12,marginBottom:18,alignItems:"stretch"}}>
+              {loading?Array(3).fill(0).map((_,i)=>(
+                <div key={i} style={{flex:1,background:th.cardBg,borderRadius:14,padding:"14px 16px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:8}}>
+                  <Skeleton h={10} w="55%" th={th}/><Skeleton h={26} w="70%" th={th}/><Skeleton h={6} th={th}/>
+                </div>
+              )):<>
+                <MetricCard th={th} icon={<Ico.Trend  s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Horas de Estudo" value={modoDia?minParaHM((cardHoras||0)*60):`${cardHoras}h`} unit="" sub={`Meta: ${modoDia?"4h/dia":`${metaH}h/mês`}`} pctVal={pct(modoDia?(cardHoras||0)*60:cardHoras*60,metaH*60)} barColor={ACCENT_ATUAL}/>
+                <MetricCard th={th} icon={<Ico.BookOpen s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Backtests" value={cardPaginas} unit="" sub={`Meta: ${modoDia?"3/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT_ATUAL}/>
+                <MetricCard th={th} icon={<Ico.Repeat s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT_ATUAL}/>
+              </>}
+              <div style={{flexShrink:0,marginLeft:8,display:"flex",flexDirection:"column",justifyContent:"center",gap:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:7,border:`1px solid ${th.border2}`,borderRadius:9,padding:"8px 14px",background:th.surface,fontSize:13,color:th.text,whiteSpace:"nowrap"}}>
+                  <Ico.Calendar s={14} c={th.textMuted}/> {dataFormatada}
+                </div>
+                <button onClick={carregar} style={{border:`1px solid ${th.border2}`,borderRadius:9,padding:"8px 0",background:th.surface,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,fontSize:12,color:th.textMuted}} title="Atualizar">
+                  <Ico.Repeat s={14} c={th.textMuted}/> Atualizar
+                </button>
               </div>
             </div>
-            {(dadosDiario?.graficoION2?.length||0) > 0 ? (
-              <svg viewBox="0 0 600 200" style={{width:"100%",height:"auto",display:"block"}}>
-                {(() => {
-                  const pontosMes = dadosDiario.graficoION2.filter(p=>p.data.startsWith(`${anoVis}-${String(mesVis+1).padStart(2,"0")}`));
-                  if(pontosMes.length < 2) return <text x="300" y="100" textAnchor="middle" fontSize="13" fill={th.textMuted}>Dados insuficientes no mês</text>;
-                  const vals = pontosMes.map(p=>p.valor);
-                  const maxV = Math.max(...vals,0), minV = Math.min(...vals,0);
-                  const range = (maxV-minV)||1;
-                  const padL=48,padR=14,padT=18,padB=26,W=600,H=200;
-                  const plotW=W-padL-padR, plotH=H-padT-padB;
-                  const pts = pontosMes.map((p,i)=>({
-                    ...p,
-                    x: padL+(i/(pontosMes.length-1))*plotW,
-                    y: padT+plotH-((p.valor-minV)/range)*plotH,
-                  }));
-                  const zeroY = padT+plotH-((0-minV)/range)*plotH;
-                  const linePath = pts.map((p,i)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ");
+
+            {!loading && <OntemCard ontem={ontem} ontemData={ontemData} th={th} accent={ACCENT_ATUAL}/>}
+
+            {modoDia&&(
+              <div style={{background:dark?"#1a3028":"#f0fdf8",border:`1px solid ${dark?"#2d6b4f":"#a7e9c9"}`,borderRadius:10,padding:"10px 18px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:600}}>📅 Exibindo dados de {String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}/{anoVis}</span>
+                <button onClick={()=>setDiaSel(null)} style={{fontSize:12,color:ACCENT_ATUAL,background:"none",border:`1px solid ${ACCENT_ATUAL}`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontWeight:600}}>Voltar ao mês</button>
+              </div>
+            )}
+
+            {/* Resultados do Mês + Mini calendário */}
+            <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:16,marginBottom:18}}>
+              <div style={{background:th.cardBg,borderRadius:14,padding:"20px 22px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <span style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em"}}>Resultados do Mês</span>
+                  <div style={{display:"flex",alignItems:"baseline",gap:8}}>
+                    <span style={{fontSize:18,fontWeight:800,color:financMes==null?th.textMuted:(financMes>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31"))}}>
+                      {financMes==null?"—":(financMes>=0?"+":"−")+"R$ "+Math.abs(financMes).toFixed(0)}
+                    </span>
+                    <span style={{fontSize:11,color:th.textMuted}}>{wrMes!=null?`WR ${wrMes}%`:""}</span>
+                  </div>
+                </div>
+                {(dadosDiario?.graficoION2?.length||0) > 0 ? (
+                  <svg viewBox="0 0 600 200" style={{width:"100%",height:"auto",display:"block"}}>
+                    {(() => {
+                      const pontosMes = dadosDiario.graficoION2.filter(p=>p.data.startsWith(`${anoVis}-${String(mesVis+1).padStart(2,"0")}`));
+                      if(pontosMes.length < 2) return <text x="300" y="100" textAnchor="middle" fontSize="13" fill={th.textMuted}>Dados insuficientes no mês</text>;
+                      const vals = pontosMes.map(p=>p.valor);
+                      const maxV = Math.max(...vals,0), minV = Math.min(...vals,0);
+                      const range = (maxV-minV)||1;
+                      const padL=48,padR=14,padT=18,padB=26,W=600,H=200;
+                      const plotW=W-padL-padR, plotH=H-padT-padB;
+                      const pts = pontosMes.map((p,i)=>({
+                        ...p,
+                        x: padL+(i/(pontosMes.length-1))*plotW,
+                        y: padT+plotH-((p.valor-minV)/range)*plotH,
+                      }));
+                      const zeroY = padT+plotH-((0-minV)/range)*plotH;
+                      const linePath = pts.map((p,i)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ");
+                      return (
+                        <>
+                          <line x1={padL} y1={zeroY} x2={W-padR} y2={zeroY} stroke={th.border2} strokeWidth="1" strokeDasharray="3,3"/>
+                          {[minV,(minV+maxV)/2,maxV].map((v,i)=>{
+                            const y = padT+plotH-((v-minV)/range)*plotH;
+                            return <text key={i} x={padL-8} y={y+4} textAnchor="end" fontSize="11" fill={th.textMuted}>{Math.round(v)}</text>;
+                          })}
+                          <path d={`${linePath} L${pts[pts.length-1].x},${zeroY} L${pts[0].x},${zeroY} Z`} fill={ACCENT_ATUAL} opacity="0.08"/>
+                          <path d={linePath} fill="none" stroke={ACCENT_ATUAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          {pts.map((p,i)=>(
+                            <g key={i}>
+                              <circle cx={p.x} cy={p.y} r="3.5" fill={ACCENT_ATUAL} stroke={th.cardBg} strokeWidth="2"/>
+                              {(i===pts.length-1 || i%3===0) && (
+                                <text x={p.x} y={p.y-10} textAnchor="middle" fontSize="11" fontWeight="700" fill={th.text}>{p.valor>=0?"+":""}{Math.round(p.valor)}</text>
+                              )}
+                              <text x={p.x} y={H-6} textAnchor="middle" fontSize="10" fill={th.textMuted}>{p.data.slice(8,10)}/{p.data.slice(5,7)}</text>
+                            </g>
+                          ))}
+                        </>
+                      );
+                    })()}
+                  </svg>
+                ) : <div style={{padding:"40px 0",textAlign:"center",color:th.textMuted,fontSize:12}}>Carregando gráfico...</div>}
+
+                {setupsMesLista.length>0 && (
+                  <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
+                    {setupsMesLista.map(s=>(
+                      <div key={s.nome} style={{flex:1,minWidth:130,background:th.resumeBg,borderRadius:10,padding:"12px 16px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:4}}>
+                        <div style={{fontSize:13,fontWeight:700,color:th.text}}>{s.nome}</div>
+                        <div style={{fontSize:12,color:th.textMuted}}>WR {s.wr}%</div>
+                        <div style={{fontSize:15,fontWeight:800,color:s.financ>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{s.financ>=0?"+":"−"}R$ {Math.abs(s.financ).toFixed(0)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative"}}>
+                <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,display:"block"}}>{MESES_PT[mesVis]}</span>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:5}}>
+                  {miniCalDias.map(({dia,r})=>{
+                    const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
+                    return (
+                      <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
+                        style={{aspectRatio:"1",borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
+                        {dia}
+                      </div>
+                    );
+                  })}
+                </div>
+                {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 2"] && (() => {
+                  const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
+                  const r = tradesPorData[key]["ION 2"];
                   return (
                     <>
-                      <line x1={padL} y1={zeroY} x2={W-padR} y2={zeroY} stroke={th.border2} strokeWidth="1" strokeDasharray="3,3"/>
-                      {[minV,(minV+maxV)/2,maxV].map((v,i)=>{
-                        const y = padT+plotH-((v-minV)/range)*plotH;
-                        return <text key={i} x={padL-8} y={y+4} textAnchor="end" fontSize="11" fill={th.textMuted}>{Math.round(v)}</text>;
-                      })}
-                      <path d={`${linePath} L${pts[pts.length-1].x},${zeroY} L${pts[0].x},${zeroY} Z`} fill={ACCENT_ATUAL} opacity="0.08"/>
-                      <path d={linePath} fill="none" stroke={ACCENT_ATUAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      {pts.map((p,i)=>(
-                        <g key={i}>
-                          <circle cx={p.x} cy={p.y} r="3.5" fill={ACCENT_ATUAL} stroke={th.cardBg} strokeWidth="2"/>
-                          {(i===pts.length-1 || i%3===0) && (
-                            <text x={p.x} y={p.y-10} textAnchor="middle" fontSize="11" fontWeight="700" fill={th.text}>{p.valor>=0?"+":""}{Math.round(p.valor)}</text>
-                          )}
-                          <text x={p.x} y={H-6} textAnchor="middle" fontSize="10" fill={th.textMuted}>{p.data.slice(8,10)}/{p.data.slice(5,7)}</text>
-                        </g>
-                      ))}
+                      <div onClick={()=>setDiaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
+                      <div style={{position:"absolute",top:52,right:8,left:8,background:th.cardBg,borderRadius:14,padding:"18px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.4)",border:`1px solid ${th.border}`,zIndex:10}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                          <span style={{fontSize:14,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
+                        </div>
+                        <div style={{display:"flex",gap:16,marginBottom:14}}>
+                          <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
+                          <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
+                          <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
+                        </div>
+                        <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer"}}>Mais detalhes →</div>
+                      </div>
                     </>
                   );
                 })()}
-              </svg>
-            ) : <div style={{padding:"40px 0",textAlign:"center",color:th.textMuted,fontSize:12}}>Carregando gráfico...</div>}
+              </div>
+            </div>
 
-  {setupsMesLista.length>0 && (
-              <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
-{setupsMesLista.map(s=>(
-                  <div key={s.nome} style={{flex:1,minWidth:130,background:th.resumeBg,borderRadius:10,padding:"12px 16px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:4}}>
-                    <div style={{fontSize:13,fontWeight:700,color:th.text}}>{s.nome}</div>
-                    <div style={{fontSize:12,color:th.textMuted}}>WR {s.wr}%</div>
-                    <div style={{fontSize:15,fontWeight:800,color:s.financ>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{s.financ>=0?"+":"−"}R$ {Math.abs(s.financ).toFixed(0)}</div>
+            {/* Status dos Setups */}
+            <div style={{marginBottom:18}}>
+              <div style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Status dos Setups</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {setupsLinhasDash.map((linha,li)=>(
+                  <div key={li} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                    {linha.map((s,ci)=> s ? (
+                      <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`}}>
+                        <span style={{fontSize:12.5,fontWeight:700,color:th.text}}>{s.label}</span>
+                        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                          <span style={{fontSize:11,fontWeight:700,color:corWRDash(s.taxaAcerto).text,background:corWRDash(s.taxaAcerto).bg,border:`1px solid ${corWRDash(s.taxaAcerto).border}`,borderRadius:20,padding:"1px 8px"}}>{s.taxaAcerto}%</span>
+                          <span style={{fontSize:10,color:th.textMuted}}>n={s.trades}</span>
+                        </div>
+                      </div>
+                    ) : <div key={ci} style={{padding:"10px 14px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:11,color:th.textMuted,display:"flex",alignItems:"center"}}>Sem dados ainda</div>)}
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Hoje / Não devo / Intenção */}
+            <div style={{display:"grid",gridTemplateColumns:"1.2fr 1fr 1fr",gap:14,marginBottom:18}}>
+              <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+                <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
+                <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
+                  {checklistHoje.map(item=>(
+                    <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                      <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
+                      <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F"}}>
+                <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
+                <textarea
+                  value={naoDevoHoje}
+                  onChange={e=>setNaoDevoHoje(e.target.value)}
+                  onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
+                  placeholder="O que evitar hoje..."
+                  rows={5}
+                  style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:13,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                />
+              </div>
+
+              <div style={{background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"16px 18px",border:`1px solid ${ACCENT_ATUAL}33`}}>
+                <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
+                <textarea
+                  value={intencaoHoje}
+                  onChange={e=>setIntencaoHoje(e.target.value)}
+                  onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
+                  placeholder="Foco de hoje..."
+                  rows={5}
+                  style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:13,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                />
+              </div>
+            </div>
+
+            {/* Sequências Atuais — colapsável */}
+            <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
+              <div onClick={()=>setSeqExpandido(v=>!v)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
+                <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase"}}>Sequências Atuais</span>
+                <span style={{color:th.textMuted,fontSize:13}}>{seqExpandido?"▲":"▼"}</span>
+              </div>
+              {seqExpandido && (
+                <div style={{marginTop:16}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
+                    <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.Clock s={15} c={th.textMuted}/>Estudo 4h</span>
+                    <span style={{display:"flex",alignItems:"center",gap:12}}>
+                      <span style={{fontSize:14}}>
+                        <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{seq[0]?.dias||0}</span>
+                        <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
+                      </span>
+                      <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {seq[0]?.pr||0}</span>
+                    </span>
+                  </div>
+
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
+                    <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.BookOpen s={15} c={th.textMuted}/>3+ Backtests/dia</span>
+                    <span style={{display:"flex",alignItems:"center",gap:12}}>
+                      <span style={{fontSize:14}}>
+                        <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{seq[1]?.dias||0}</span>
+                        <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
+                      </span>
+                      <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {seq[1]?.pr||0}</span>
+                    </span>
+                  </div>
+
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0"}}>
+                    <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.Repeat s={15} c={th.textMuted}/>1 Replay por dia</span>
+                    <span style={{display:"flex",alignItems:"center",gap:12}}>
+                      <span style={{fontSize:14}}>
+                        <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{rotinas.find(r=>r.nome.toLowerCase().includes("replay"))?.dias||0}</span>
+                        <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
+                      </span>
+                      <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {rotinas.find(r=>r.nome.toLowerCase().includes("replay"))?.pr||0}</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Progresso das Metas */}
+            <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
+              <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:16}}>
+                Progresso das Metas
+                <span style={{fontWeight:500,fontSize:12,color:th.textMuted,textTransform:"none",letterSpacing:0,marginLeft:8}}>(acumulado no ano)</span>
+              </div>
+              {loading?Array(2).fill(0).map((_,i)=><div key={i} style={{padding:"13px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>):<>
+                <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend  s={16} c={ACCENT_ATUAL}/>} value={`${m.horasEstudo??0}h`} meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT_ATUAL}/>
+                <ProgressBar th={th} label="Backtests"       icon={<Ico.BookOpen s={16} c={ACCENT_ATUAL}/>} value={m.paginasLidas??0} meta={METAS_ANUAIS.paginasLidas}      pctVal={pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)} color={ACCENT_ATUAL}/>
+                <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat s={16} c={ACCENT_ATUAL}/>} value={m.replays??0}          meta={METAS_ANUAIS.replays}            pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT_ATUAL}/>
+              </>}
+            </div>
+          </main>
+
+          {/* Sidebar direita — não estica até o fim, só até a altura do próprio conteúdo */}
+          <aside style={{width:340,flexShrink:0,display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                <Ico.Clipboard s={16} c={ACCENT_ATUAL}/>
+                <span style={{fontWeight:700,fontSize:12,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.06em"}}>Plano da Semana</span>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
+                {planoSemana.map(p=>(
+                  <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start",minWidth:0,overflow:"hidden"}}>
+                    <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1,wordBreak:"break-word",overflowWrap:"break-word",minWidth:0}}>{p.texto}</span>
+                    <span onClick={()=>removePlanoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
+                  </div>
+                ))}
+                {planoSemana.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum item ainda.</div>}
+              </div>
+              {showFormPlano ? (
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  <textarea autoFocus value={novoPlano} onChange={e=>setNovoPlano(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlanoItem()} placeholder="Novo item do plano..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
+                  <div style={{display:"flex",gap:6}}>
+                    <button onClick={()=>{addPlanoItem();setShowFormPlano(false);}} style={{flex:1,background:ACCENT_ATUAL,color:"#fff",border:"none",borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>Adicionar</button>
+                    <button onClick={()=>{setShowFormPlano(false);setNovoPlano("");}} style={{background:"none",border:`1px solid ${th.border2}`,color:th.textMuted,borderRadius:8,padding:"7px 14px",fontSize:12,cursor:"pointer"}}>Cancelar</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{display:"flex",justifyContent:"flex-end"}}>
+                  <button onClick={()=>setShowFormPlano(true)} style={{background:"none",border:`1px solid ${ACCENT_ATUAL}`,color:ACCENT_ATUAL,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
+                </div>
+              )}
+            </div>
+
+            <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                <span style={{width:16,height:16,borderRadius:"50%",background:"#c68888",color:"#1a1219",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>!</span>
+                <span style={{fontWeight:700,fontSize:12,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em"}}>Pontos de Atenção</span>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
+                {pontosAtencao.map(p=>(
+                  <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start",minWidth:0,overflow:"hidden"}}>
+                    <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1,wordBreak:"break-word",overflowWrap:"break-word",minWidth:0}}>{p.texto}</span>
+                    <span onClick={()=>removePontoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
+                  </div>
+                ))}
+                {pontosAtencao.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum ponto ainda.</div>}
+              </div>
+              {showFormPonto ? (
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  <textarea autoFocus value={novoPonto} onChange={e=>setNovoPonto(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPontoItem()} placeholder="Novo ponto..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
+                  <div style={{display:"flex",gap:6}}>
+                    <button onClick={()=>{addPontoItem();setShowFormPonto(false);}} style={{flex:1,background:"#c68888",color:"#1a1219",border:"none",borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>Adicionar</button>
+                    <button onClick={()=>{setShowFormPonto(false);setNovoPonto("");}} style={{background:"none",border:`1px solid ${th.border2}`,color:th.textMuted,borderRadius:8,padding:"7px 14px",fontSize:12,cursor:"pointer"}}>Cancelar</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{display:"flex",justifyContent:"flex-end"}}>
+                  <button onClick={()=>setShowFormPonto(true)} style={{background:"none",border:`1px solid #c68888`,color:"#c68888",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
+                </div>
+              )}
+            </div>
+
+            {objetivosSemanaAtual && (objetivosSemanaAtual.objetivos||[]).length>0 && (
+              <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                  <span style={{fontSize:13}}>🎯</span>
+                  <span style={{fontWeight:700,fontSize:12,color:"#7fb89a",textTransform:"uppercase",letterSpacing:"0.06em"}}>Objetivos da Semana</span>
+                </div>
+                <div style={{fontSize:10,color:th.textMuted,marginBottom:10}}>Sincronizado com a aba Objetivos</div>
+                <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                  {objetivosSemanaAtual.objetivos.map(o=>(
+                    <div key={o.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5,opacity:o.feito?0.55:1}}>
+                      <span style={{fontSize:10,fontWeight:700,padding:"1px 8px",borderRadius:20,background:th.navActiveBg,color:ACCENT_ATUAL,width:"fit-content"}}>{o.categoria}</span>
+                      <span style={{fontSize:12,color:th.text,textDecoration:o.feito?"line-through":"none",lineHeight:1.4}}>{o.texto}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-          </div>
-
-          <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative"}}>
-<span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,display:"block"}}>{MESES_PT[mesVis]}</span>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:5}}>
-              {miniCalDias.map(({dia,r})=>{
-                const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
-                return (
-                  <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
-                    style={{aspectRatio:"1",borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
-                    {dia}
-                  </div>
-                );
-              })}
-            </div>
-{diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 2"] && (() => {
-              const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-              const r = tradesPorData[key]["ION 2"];
-              return (
-                <>
-                  <div onClick={()=>setDiaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
-                  <div style={{position:"absolute",top:52,right:8,left:8,background:th.cardBg,borderRadius:14,padding:"18px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.4)",border:`1px solid ${th.border}`,zIndex:10}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                      <span style={{fontSize:14,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
-                    </div>
-                    <div style={{display:"flex",gap:16,marginBottom:14}}>
-                      <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?"#2f7d52":"#a83f31"}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
-                      <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
-                      <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
-                    </div>
-                    <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer"}}>Mais detalhes →</div>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
+          </aside>
         </div>
-
-        <div style={{marginBottom:18}}>
-          <div style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Status dos Setups</div>
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            {setupsLinhasDash.map((linha,li)=>(
-              <div key={li} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                {linha.map((s,ci)=> s ? (
-                  <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`}}>
-                    <span style={{fontSize:12.5,fontWeight:700,color:th.text}}>{s.label}</span>
-                    <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                      <span style={{fontSize:11,fontWeight:700,color:corWRDash(s.taxaAcerto).text,background:corWRDash(s.taxaAcerto).bg,border:`1px solid ${corWRDash(s.taxaAcerto).border}`,borderRadius:20,padding:"1px 8px"}}>{s.taxaAcerto}%</span>
-                      <span style={{fontSize:10,color:th.textMuted}}>n={s.trades}</span>
-                    </div>
-                  </div>
-                ) : <div key={ci} style={{padding:"10px 14px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:11,color:th.textMuted,display:"flex",alignItems:"center"}}>Sem dados ainda</div>)}
-              </div>
-            ))}
-          </div>  
-        </div>
-
-        <div style={{display:"grid",gridTemplateColumns:"1.2fr 1fr 1fr",gap:14,marginBottom:18}}>
-          <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
-            <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
-            <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
-              {checklistHoje.map(item=>(
-                <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-                  <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
-                  <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F"}}>
-            <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
-            <textarea
-              value={naoDevoHoje}
-              onChange={e=>setNaoDevoHoje(e.target.value)}
-              onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-              placeholder="O que evitar hoje..."
-              rows={5}
-              style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:13,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-            />
-          </div>
-
-          <div style={{background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"16px 18px",border:`1px solid ${ACCENT_ATUAL}33`}}>
-            <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
-            <textarea
-              value={intencaoHoje}
-              onChange={e=>setIntencaoHoje(e.target.value)}
-              onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-              placeholder="Foco de hoje..."
-              rows={5}
-              style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:13,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-            />
-          </div>
-        </div>
-        
-
-        <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
-          <div onClick={()=>setSeqExpandido(v=>!v)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
-            <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase"}}>Sequências Atuais</span>
-            <span style={{color:th.textMuted,fontSize:13}}>{seqExpandido?"▲":"▼"}</span>
-          </div>
-          {seqExpandido && (
-            <div style={{marginTop:16}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
-                <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.Clock s={15} c={th.textMuted}/>Estudo 4h</span>
-                <span style={{display:"flex",alignItems:"center",gap:12}}>
-                  <span style={{fontSize:14}}>
-                    <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{seq[0]?.dias||0}</span>
-                    <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
-                  </span>
-                  <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {seq[0]?.pr||0}</span>
-                </span>
-              </div>
-
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${th.border}`}}>
-                <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.BookOpen s={15} c={th.textMuted}/>3+ Backtests/dia</span>
-                <span style={{display:"flex",alignItems:"center",gap:12}}>
-                  <span style={{fontSize:14}}>
-                    <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{seq[1]?.dias||0}</span>
-                    <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
-                  </span>
-                  <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {seq[1]?.pr||0}</span>
-                </span>
-              </div>
-              
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0"}}>
-                <span style={{display:"flex",alignItems:"center",gap:9,fontSize:13,color:th.textSub}}><Ico.Repeat s={15} c={th.textMuted}/>1 Replay por dia</span>
-                <span style={{display:"flex",alignItems:"center",gap:12}}>
-                  <span style={{fontSize:14}}>
-                    <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{rotinas.find(r=>r.nome.toLowerCase().includes("replay"))?.dias||0}</span>
-                    <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
-                  </span>
-                  <span style={{fontSize:11,color:th.textMuted,minWidth:48,textAlign:"right"}}>PR: {rotinas.find(r=>r.nome.toLowerCase().includes("replay"))?.pr||0}</span>
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
-          <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:16}}>
-            Progresso das Metas
-            <span style={{fontWeight:500,fontSize:12,color:th.textMuted,textTransform:"none",letterSpacing:0,marginLeft:8}}>(acumulado no ano)</span>
-          </div>
-          {loading?Array(2).fill(0).map((_,i)=><div key={i} style={{padding:"13px 0",borderBottom:`1px solid ${th.border}`}}><Skeleton th={th}/></div>):<>
-            <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend  s={16} c={ACCENT_ATUAL}/>} value={`${m.horasEstudo??0}h`} meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT_ATUAL}/>
-            <ProgressBar th={th} label="Backtests"       icon={<Ico.BookOpen s={16} c={ACCENT_ATUAL}/>} value={m.paginasLidas??0} meta={METAS_ANUAIS.paginasLidas}      pctVal={pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)} color={ACCENT_ATUAL}/>
-            <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat s={16} c={ACCENT_ATUAL}/>} value={m.replays??0}          meta={METAS_ANUAIS.replays}            pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT_ATUAL}/>
-</>}
-        </div>
-      </main>
-
-    <aside style={{width:340,flexShrink:0,display:"flex",flexDirection:"column",gap:14}}>
-        <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-            <Ico.Clipboard s={16} c={ACCENT_ATUAL}/>
-            <span style={{fontWeight:700,fontSize:12,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.06em"}}>Plano da Semana</span>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
-            {planoSemana.map(p=>(
-              <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
-                <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1}}>{p.texto}</span>
-                <span onClick={()=>removePlanoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
-              </div>
-            ))}
-            {planoSemana.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum item ainda.</div>}
-          </div>
-{showFormPlano ? (
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              <textarea autoFocus value={novoPlano} onChange={e=>setNovoPlano(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlanoItem()} placeholder="Novo item do plano..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>{addPlanoItem();setShowFormPlano(false);}} style={{flex:1,background:ACCENT_ATUAL,color:"#fff",border:"none",borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>Adicionar</button>
-                <button onClick={()=>{setShowFormPlano(false);setNovoPlano("");}} style={{background:"none",border:`1px solid ${th.border2}`,color:th.textMuted,borderRadius:8,padding:"7px 14px",fontSize:12,cursor:"pointer"}}>Cancelar</button>
-              </div>
-            </div>
-          ) : (
-<div style={{display:"flex",justifyContent:"flex-end"}}>
-              <button onClick={()=>setShowFormPlano(true)} style={{background:"none",border:`1px solid ${ACCENT_ATUAL}`,color:ACCENT_ATUAL,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
-            </div>          )}
-        </div>
-
-        <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-            <span style={{width:16,height:16,borderRadius:"50%",background:"#c68888",color:"#1a1219",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>!</span>
-            <span style={{fontWeight:700,fontSize:12,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em"}}>Pontos de Atenção</span>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
-            {pontosAtencao.map(p=>(
-              <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
-                <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1}}>{p.texto}</span>
-                <span onClick={()=>removePontoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
-              </div>
-            ))}
-            {pontosAtencao.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum ponto ainda.</div>}
-          </div>
-{showFormPonto ? (
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              <textarea autoFocus value={novoPonto} onChange={e=>setNovoPonto(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPontoItem()} placeholder="Novo ponto..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>{addPontoItem();setShowFormPonto(false);}} style={{flex:1,background:"#c68888",color:"#1a1219",border:"none",borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>Adicionar</button>
-                <button onClick={()=>{setShowFormPonto(false);setNovoPonto("");}} style={{background:"none",border:`1px solid ${th.border2}`,color:th.textMuted,borderRadius:8,padding:"7px 14px",fontSize:12,cursor:"pointer"}}>Cancelar</button>
-              </div>
-            </div>
-          ) : (
-<div style={{display:"flex",justifyContent:"flex-end"}}>
-              <button onClick={()=>setShowFormPonto(true)} style={{background:"none",border:`1px solid #c68888`,color:"#c68888",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
-            </div>          )}
-        </div>
-
-        {objetivosSemanaAtual && (objetivosSemanaAtual.objetivos||[]).length>0 && (
-          <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-              <span style={{fontSize:13}}>🎯</span>
-              <span style={{fontWeight:700,fontSize:12,color:"#7fb89a",textTransform:"uppercase",letterSpacing:"0.06em"}}>Objetivos da Semana</span>
-            </div>
-            <div style={{fontSize:10,color:th.textMuted,marginBottom:10}}>Sincronizado com a aba Objetivos</div>
-            <div style={{display:"flex",flexDirection:"column",gap:7}}>
-              {objetivosSemanaAtual.objetivos.map(o=>(
-                <div key={o.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5,opacity:o.feito?0.55:1}}>
-                  <span style={{fontSize:10,fontWeight:700,padding:"1px 8px",borderRadius:20,background:th.navActiveBg,color:ACCENT_ATUAL,width:"fit-content"}}>{o.categoria}</span>
-                  <span style={{fontSize:12,color:th.text,textDecoration:o.feito?"line-through":"none",lineHeight:1.4}}>{o.texto}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </aside>
       </div>
     );
   };
@@ -857,11 +852,11 @@ useEffect(()=>{
         </div>
       </div>
 
-      <div style={{display:"flex",gap:16}}>
+      <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
 
-        {/* SIDEBAR FLUTUANTE — expansível, estica até o fim */}
+        {/* SIDEBAR FLUTUANTE — não estica até o fim, altura pelo próprio conteúdo */}
         <aside style={{
-          width:sidebarExpandido?210:68, background:th.surface, borderRadius:30, border:`1px solid ${th.border}`,
+          width:sidebarExpandido?230:74, background:th.surface, borderRadius:30, border:`1px solid ${th.border}`,
           padding:sidebarExpandido?"18px 12px":"18px 0", display:"flex", flexDirection:"column",
           alignItems:sidebarExpandido?"stretch":"center", gap:3, flexShrink:0,
           transition:"width 0.2s ease",
@@ -871,18 +866,16 @@ useEffect(()=>{
             return (
               <button key={item.label} onClick={()=>setActiveNav(item.label)} title={sidebarExpandido?undefined:item.label} style={{
                 display:"flex",alignItems:"center",gap:sidebarExpandido?10:0,justifyContent:sidebarExpandido?"flex-start":"center",
-                width:sidebarExpandido?"100%":42,height:sidebarExpandido?"auto":42,padding:sidebarExpandido?"10px 14px":0,
+                width:sidebarExpandido?"100%":46,height:sidebarExpandido?"auto":46,padding:sidebarExpandido?"11px 14px":0,
                 borderRadius:sidebarExpandido?14:16,border:"none",cursor:"pointer",
                 background:ativo?ACCENT_ATUAL:"transparent",color:ativo?"#fff":th.textMuted,
-                fontSize:13,fontWeight:ativo?600:500,
+                fontSize:14,fontWeight:ativo?600:500,
               }}>
                 {item.icon}
                 {sidebarExpandido && <span>{item.label}</span>}
               </button>
             );
           })}
-
-          <div style={{flex:1}}/>
 
           <div style={{marginTop:sidebarExpandido?12:8,borderTop:`1px solid ${th.border}`,paddingTop:sidebarExpandido?12:8,display:"flex",justifyContent:"center"}}>
             <div onClick={()=>setSidebarExpandido(v=>!v)} style={{width:32,height:32,borderRadius:12,background:th.resumeBg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
