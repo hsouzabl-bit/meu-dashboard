@@ -448,8 +448,13 @@ export default function App(){
     }).filter(Boolean);
     const financMes = dadosMes?.contas?.["ION 2"]?.financTotal ?? null;
     const wrMes = dadosMes?.contas?.["ION 2"]?.taxaAcerto ?? null;
-    const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
+const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
+    const primeiroDiaSemana = new Date(anoVis, mesVis, 1).getDay();
+    const offsetInicio = primeiroDiaSemana===0 ? 6 : primeiroDiaSemana-1;
     const miniCalDias = [];
+    for(let i=0; i<offsetInicio; i++){
+      miniCalDias.push({ dia:null, dataStr:null, r:null });
+    }
     for(let d=1; d<=diasNoMesAtual; d++){
       const dataStr = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
       const r = tradesPorData[dataStr]?.["ION 2"] || tradesPorData[dataStr]?.["ion 2"] || null;
