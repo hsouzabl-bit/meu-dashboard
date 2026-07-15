@@ -637,9 +637,11 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
               </div>
 
 {/* Linha 2, Coluna B: Hoje | Não devo + Intenção */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,height:"100%"}}>
-                <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
-                  <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
+              <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
+                <div style={{fontWeight:700,fontSize:11.5,color:"transparent",marginBottom:10,userSelect:"none"}}>.</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,flex:1}}>
+                  <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+                    <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
                   <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
                     {checklistHoje.map(item=>(
                       <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
