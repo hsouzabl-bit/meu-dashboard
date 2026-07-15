@@ -501,8 +501,8 @@ export default function App(){
               </div>
             )}
 
- {/* Resultados do Mês + Status dos Setups | Mini calendário + Hoje | Não devo + Intenção */}
-            <div style={{display:"grid",gridTemplateColumns:"1.3fr 0.85fr 0.85fr",gap:14,marginBottom:18,alignItems:"start"}}>
+{/* Resultados do Mês + Status dos Setups | Calendário + (Hoje / Não devo+Intenção) */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1.15fr",gap:16,marginBottom:18,alignItems:"start"}}>
 
               {/* Coluna A: Resultados do Mês + Status dos Setups */}
               <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -590,16 +590,16 @@ export default function App(){
                 </div>
               </div>
 
-              {/* Coluna B: Mini calendário + Hoje */}
+              {/* Coluna B: Calendário grande em cima, Hoje + (Não devo/Intenção) embaixo */}
               <div style={{display:"flex",flexDirection:"column",gap:14}}>
                 <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative"}}>
                   <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,display:"block"}}>{MESES_PT[mesVis]}</span>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:5}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6}}>
                     {miniCalDias.map(({dia,r})=>{
                       const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
                       return (
                         <div key={dia} onClick={()=>r&&setDiaSel(dia===diaSel?null:dia)}
-                          style={{aspectRatio:"1",borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
+                          style={{aspectRatio:"1",borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:r?th.text:th.textMuted,cursor:r?"pointer":"default",fontWeight:r?700:400}}>
                           {dia}
                         </div>
                       );
@@ -627,43 +627,43 @@ export default function App(){
                   })()}
                 </div>
 
-                <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
-                  <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
-                  <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
-                    {checklistHoje.map(item=>(
-                      <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-                        <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
-                        <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
-                      </div>
-                    ))}
+                {/* Linha abaixo do calendário: Hoje | Não devo + Intenção empilhados */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                  <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+                    <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
+                    <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
+                      {checklistHoje.map(item=>(
+                        <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                          <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
+                          <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Coluna C: Não devo + Intenção */}
-              <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F"}}>
-                  <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
-                  <textarea
-                    value={naoDevoHoje}
-                    onChange={e=>setNaoDevoHoje(e.target.value)}
-                    onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-                    placeholder="O que evitar hoje..."
-                    rows={4}
-                    style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                  />
-                </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                    <div style={{flex:1,background:th.cardBg,borderRadius:14,padding:"14px 16px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F",display:"flex",flexDirection:"column"}}>
+                      <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
+                      <textarea
+                        value={naoDevoHoje}
+                        onChange={e=>setNaoDevoHoje(e.target.value)}
+                        onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
+                        placeholder="O que evitar hoje..."
+                        style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                      />
+                    </div>
 
-                <div style={{background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"14px 16px",border:`1px solid ${ACCENT_ATUAL}33`}}>
-                  <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
-                  <textarea
-                    value={intencaoHoje}
-                    onChange={e=>setIntencaoHoje(e.target.value)}
-                    onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-                    placeholder="Foco de hoje..."
-                    rows={4}
-                    style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                  />
+                    <div style={{flex:1,background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"14px 16px",border:`1px solid ${ACCENT_ATUAL}33`,display:"flex",flexDirection:"column"}}>
+                      <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
+                      <textarea
+                        value={intencaoHoje}
+                        onChange={e=>setIntencaoHoje(e.target.value)}
+                        onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
+                        placeholder="Foco de hoje..."
+                        style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
