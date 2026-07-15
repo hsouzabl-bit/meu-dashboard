@@ -470,9 +470,9 @@ const setupsClassificados = {};
       [setupsClassificados["FQ"], setupsClassificados["TC Pós BO"]],
       [setupsClassificados["TC Meio de Mov."], setupsClassificados["TC Supertrend"]],
     ];
-    const setupsMesLista = (dadosMes?.setups||[]).map(s=>{
+const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
       const c = classificarSetup(s.nome);
-      return c ? { nome:c.label, wr:s.taxaAcerto, financ:s.financTotal } : null; 
+      return c ? { nome:c.label, wr:s.taxaAcerto, financ:s.financTotal } : null;
     }).filter(Boolean);
     const financMes = dadosMes?.contas?.["ION 3"]?.financTotal ?? null;
     const wrMes = dadosMes?.contas?.["ION 3"]?.taxaAcerto ?? null;
