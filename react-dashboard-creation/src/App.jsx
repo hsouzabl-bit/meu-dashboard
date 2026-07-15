@@ -668,31 +668,6 @@ export default function App(){
               </div>
             </div>
 
-              <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F"}}>
-                <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
-                <textarea
-                  value={naoDevoHoje}
-                  onChange={e=>setNaoDevoHoje(e.target.value)}
-                  onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-                  placeholder="O que evitar hoje..."
-                  rows={5}
-                  style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:13,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                />
-              </div>
-
-              <div style={{background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"16px 18px",border:`1px solid ${ACCENT_ATUAL}33`}}>
-                <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
-                <textarea
-                  value={intencaoHoje}
-                  onChange={e=>setIntencaoHoje(e.target.value)}
-                  onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-                  placeholder="Foco de hoje..."
-                  rows={5}
-                  style={{width:"100%",background:"transparent",border:"none",outline:"none",fontSize:13,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                />
-              </div>
-            </div>
-
             {/* Progresso das Metas */}
             <div style={{background:th.cardBg,borderRadius:14,padding:"22px 26px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
               <div style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.08em",color:th.textSub,textTransform:"uppercase",marginBottom:16}}>
