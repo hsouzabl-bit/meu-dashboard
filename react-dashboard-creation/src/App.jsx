@@ -463,7 +463,26 @@ export default function App(){
     }).filter(Boolean);
     const financMes = dadosMes?.contas?.["ION 2"]?.financTotal ?? null;
     const wrMes = dadosMes?.contas?.["ION 2"]?.taxaAcerto ?? null;
-const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
+
+    const streakDias = [];
+    let cursor = new Date(hoje);
+    while (streakDias.length < 20) {
+      const diaSemana = cursor.getDay();
+      if (diaSemana !== 0 && diaSemana !== 6) {
+        const chave = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,"0")}-${String(cursor.getDate()).padStart(2,"0")}`;
+        const det = diasDia[chave];
+        const tipo = (det?.tipo || "").toLowerCase();
+        const status = !det ? null : tipo.includes("perfeito") && !tipo.includes("quase") ? "perfeito" : tipo.includes("quase") ? "quase" : "fraco";
+        streakDias.unshift({ chave, status, dataObj: new Date(cursor) });
+      }
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    let streakAtual = 0;
+    for (let i = streakDias.length - 1; i >= 0; i--) {
+      if (streakDias[i].status === "perfeito") streakAtual++;
+      else break;
+    }
+    const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
     const primeiroDiaSemana = new Date(anoVis, mesVis, 1).getDay();
     const offsetInicio = primeiroDiaSemana===0 ? 6 : primeiroDiaSemana-1;
     const miniCalDias = [];
@@ -539,7 +558,20 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
               </div>
             </div>
 
-            {!loading && <OntemCard ontem={ontem} ontemData={ontemData} th={th} accent={ACCENT_ATUAL}/>}
+<div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Discipline Streak</span>
+                <span style={{fontSize:12,fontWeight:700,color:streakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>🔥 {streakAtual}d</span>
+              </div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {streakDias.map((d,i)=>{
+                  const cor = d.status===null ? "transparent" : d.status==="perfeito" ? (dark?"#1a7048":"#5cb583") : d.status==="quase" ? (dark?"#856404":"#d1a53d") : (dark?"#8a3a3a":"#d9776b");
+                  return (
+                    <div key={i} title={d.dataObj.toLocaleDateString("pt-BR")} style={{width:24,height:24,borderRadius:6,background:cor,border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
+                  );
+                })}
+              </div>
+            </div>
 
             {modoDia&&(
               <div style={{background:dark?"#1a3028":"#f0fdf8",border:`1px solid ${dark?"#2d6b4f":"#a7e9c9"}`,borderRadius:10,padding:"10px 18px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
