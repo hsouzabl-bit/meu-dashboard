@@ -176,7 +176,7 @@ export default function App(){
 
   const [activeNav,setActiveNav]     = useState("Dashboard");
   const [dark,setDark]               = useState(true);
-  const [sidebarExpandido,setSidebarExpandido] = useState(false);
+  const [sidebarExpandido,setSidebarExpandido] = useState(true);
   const [seqExpandido, setSeqExpandido] = useState(false);
 
   const [diaSel,setDiaSel]           = useState(null);
@@ -502,7 +502,7 @@ export default function App(){
             )}
 
 {/* Resultados do Mês + Status dos Setups | Calendário + (Hoje / Não devo+Intenção) */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1.15fr",gap:16,marginBottom:18,alignItems:"start"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:18,alignItems:"start"}}>
 
               {/* Coluna A: Resultados do Mês + Status dos Setups */}
               <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -594,7 +594,7 @@ export default function App(){
               <div style={{display:"flex",flexDirection:"column",gap:14}}>
                 <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative"}}>
                   <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,display:"block"}}>{MESES_PT[mesVis]}</span>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>
                     {miniCalDias.map(({dia,r})=>{
                       const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
                       return (
@@ -857,7 +857,7 @@ export default function App(){
         </div>
       </div>
 
-      <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
+      <div style={{display:"flex",gap:28,alignItems:"flex-start"}}>
 
         {/* SIDEBAR FLUTUANTE — não estica até o fim, altura pelo próprio conteúdo */}
         <aside style={{
