@@ -807,11 +807,26 @@ const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
                 <span style={{fontWeight:700,fontSize:11,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Progresso das Metas</span>
                 <span style={{color:th.textMuted,fontSize:13}}>{metasExpandido?"▲":"▼"}</span>
               </div>
-              {metasExpandido && (
-                <div style={{marginTop:14}}>
-                  <ProgressBar th={th} label="Horas de estudo" icon={<Ico.Trend  s={14} c={ACCENT_ATUAL}/>} value={`${m.horasEstudo??0}h`} meta={`${METAS_ANUAIS.horasEstudo}h`} pctVal={pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)} color={ACCENT_ATUAL}/>
-                  <ProgressBar th={th} label="Backtests"       icon={<Ico.BookOpen s={14} c={ACCENT_ATUAL}/>} value={m.paginasLidas??0} meta={METAS_ANUAIS.paginasLidas}      pctVal={pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)} color={ACCENT_ATUAL}/>
-                  <ProgressBar th={th} label="Replays"         icon={<Ico.Repeat s={14} c={ACCENT_ATUAL}/>} value={m.replays??0}          meta={METAS_ANUAIS.replays}            pctVal={pct(m.replays,METAS_ANUAIS.replays)} color={ACCENT_ATUAL}/>
+{metasExpandido && (
+                <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:12}}>
+                  {[
+                    {label:"Horas de estudo", icon:<Ico.Trend  s={14} c={ACCENT_ATUAL}/>, value:`${m.horasEstudo??0}h`, meta:`${METAS_ANUAIS.horasEstudo}h`, pctVal:pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)},
+                    {label:"Backtests",       icon:<Ico.BookOpen s={14} c={ACCENT_ATUAL}/>, value:m.paginasLidas??0, meta:METAS_ANUAIS.paginasLidas, pctVal:pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)},
+                    {label:"Replays",         icon:<Ico.Repeat s={14} c={ACCENT_ATUAL}/>, value:m.replays??0, meta:METAS_ANUAIS.replays, pctVal:pct(m.replays,METAS_ANUAIS.replays)},
+                  ].map(item=>(
+                    <div key={item.label}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                        <span style={{display:"flex",alignItems:"center",gap:7,fontSize:12,color:th.textSub}}>{item.icon}{item.label}</span>
+                        <span style={{fontSize:11,color:th.textMuted}}>{item.value} / {item.meta}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <div style={{flex:1,background:th.resumeBg,borderRadius:6,height:6}}>
+                          <div style={{width:`${item.pctVal}%`,background:ACCENT_ATUAL,borderRadius:6,height:6,transition:"width 0.8s ease"}}/>
+                        </div>
+                        <span style={{fontSize:11,fontWeight:700,color:th.text,minWidth:30,textAlign:"right"}}>{item.pctVal}%</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 </div>
