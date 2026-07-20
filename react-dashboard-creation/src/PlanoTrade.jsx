@@ -226,34 +226,265 @@ function Quote({ children, theme }) {
   );
 }
 
-/* ---------------- Cartão de setup (estrutura fixa de colunas) ---------------- */
+/* ---------------- Helpers de tom (cor por estado de fluência) ---------------- */
 
-function SetupCard({ nome, badge, badgeColor, fluencia, data, theme }) {
+function toneBg(tone, theme) {
+  const tones = {
+    neutral: theme.border,
+    good: `${theme.accent}22`,
+    warn: "#e0a63a22",
+    bad: "#e0555522",
+  };
+  return tones[tone] || tones.neutral;
+}
+function toneColor(tone, theme) {
+  const tones = { neutral: theme.textMuted, good: theme.accent, warn: "#e0a63a", bad: "#e05555" };
+  return tones[tone] || tones.neutral;
+}
+
+/* ---------------- Ícones por setup ---------------- */
+
+const IconTRM = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+  </svg>
+);
+const IconFQ = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" />
+  </svg>
+);
+const IconTCMM = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 17l6-6 4 4 8-8" /><path d="M17 7h4v4" />
+  </svg>
+);
+const IconTCPos = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 19V5" /><path d="M6 11l6-6 6 6" />
+  </svg>
+);
+const IconTCSuper = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="5" cy="14" r="1.6" /><circle cx="12" cy="7" r="1.6" /><circle cx="19" cy="16" r="1.6" /><path d="M6.3 12.8L10.7 8.5M13.3 8.3l4.4 6" />
+  </svg>
+);
+
+/* ---------------- Blocos do painel de detalhe ---------------- */
+
+function StatCard({ theme, label, value, accent }) {
   return (
-    <Accordion
-      title={nome}
-      badge={badge}
-      badgeColor={badgeColor}
-      theme={theme}
-    >
-      <Field label="Lógica do setup" theme={theme}>{data.logica}</Field>
-      <Field label="Timeframe de leitura" theme={theme}>{data.timeframe}</Field>
-      <Field label="Pré-condição (veto)" theme={theme}>{data.veto}</Field>
-      <Field label="Regras de entrada" theme={theme}>{data.regras}</Field>
-      <Field label="Filtros" theme={theme}>{data.filtros}</Field>
-      <Field label="Barra de sinal exigida" theme={theme}>{data.barraSinal}</Field>
-      <Field label="Onde invalida" theme={theme}>{data.invalidacao}</Field>
-      <Field label="Red flags conhecidos" theme={theme}>{data.redFlags}</Field>
-      <Field label="Estado de fluência" theme={theme}>
-        <Pill theme={theme} tone={fluencia.tone}>{fluencia.label}</Pill>
-        {fluencia.detalhe && (
-          <span style={{ marginLeft: 8, color: theme.textMuted, fontSize: 13 }}>
-            {fluencia.detalhe}
-          </span>
+    <div style={{ background: theme.cardAlt, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "10px 12px" }}>
+      <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 800, color: accent ? theme.accent : theme.text }}>{value}</div>
+    </div>
+  );
+}
+
+function DetailBlock({ theme, label, children, danger }) {
+  return (
+    <div style={{ border: `1px solid ${theme.border}`, borderRadius: 10, padding: 12 }}>
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: danger ? "#e05555" : theme.accent,
+          textTransform: "uppercase",
+          letterSpacing: 0.4,
+          marginBottom: 6,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ fontSize: 12.5, color: theme.text, lineHeight: 1.6 }}>{children}</div>
+    </div>
+  );
+}
+
+function Chip({ theme, children }) {
+  return (
+    <span style={{ background: theme.cardAlt, color: theme.textMuted, fontSize: 11.5, padding: "4px 9px", borderRadius: 7 }}>
+      {children}
+    </span>
+  );
+}
+
+function SetupDetail({ s, theme }) {
+  const blockA = s.data.regiao
+    ? {
+        label: "Região (mín. 2 de 4)",
+        content: (
+          <ul style={{ margin: 0, paddingLeft: 16, lineHeight: 1.7 }}>
+            {s.data.regiao.map((r, i) => (
+              <li key={i}>{r}</li>
+            ))}
+          </ul>
+        ),
+      }
+    : { label: "Pré-condição (veto)", content: s.data.veto };
+
+  const blockB = s.data.condicao
+    ? { label: "Condição", content: s.data.condicao }
+    : { label: "Regras de entrada", content: [s.data.regras, s.data.filtros].filter(Boolean).join(" ") };
+
+  return (
+    <div style={{ padding: "18px 20px 20px", background: theme.bg }}>
+      <div style={{ fontSize: 12.5, color: theme.textMuted, lineHeight: 1.6, marginBottom: 14 }}>{s.data.logica}</div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 14 }}>
+        <StatCard theme={theme} label="Stop aceito" value={s.stopAceito} />
+        <StatCard theme={theme} label="Split (5 ctts)" value={s.split} />
+        <StatCard theme={theme} label="RxR combinado" value={s.rxr} accent />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+        <DetailBlock theme={theme} label={blockA.label}>{blockA.content}</DetailBlock>
+        <DetailBlock theme={theme} label={blockB.label}>{blockB.content}</DetailBlock>
+        <DetailBlock theme={theme} label="Gatilhos aceitos">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {s.barraSinalChips.map((c, i) => (
+              <Chip key={i} theme={theme}>{c}</Chip>
+            ))}
+          </div>
+        </DetailBlock>
+        <DetailBlock theme={theme} label="Onde invalida" danger>{s.data.invalidacao}</DetailBlock>
+      </div>
+
+      <div
+        style={{
+          background: "#e0555518",
+          border: "1px solid #e0555540",
+          borderRadius: 10,
+          padding: 12,
+          marginBottom: 10,
+        }}
+      >
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#e05555", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 }}>
+          Red flags conhecidos
+        </div>
+        <div style={{ fontSize: 12.5, color: theme.text, lineHeight: 1.6 }}>{s.data.redFlags}</div>
+      </div>
+
+      <div style={{ fontSize: 12.5, color: theme.textMuted, lineHeight: 1.6 }}>
+        {s.papel && (
+          <div style={{ marginBottom: 6 }}>
+            <b style={{ color: theme.text }}>Papel no operacional: </b>
+            {s.papel}
+          </div>
         )}
-      </Field>
-      <Field label="Exemplo âncora" theme={theme}>{data.exemplo}</Field>
-    </Accordion>
+        <div>
+          <b style={{ color: theme.text }}>Exemplo âncora: </b>
+          {s.data.exemplo}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Tabela comparativa de setups (expansão inline) ---------------- */
+
+function SetupsTable({ theme, setups }) {
+  const [openId, setOpenId] = useState(null);
+
+  return (
+    <div style={{ border: `1px solid ${theme.border}`, borderRadius: 14, overflow: "hidden" }}>
+      <div style={{ overflowX: "auto" }}>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: 13,
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            minWidth: 700,
+          }}
+        >
+          <thead>
+            <tr>
+              {["Setup", "Timeframe", "Barra de sinal", "Split / RxR", "Fluência", ""].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    textAlign: "left",
+                    padding: "12px 14px",
+                    borderBottom: `1px solid ${theme.border}`,
+                    color: theme.textMuted,
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.4,
+                    background: theme.cardAlt,
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {setups.map((s, i) => {
+              const isOpen = openId === s.id;
+              const Icon = s.Icon;
+              return (
+                <React.Fragment key={s.id}>
+                  <tr
+                    onClick={() => setOpenId(isOpen ? null : s.id)}
+                    style={{
+                      cursor: "pointer",
+                      background: isOpen ? theme.cardAlt : i % 2 === 1 ? `${theme.cardAlt}80` : "transparent",
+                    }}
+                  >
+                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 8,
+                            background: toneBg(s.fluencia.tone, theme),
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Icon color={toneColor(s.fluencia.tone, theme)} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, color: theme.text }}>{s.nomeCurto}</div>
+                          <div style={{ fontSize: 11, color: theme.textMuted }}>{s.subtitulo}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}`, color: theme.textMuted }}>
+                      {s.timeframeShort}
+                    </td>
+                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}`, color: theme.textMuted }}>
+                      {s.barraSinalChips.join(" · ")}
+                    </td>
+                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}` }}>
+                      <div style={{ fontWeight: 700, color: theme.text }}>{s.split}</div>
+                      <div style={{ fontSize: 11, color: theme.textMuted }}>{s.rxr}</div>
+                    </td>
+                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}` }}>
+                      <Pill theme={theme} tone={s.fluencia.tone}>{s.fluencia.label}</Pill>
+                    </td>
+                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}`, textAlign: "center" }}>
+                      <IcoChevron open={isOpen} color={theme.textMuted} />
+                    </td>
+                  </tr>
+                  {isOpen && (
+                    <tr>
+                      <td colSpan={6} style={{ padding: 0, borderBottom: `1px solid ${theme.border}` }}>
+                        <SetupDetail s={s} theme={theme} />
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -317,11 +548,105 @@ function TabelaSaida({ theme }) {
   );
 }
 
+function TabelaGestaoPorSetup({ theme }) {
+  const rows = [
+    { setup: "FQ", split: "3/1/1", pontos: "200 / 300 / 400", rxr: "1,3x1", status: { label: "Fechado", tone: "good" } },
+    { setup: "TC Meio de Movimento", split: "3/1/1", pontos: "225 / 300 / 400", rxr: "1,2x1", status: { label: "Fechado", tone: "good" } },
+    { setup: "TRM", split: "3/1/1", pontos: "225 / 300 / 400", rxr: "1,2x1", status: { label: "Fechado", tone: "good" } },
+    { setup: "TC Pós BO", split: "2/2/1", pontos: "225 / 400 / 550", rxr: "1,6x1", status: { label: "Fechado", tone: "good" } },
+    { setup: "TC Pré BO", split: "3/1/1 (ref.)", pontos: "— / — / 400", rxr: "~1,3x1", status: { label: "Pausado", tone: "warn" } },
+    { setup: "TC Supertrend", split: "—", pontos: "—", rxr: "—", status: { label: "Sem amostra", tone: "neutral" } },
+  ];
+  const statusColors = {
+    good: { bg: `${theme.accent}22`, text: theme.accent },
+    warn: { bg: "#e0a63a22", text: "#e0a63a" },
+    neutral: { bg: theme.border, text: theme.textMuted },
+  };
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          fontSize: 13,
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+      >
+        <thead>
+          <tr>
+            {["Setup", "Split (5 ctts)", "Pontos (1ª / 2ª / Final)", "RxR", "Status"].map((h) => (
+              <th
+                key={h}
+                style={{
+                  textAlign: "left",
+                  padding: "8px 10px",
+                  borderBottom: `1px solid ${theme.border}`,
+                  color: theme.accent,
+                  fontSize: 11,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.4,
+                }}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const c = statusColors[r.status.tone];
+            return (
+              <tr key={r.setup}>
+                <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.text, fontWeight: 700 }}>
+                  {r.setup}
+                </td>
+                <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.text }}>
+                  {r.split}
+                </td>
+                <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.textMuted }}>
+                  {r.pontos}
+                </td>
+                <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.text, fontWeight: 700 }}>
+                  {r.rxr}
+                </td>
+                <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}` }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: "3px 10px",
+                      borderRadius: 999,
+                      background: c.bg,
+                      color: c.text,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {r.status.label}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /* ---------------- Dados dos setups ---------------- */
 
 const SETUPS = [
   {
+    id: "trm",
+    nomeCurto: "TRM",
     nome: "TRM — Trade de Retorno às Médias",
+    subtitulo: "Retorno às médias",
+    Icon: IconTRM,
+    timeframeShort: "M5 → M2",
+    barraSinalChips: ["Inside/outside", "Martelo/invertido", "Engolfo"],
+    stopAceito: "Variável (esticamento)",
+    split: "3/1/1",
+    rxr: "1,2x1",
     badge: "Fluente",
     badgeColor: { bg: "#4ecb8d22", text: "#4ecb8d" },
     fluencia: { label: "Fluente", tone: "good", detalhe: "80% de acerto no período (4G/1L/1BE em 6 trades)" },
@@ -338,27 +663,50 @@ const SETUPS = [
     },
   },
   {
+    id: "fq",
+    nomeCurto: "FQ",
     nome: "FQ — Falha de Estrutura",
+    subtitulo: "Falha de estrutura",
+    Icon: IconFQ,
+    timeframeShort: "M5 → M2",
+    barraSinalChips: ["Martelo/invertido", "2BR", "Inside", "Outside"],
+    stopAceito: "Até 250 pts",
+    split: "3/1/1",
+    rxr: "1,3x1",
+    papel: "(a) alternativa ao TRM quando esticado mas sem ter dado para participar; (b) captura de reversão real numa localização onde a reversão já era esperada e a força reversiva já aconteceu, deixando correção + gatilho.",
     badge: "Em validação",
     badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
-    fluencia: { label: "Em validação", tone: "warn", detalhe: "Regras reformuladas — histórico anterior: 38% de acerto, maior detrator financeiro do período" },
+    fluencia: { label: "Em validação", tone: "warn", detalhe: "Reformulado com o Mateus, jul/2026 — histórico anterior: 41% de acerto" },
     data: {
-      logica: "Falha de continuidade expõe traders posicionados a favor da tendência com stop técnico no nível que acabou de ser rompido — a quebra de estrutura (topo mais baixo / fundo mais alto) gera o próprio combustível da reversão ao acionar esses stops.",
-      timeframe: "M5 para estrutura, esticamento e veto de tendência (20 barras); M2 para confirmação de rompimento do nível relevante e execução.",
-      veto: "Candidato somente em uma de duas situações: (1) esticado 3+ barras do M5 sem tocar a MME9 do M5 (mesma régua do TRM) ou (2) calçado pela MME9 no M2 e rompimento de um topo/fundo relevante anterior (o T/F que perdeu o fundo/topo que o sustentava — onde estaria o stop técnico de quem opera a favor da tendência). Veto adicional: se as últimas ~20 barras do M5 mostram tendência direcional clara sem sinal de exaustão (clímax, 3+ puxadas sem correção profunda), FQ não é candidato.",
-      regras: "Estrutura de tendência prévia (T/F/T/F, mín. 2 de cada lado) + região de trava (S/R, LT/CL, Fibo, MA longa, VWAP) + falha de estrutura confirmada + gatilho na região.",
-      filtros: "MME9 do M2 a favor da nova direção; gatilho em região de fibored (38-61,8% da perna); espaço até a MME9 do M2 para viabilizar parcial — pegar longe dela (espaço) ou depois dela (apoio), nunca no meio do caminho.",
-      barraSinal: "Rejeição decisiva da região — martelo, engolfo ou inside claro a favor da reversão. Doji nunca é aceitável como SB de agressão neste setup.",
-      invalidacao: "A falha de estrutura precisa se confirmar rápido — se o preço volta a romper além do nível que gerou a falha, não é FQ, é continuação disfarçada.",
-      redFlags: "Doji como SB (recorrente: 09/06, 18/06 ×2, 23/06); operar contra canal estreito/muito perto das médias sem quebra real de estrutura; vender no fundo de um range pequeno sem violação de fundo relevante; repetir a mesma região após FQ anterior (\"FQ do FQ\").",
+      logica: "Falha de continuidade expõe traders posicionados a favor da tendência com stop técnico no nível que acabou de ser rompido — a quebra de estrutura gera o próprio combustível da reversão ao acionar esses stops. Fechado para exigir região de alta confluência e condição que já demonstre força reversiva real, não hipotética.",
+      timeframe: "M5 para região e condição; M2 para MME9, espaço e execução.",
+      regiao: [
+        "Topo/fundo isolado",
+        "Suporte/Resistência validado (2+ toques prévios)",
+        "Médias do tempo gráfico maior",
+        "Alvo de fibo + 1 confluência adicional",
+      ],
+      condicao: "Esticado: 3+ candles afastado da MME9 do M5, com espaço para 1x1 na MME9 do M2. Estruturado: quebra de microestrutura anterior + calço da MME9 do M2 + espaço gráfico de 1x1 até o T/F mais próximo (da perna que gerou a falha) — sem esse espaço, não há trade.",
+      barraSinal: "Martelo/martelo invertido · 2BR (inclui engolfo) · inside bar (favorável, ou doji com fechamento nos 30% superiores/inferiores + pavio consistente) · outside bar.",
+      invalidacao: "A falha precisa se confirmar rápido — retorno além do nível que gerou a falha é continuação disfarçada, não FQ.",
+      redFlags: "Doji fora do critério objetivo de pavio; região com só 1 confluência; condição \"esticado\" sem espaço até a 9 do M2; condição \"estruturado\" sem espaço até o T/F (veto automático).",
       exemplo: "29/06 (FQ realmente acima da 9 e da VWAP, vindo da MM20 do 60' + 50% fibo do dia anterior).",
     },
   },
   {
+    id: "tc-mm",
+    nomeCurto: "TC Meio de Mov.",
     nome: "TC — Meio de Movimento (MME9)",
+    subtitulo: "Pullback na MME9",
+    Icon: IconTCMM,
+    timeframeShort: "M5 → M2",
+    barraSinalChips: ["Padrão", "Inside/outside reforça"],
+    stopAceito: "Variável (T/F do swing)",
+    split: "3/1/1",
+    rxr: "1,2x1",
     badge: "Funcional",
     badgeColor: { bg: "#4ecb8d22", text: "#4ecb8d" },
-    fluencia: { label: "Funcional", tone: "good", detalhe: "60% de acerto no período (3G/2L), +R$227" },
+    fluencia: { label: "Funcional", tone: "good", detalhe: "54% de acerto no período" },
     data: {
       logica: "Dentro de uma tendência já estabelecida, o pullback até a média de referência oferece entrada de continuidade — o viés a favor já está validado pelo alinhamento das médias.",
       timeframe: "M5 para checar alinhamento de médias e estrutura de tendência; M2 para execução do PB.",
@@ -372,10 +720,19 @@ const SETUPS = [
     },
   },
   {
+    id: "tc-pos",
+    nomeCurto: "TC Pós BO",
     nome: "TC — Pós BO (rompimento)",
+    subtitulo: "Continuidade pós-rompimento",
+    Icon: IconTCPos,
+    timeframeShort: "M2 / M5 (janela 40 barras)",
+    barraSinalChips: ["Inside", "Outside", "Martelo/shooting star", "2BR"],
+    stopAceito: "Variável (a própria SB)",
+    split: "2/2/1",
+    rxr: "1,6x1",
     badge: "Em validação",
     badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
-    fluencia: { label: "Em validação", tone: "warn", detalhe: "25% de acerto no período (2G/6L), -R$834 — raiz recém-reformulada" },
+    fluencia: { label: "Em validação", tone: "warn", detalhe: "44% de acerto no período, raiz recém-reformulada" },
     data: {
       logica: "Captura continuidade após um rompimento genuíno de uma região relevante (lateralidade mín. 2T/2F, triângulo, ou máx/mín do dia) que já provou ter distanciado e retornado — é o teste do rompimento, não a entrada nele.",
       timeframe: "M2 se o nível estiver contido em até ~40 barras de M2 (~80min); acima disso, sobe para M5/M15 — e o trade correto passa a ser meio de movimento pós-rompimento, não entrada direto no rompimento.",
@@ -389,10 +746,19 @@ const SETUPS = [
     },
   },
   {
+    id: "tc-super",
+    nomeCurto: "TC Supertrend",
     nome: "TC — Supertrend (9 do 2')",
+    subtitulo: "9 do M2",
+    Icon: IconTCSuper,
+    timeframeShort: "M5 → M2",
+    barraSinalChips: ["Padrão"],
+    stopAceito: "—",
+    split: "—",
+    rxr: "—",
     badge: "Coletando dados",
     badgeColor: { bg: `#8888` + "22", text: "#9aa3b2" },
-    fluencia: { label: "Dados insuficientes", tone: "neutral", detalhe: "Poucas ocorrências com a regra já formalizada — observar próximas entradas" },
+    fluencia: { label: "Sem amostra", tone: "neutral", detalhe: "Poucas ocorrências com a regra já formalizada — observar próximas entradas" },
     data: {
       logica: "Mesmo cenário de tendência com médias alinhadas do TC de MM, mas usa especificamente a MME9 do M2 — exige que ela já tenha se provado como suporte/resistência viva antes, evitando ser o primeiro a testar um nível ainda não validado.",
       timeframe: "M5 para contexto de tendência e alinhamento de médias; M2 para a reação na 9 e execução.",
@@ -460,18 +826,17 @@ export default function PlanoTrade({ th }) {
         </Field>
         <Field label="Princípios-guia" theme={theme}>
           <Quote theme={theme}>
-            PROFESSIONALS think, feel and act differently than losers. 
-            Changing is hard, but if you want to be a professional trader, 
-            you must commit to change your personality.
+            Profissionais pensam, sentem e agem diferente de perdedores. Mudar é difícil, mas
+            virar profissional exige comprometimento com essa mudança de postura.
           </Quote>
           <Quote theme={theme}>
-            Deciding to go ALL IN in trading is about doing what you know is NECESSARY in order to be successful. 
-            You won't be there QUICKER, you're NOT THE EXCEPTION. 
-            You need to cut the idea that "its different" for you and actually COMPROMISE.
+            Ir all-in no trading é fazer o que sei ser necessário para ter sucesso. Não vou
+            chegar lá mais rápido sendo exceção — preciso cortar a ideia de que "é diferente"
+            pra mim e realmente me comprometer.
           </Quote>
           <Quote theme={theme}>
-            No mercado, você precisa ser muito humilde — e às vezes, a pessoa mais humilde que você
-            acha que é, ainda precisa melhorar muito.
+            No mercado, humildade é essencial — e às vezes a pessoa mais humilde que acho
+            que sou ainda precisa melhorar muito.
           </Quote>
         </Field>
       </Accordion>
@@ -526,6 +891,18 @@ export default function PlanoTrade({ th }) {
         </Field>
       </Accordion>
 
+      {/* GESTÃO DE SAÍDA POR SETUP */}
+      <Accordion level="top" title="Gestão de saída por setup" theme={theme}
+        subtitle="Split de contratos calibrado por perfil de excursão (MEP) de cada setup">
+        <Field label="Como ler" theme={theme}>
+          Split 3/1/1 = maioria protegida cedo, indicado para setups de excursão curta
+          (FQ, TC Meio de Movimento, TRM). Split 2/2/1 = menos proteção antecipada em troca
+          de payoff maior, indicado para setups que historicamente correm mais longe
+          (TC Pós BO).
+        </Field>
+        <TabelaGestaoPorSetup theme={theme} />
+      </Accordion>
+
       {/* REGRAS TRANSVERSAIS */}
       <Accordion level="top" title="Regras universais" theme={theme}
         subtitle="Aplicam-se a qualquer setup, não presas a um só">
@@ -559,9 +936,7 @@ export default function PlanoTrade({ th }) {
         </div>
       </div>
 
-      {SETUPS.map((s) => (
-        <SetupCard key={s.nome} {...s} theme={theme} />
-      ))}
+      <SetupsTable theme={theme} setups={SETUPS} />
     </div>
   );
 }
