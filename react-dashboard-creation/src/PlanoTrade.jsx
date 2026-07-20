@@ -270,6 +270,46 @@ const IconTCSuper = ({ color }) => (
   </svg>
 );
 
+const IconMapPinOff = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 21c-3.5-4-6-7.2-6-10.5A6 6 0 0 1 16.6 6.4" />
+    <path d="M19.8 13.5c.13-.63.2-1.3.2-2a6 6 0 0 0-1.3-3.7" />
+    <circle cx="12" cy="10.5" r="2" />
+    <line x1="3" y1="3" x2="21" y2="21" />
+  </svg>
+);
+const IconRepeatOff = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 9V6a2 2 0 0 1 2-2h11" />
+    <path d="M20 15v3a2 2 0 0 1-2 2H7" />
+    <polyline points="17 1 21 5 17 9" />
+    <polyline points="7 15 3 19 7 23" />
+    <line x1="2" y1="2" x2="22" y2="22" />
+  </svg>
+);
+const IconZoomQuestion = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="10.5" cy="10.5" r="6.5" />
+    <line x1="20" y1="20" x2="15.5" y2="15.5" />
+    <path d="M8.5 9a2 2 0 1 1 2.6 1.9c-.6.2-1.1.7-1.1 1.3" />
+    <line x1="10" y1="14.2" x2="10" y2="14.2" />
+  </svg>
+);
+const IconDoorExit = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13 4v16" />
+    <path d="M13 4H7a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h6" />
+    <polyline points="17 9 21 12 17 15" />
+    <line x1="21" y1="12" x2="10.5" y2="12" />
+  </svg>
+);
+const IcoShield = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3l7 3v6c0 4.4-2.9 7.6-7 9-4.1-1.4-7-4.6-7-9V6l7-3z" />
+    <path d="M9 12l2 2 4-4" />
+  </svg>
+);
+
 /* ---------------- Blocos do painel de detalhe ---------------- */
 
 function StatCard({ theme, label, value, accent }) {
@@ -548,91 +588,6 @@ function TabelaSaida({ theme }) {
   );
 }
 
-function TabelaGestaoPorSetup({ theme }) {
-  const rows = [
-    { setup: "FQ", split: "3/1/1", pontos: "200 / 300 / 400", rxr: "1,3x1", status: { label: "Fechado", tone: "good" } },
-    { setup: "TC Meio de Movimento", split: "3/1/1", pontos: "225 / 300 / 400", rxr: "1,2x1", status: { label: "Fechado", tone: "good" } },
-    { setup: "TRM", split: "3/1/1", pontos: "225 / 300 / 400", rxr: "1,2x1", status: { label: "Fechado", tone: "good" } },
-    { setup: "TC Pós BO", split: "2/2/1", pontos: "225 / 400 / 550", rxr: "1,6x1", status: { label: "Fechado", tone: "good" } },
-    { setup: "TC Pré BO", split: "3/1/1 (ref.)", pontos: "— / — / 400", rxr: "~1,3x1", status: { label: "Pausado", tone: "warn" } },
-    { setup: "TC Supertrend", split: "—", pontos: "—", rxr: "—", status: { label: "Sem amostra", tone: "neutral" } },
-  ];
-  const statusColors = {
-    good: { bg: `${theme.accent}22`, text: theme.accent },
-    warn: { bg: "#e0a63a22", text: "#e0a63a" },
-    neutral: { bg: theme.border, text: theme.textMuted },
-  };
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          fontSize: 13,
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-        }}
-      >
-        <thead>
-          <tr>
-            {["Setup", "Split (5 ctts)", "Pontos (1ª / 2ª / Final)", "RxR", "Status"].map((h) => (
-              <th
-                key={h}
-                style={{
-                  textAlign: "left",
-                  padding: "8px 10px",
-                  borderBottom: `1px solid ${theme.border}`,
-                  color: theme.accent,
-                  fontSize: 11,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.4,
-                }}
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => {
-            const c = statusColors[r.status.tone];
-            return (
-              <tr key={r.setup}>
-                <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.text, fontWeight: 700 }}>
-                  {r.setup}
-                </td>
-                <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.text }}>
-                  {r.split}
-                </td>
-                <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.textMuted }}>
-                  {r.pontos}
-                </td>
-                <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.text, fontWeight: 700 }}>
-                  {r.rxr}
-                </td>
-                <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}` }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: "3px 10px",
-                      borderRadius: 999,
-                      background: c.bg,
-                      color: c.text,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {r.status.label}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 /* ---------------- Dados dos setups ---------------- */
 
 const SETUPS = [
@@ -803,28 +758,79 @@ export default function PlanoTrade({ th }) {
         </div>
       </div>
 
-      {/* FILOSOFIA */}
-      <Accordion level="top" title="Filosofia operacional" theme={theme} defaultOpen>
-        <Field label="O que estou procurando no mercado" theme={theme}>
-          Não estou procurando movimentos. Estou procurando meu operacional nos melhores
-          contextos — momentos raros de probabilidade elevada onde o preço se encaixa
-          naquilo que meu repertório me permite operar com convicção.
-        </Field>
-        <Field label="Objetivo" theme={theme}>
-          Meu único objetivo é seguir o plano. Não é ganhar dinheiro no trade de hoje —
-          é executar o processo que, seguido com consistência, gera resultado ao longo do tempo.
-        </Field>
-        <Field label="Critério de seletividade" theme={theme}>
-          Sempre que uma operação parecer "mais ou menos", esperar. Vem sinal melhor. Não me
-          contento com "dá pra fazer" — busco apenas o que eu faria 100 vezes se acontecesse
-          de novo, independente do resultado desse trade específico.
-        </Field>
-        <Field label="Mentalidade" theme={theme}>
-          Não preciso operar todo dia. Não preciso acertar tudo. Entre 2 e 3 trades por dia,
-          seletivo, operando gatilhos no contexto correto, apenas trades de alta probabilidade.
-          Só preciso seguir meu plano.
-        </Field>
-        <Field label="Princípios-guia" theme={theme}>
+      {/* FILOSOFIA — estilo revista, sempre visível */}
+      <div style={{ marginBottom: 28 }}>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: theme.accent,
+            textTransform: "uppercase",
+            letterSpacing: 0.6,
+            marginBottom: 6,
+          }}
+        >
+          Plano de trade
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 800, color: theme.text, lineHeight: 1.2, marginBottom: 20 }}>
+          Filosofia operacional
+        </div>
+
+        <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
+            O que procuro no mercado
+          </div>
+          <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
+            Não movimentos. Meu operacional nos melhores contextos — momentos raros de
+            probabilidade elevada onde o preço se encaixa naquilo que meu repertório permite
+            operar com convicção.
+          </div>
+        </div>
+
+        <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
+            Objetivo
+          </div>
+          <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
+            Seguir o plano. Não é ganhar dinheiro no trade de hoje — é executar o processo que,
+            seguido com consistência, gera resultado ao longo do tempo.
+          </div>
+        </div>
+
+        <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
+            Critério de seletividade
+          </div>
+          <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
+            Sempre que parecer "mais ou menos", esperar. Vem sinal melhor. Só o que eu faria
+            100 vezes de novo, independente do resultado desse trade específico.
+          </div>
+        </div>
+
+        <div
+          style={{
+            borderLeft: `2px solid ${theme.accent}`,
+            paddingLeft: 18,
+            paddingTop: 12,
+            paddingBottom: 12,
+            marginBottom: 22,
+            background: `${theme.accent}12`,
+            borderRadius: "0 10px 10px 0",
+          }}
+        >
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 4 }}>
+            Mentalidade
+          </div>
+          <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
+            2 a 3 trades por dia. Seletivo. Só o que faria 100x de novo, independente do
+            resultado desse trade.
+          </div>
+        </div>
+
+        <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 8 }}>
+            Princípios-guia
+          </div>
           <Quote theme={theme}>
             Profissionais pensam, sentem e agem diferente de perdedores. Mudar é difícil, mas
             virar profissional exige comprometimento com essa mudança de postura.
@@ -838,95 +844,95 @@ export default function PlanoTrade({ th }) {
             No mercado, humildade é essencial — e às vezes a pessoa mais humilde que acho
             que sou ainda precisa melhorar muito.
           </Quote>
-        </Field>
-      </Accordion>
+        </div>
+      </div>
 
-      {/* GESTÃO DE RISCO */}
-      <Accordion level="top" title="Gestão de risco" theme={theme}>
-        <Field label="RxR fixo" theme={theme}>
-          Todo trade é pautado em R. Norma fixa neste momento: risco 1R para buscar 1,5R —
-          sem exceção, independente da qualidade aparente do setup. Resultado esperado de
-          cada operação: gain de 1,5R, loss de 1R, ou breakeven quando a parcial foi
-          realizada e o restante voltou no stop técnico.
-        </Field>
-        <Field label="Evolução futura (condicionada)" theme={theme}>
-          Reavaliar a lógica de deixar parte da posição correr além do 1,5x1 quando o
-          aumento do R e do número de contratos tornar cada fatia individual
-          proporcionalmente menor — reduzindo o impacto de uma reversão parcial no RxR
-          final da operação. Só entra em vigor com performance consistente e R maior que o
-          atual (R$200).
-        </Field>
-        <Field label="Stops técnicos" theme={theme}>
-          Uso sempre os stops técnicos definidos por setup neste plano, e respeito a
-          exigência de barra de sinal de cada um, sem negociar isso por convicção momentânea.
-        </Field>
-        <Field label="Não-abandono de operação" theme={theme}>
-          Saída de qualquer operação só ocorre em: alvo técnico, stop técnico, ou condução
-          prevista no plano de saída por contrato. Nunca por antecipação de medo do
-          resultado. Se cliquei, aceito — gain vira resultado, loss vira objeto de estudo.
-        </Field>
-      </Accordion>
+      <hr style={{ border: "none", borderTop: `1px solid ${theme.border}`, margin: "28px 0" }} />
 
-      {/* GESTÃO DE SAÍDA */}
-      <Accordion level="top" title="Gestão de saída atual — julho/2026" theme={theme}
-        subtitle="Baseada em MEP/MEN real de ION 2">
-        <Field label="Dados de base" theme={theme}>
-          MEP médio dos trades vencedores: ~460pts (geral, 71 trades) / 425pts (últimos 30).
-          Apenas 26% dos trades passam de 500pts, apenas 20% passam de 600pts. MEN médio dos
-          perdedores: ~220pts — quase exatamente metade do MEP médio.
-        </Field>
-        <Field label="Leitura" theme={theme}>
-          Segurar por alvo maior na maioria das vezes pede um comportamento estatisticamente
-          incomum do mercado. Fechar a maior parte da posição por volta de 450pts captura a
-          esmagadora maioria do movimento disponível antes da zona onde a reversão fica mais
-          provável.
-        </Field>
-        <Field label="Plano de saída por contrato" theme={theme}>
-          <TabelaSaida theme={theme} />
-        </Field>
-        <Field label="Nota" theme={theme}>
-          Revisar periodicamente conforme mais dados de MEP/MEN se acumulam. Quando houver
-          volume suficiente, quebrar essa estatística por setup — TRM provavelmente tem MEP
-          maior que TC de Pós, por exemplo.
-        </Field>
-      </Accordion>
+      {/* GESTÃO DE SAÍDA — painel, sempre visível */}
+      <div
+        style={{
+          background: theme.card,
+          border: `1px solid ${theme.border}`,
+          borderRadius: 14,
+          padding: 20,
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <IconDoorExit color={theme.accent} />
+          <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>
+            Gestão de saída · MEP/MEN real
+          </div>
+        </div>
+        <div style={{ fontSize: 13, color: theme.textMuted, lineHeight: 1.6, marginBottom: 14 }}>
+          Apenas 26% dos vencedores passam de 500pts. Fechar a maior parte da posição por
+          volta de 450pts captura a maioria do movimento antes da zona de reversão mais
+          provável. Detalhe completo do split por setup na tabela de setups abaixo.
+        </div>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
+          {[
+            { ctts: "7 ctts", pts: "150 pts" },
+            { ctts: "6 ctts", pts: "175 pts" },
+            { ctts: "5 ctts", pts: "200 pts" },
+            { ctts: "4 ctts", pts: "250 pts" },
+            { ctts: "3 ctts", pts: "300 pts" },
+          ].map((c) => (
+            <div
+              key={c.ctts}
+              style={{
+                background: theme.cardAlt,
+                borderRadius: 8,
+                padding: "8px 12px",
+                textAlign: "center",
+                minWidth: 70,
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ fontSize: 11, color: theme.textMuted }}>{c.ctts}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.text, marginTop: 2 }}>{c.pts}</div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* GESTÃO DE SAÍDA POR SETUP */}
-      <Accordion level="top" title="Gestão de saída por setup" theme={theme}
-        subtitle="Split de contratos calibrado por perfil de excursão (MEP) de cada setup">
-        <Field label="Como ler" theme={theme}>
-          Split 3/1/1 = maioria protegida cedo, indicado para setups de excursão curta
-          (FQ, TC Meio de Movimento, TRM). Split 2/2/1 = menos proteção antecipada em troca
-          de payoff maior, indicado para setups que historicamente correm mais longe
-          (TC Pós BO).
-        </Field>
-        <TabelaGestaoPorSetup theme={theme} />
-      </Accordion>
-
-      {/* REGRAS TRANSVERSAIS */}
-      <Accordion level="top" title="Regras universais" theme={theme}
-        subtitle="Aplicam-se a qualquer setup, não presas a um só">
-        <Field label="Vetar ponto de decisão" theme={theme}>
-          Não operar em ponto de decisão ainda aberto — especialmente rompimentos de S/R
-          macro "acreditando que já rompeu" no M5. Rompimentos avaliados sempre dentro da
-          lógica de 40 barras (ver TC de Pós BO).
-        </Field>
-        <Field label="Não repetir região" theme={theme}>
-          Jamais entrar em 2 trades seguidos com a mesma ideia, na mesma região, após um
-          stop. Aguardar nova definição de estrutura antes de qualquer nova tentativa ali.
-        </Field>
-        <Field label="Faz sentido no M5?" theme={theme}>
-          Pergunta obrigatória antes de qualquer entrada de execução no M2: essa entrada vai
-          fazer sentido depois quando observada no M5? Se não fizer sentido no M5, normalmente
-          é forçado no M2.
-        </Field>
-        <Field label="Disposição" theme={theme}>
-          Registrar disposição (1 a 5) antes da primeira entrada do dia, para correlacionar
-          com stops e identificar se a qualidade de decisão cai após determinado tempo de
-          pregão (fadiga/tempo de sessão — categoria própria no diário, separada de
-          técnico/emocional).
-        </Field>
-      </Accordion>
+      {/* REGRAS UNIVERSAIS — painel, sempre visível */}
+      <div
+        style={{
+          background: theme.card,
+          border: `1px solid ${theme.border}`,
+          borderRadius: 14,
+          padding: 20,
+          marginBottom: 28,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <IcoShield color={theme.accent} />
+          <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>Regras universais</div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+          {[
+            { Icon: IconMapPinOff, text: "Ponto de decisão: não faço nada" },
+            { Icon: IconRepeatOff, text: "Não tomo 2 stops na mesma região" },
+            { Icon: IconZoomQuestion, text: "Não pego trades que não fazem sentido no M5" },
+          ].map((r, i) => (
+            <div
+              key={i}
+              style={{
+                background: theme.cardAlt,
+                border: `1px solid ${theme.border}`,
+                borderRadius: 10,
+                padding: 14,
+              }}
+            >
+              <r.Icon color={theme.textMuted} />
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.text, marginTop: 10, lineHeight: 1.4 }}>
+                {r.text}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* SETUPS */}
       <div style={{ margin: "24px 0 12px" }}>
