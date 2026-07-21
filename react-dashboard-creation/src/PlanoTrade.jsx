@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 /*
   PlanoTrade.jsx
@@ -421,10 +421,90 @@ function SetupDetail({ s, theme }) {
   );
 }
 
-/* ---------------- Tabela comparativa de setups (expansão inline) ---------------- */
+function SetupPopover({ s, theme, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+        animation: "planoFadeIn 140ms ease",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: theme.card,
+          border: `1px solid ${theme.border}`,
+          borderRadius: 16,
+          width: "100%",
+          maxWidth: 640,
+          maxHeight: "85vh",
+          overflowY: "auto",
+          boxShadow: "0 24px 70px rgba(0,0,0,0.35)",
+        }}
+      >
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "14px 16px",
+            background: theme.card,
+            borderBottom: `1px solid ${theme.border}`,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <s.Icon color={toneColor(s.fluencia.tone, theme)} />
+            <div style={{ fontWeight: 700, color: theme.text, fontSize: 14.5 }}>{s.nome}</div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 8,
+              border: "none",
+              background: theme.cardAlt,
+              color: theme.textMuted,
+              cursor: "pointer",
+              fontSize: 15,
+              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            ×
+          </button>
+        </div>
+        <SetupDetail s={s} theme={theme} />
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Tabela comparativa de setups (abre popup ao clicar) ---------------- */
 
 function SetupsTable({ theme, setups }) {
   const [openId, setOpenId] = useState(null);
+  const openSetup = setups.find((s) => s.id === openId);
 
   return (
     <div style={{ border: `1px solid ${theme.border}`, borderRadius: 14, overflow: "hidden" }}>
@@ -461,69 +541,62 @@ function SetupsTable({ theme, setups }) {
           </thead>
           <tbody>
             {setups.map((s, i) => {
-              const isOpen = openId === s.id;
               const Icon = s.Icon;
               return (
-                <React.Fragment key={s.id}>
-                  <tr
-                    onClick={() => setOpenId(isOpen ? null : s.id)}
-                    style={{
-                      cursor: "pointer",
-                      background: isOpen ? theme.cardAlt : i % 2 === 1 ? `${theme.cardAlt}80` : "transparent",
-                    }}
-                  >
-                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}` }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: 8,
-                            background: toneBg(s.fluencia.tone, theme),
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <Icon color={toneColor(s.fluencia.tone, theme)} />
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 700, color: theme.text }}>{s.nomeCurto}</div>
-                          <div style={{ fontSize: 11, color: theme.textMuted }}>{s.subtitulo}</div>
-                        </div>
+                <tr
+                  key={s.id}
+                  onClick={() => setOpenId(s.id)}
+                  style={{
+                    cursor: "pointer",
+                    background: i % 2 === 1 ? `${theme.cardAlt}80` : "transparent",
+                  }}
+                >
+                  <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 8,
+                          background: toneBg(s.fluencia.tone, theme),
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon color={toneColor(s.fluencia.tone, theme)} />
                       </div>
-                    </td>
-                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}`, color: theme.textMuted }}>
-                      {s.timeframeShort}
-                    </td>
-                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}`, color: theme.textMuted }}>
-                      {s.barraSinalChips.join(" · ")}
-                    </td>
-                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}` }}>
-                      <div style={{ fontWeight: 700, color: theme.text }}>{s.split}</div>
-                      <div style={{ fontSize: 11, color: theme.textMuted }}>{s.rxr}</div>
-                    </td>
-                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}` }}>
-                      <Pill theme={theme} tone={s.fluencia.tone}>{s.fluencia.label}</Pill>
-                    </td>
-                    <td style={{ padding: "12px 14px", borderBottom: isOpen ? "none" : `1px solid ${theme.border}`, textAlign: "center" }}>
-                      <IcoChevron open={isOpen} color={theme.textMuted} />
-                    </td>
-                  </tr>
-                  {isOpen && (
-                    <tr>
-                      <td colSpan={6} style={{ padding: 0, borderBottom: `1px solid ${theme.border}` }}>
-                        <SetupDetail s={s} theme={theme} />
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
+                      <div>
+                        <div style={{ fontWeight: 700, color: theme.text }}>{s.nomeCurto}</div>
+                        <div style={{ fontSize: 11, color: theme.textMuted }}>{s.subtitulo}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}`, color: theme.textMuted }}>
+                    {s.timeframeShort}
+                  </td>
+                  <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}`, color: theme.textMuted }}>
+                    {s.barraSinalChips.join(" · ")}
+                  </td>
+                  <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}` }}>
+                    <div style={{ fontWeight: 700, color: theme.text }}>{s.split}</div>
+                    <div style={{ fontSize: 11, color: theme.textMuted }}>{s.rxr}</div>
+                  </td>
+                  <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}` }}>
+                    <Pill theme={theme} tone={s.fluencia.tone}>{s.fluencia.label}</Pill>
+                  </td>
+                  <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}`, textAlign: "center", color: theme.textMuted }}>
+                    <IcoChevron open={false} color={theme.textMuted} />
+                  </td>
+                </tr>
               );
             })}
           </tbody>
         </table>
       </div>
+
+      {openSetup && <SetupPopover s={openSetup} theme={theme} onClose={() => setOpenId(null)} />}
     </div>
   );
 }
@@ -758,179 +831,188 @@ export default function PlanoTrade({ th }) {
         </div>
       </div>
 
-      {/* FILOSOFIA — estilo revista, sempre visível */}
-      <div style={{ marginBottom: 28 }}>
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: theme.accent,
-            textTransform: "uppercase",
-            letterSpacing: 0.6,
-            marginBottom: 6,
-          }}
-        >
-          Plano de trade
-        </div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: theme.text, lineHeight: 1.2, marginBottom: 20 }}>
-          Filosofia operacional
-        </div>
+      {/* FILOSOFIA — 2 colunas: Filosofia Operacional | Mentalidade e Princípios base */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gap: 28,
+          marginBottom: 28,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: theme.text, lineHeight: 1.2, marginBottom: 18 }}>
+            Filosofia operacional
+          </div>
 
-        <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
-            O que procuro no mercado
+          <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
+              O que procuro no mercado
+            </div>
+            <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
+              Não movimentos. Meu operacional nos melhores contextos — momentos raros de
+              probabilidade elevada onde o preço se encaixa naquilo que meu repertório permite
+              operar com convicção.
+            </div>
           </div>
-          <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
-            Não movimentos. Meu operacional nos melhores contextos — momentos raros de
-            probabilidade elevada onde o preço se encaixa naquilo que meu repertório permite
-            operar com convicção.
-          </div>
-        </div>
 
-        <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
-            Objetivo
+          <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
+              Objetivo
+            </div>
+            <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
+              Seguir o plano. Não é ganhar dinheiro no trade de hoje — é executar o processo que,
+              seguido com consistência, gera resultado ao longo do tempo.
+            </div>
           </div>
-          <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
-            Seguir o plano. Não é ganhar dinheiro no trade de hoje — é executar o processo que,
-            seguido com consistência, gera resultado ao longo do tempo.
-          </div>
-        </div>
 
-        <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
-            Critério de seletividade
-          </div>
-          <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
-            Sempre que parecer "mais ou menos", esperar. Vem sinal melhor. Só o que eu faria
-            100 vezes de novo, independente do resultado desse trade específico.
+          <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
+              Critério de seletividade
+            </div>
+            <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
+              Sempre que parecer "mais ou menos", esperar. Vem sinal melhor. Só o que eu faria
+              100 vezes de novo, independente do resultado desse trade específico.
+            </div>
           </div>
         </div>
 
-        <div
-          style={{
-            borderLeft: `2px solid ${theme.accent}`,
-            paddingLeft: 18,
-            paddingTop: 12,
-            paddingBottom: 12,
-            marginBottom: 22,
-            background: `${theme.accent}12`,
-            borderRadius: "0 10px 10px 0",
-          }}
-        >
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 4 }}>
-            Mentalidade
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: theme.text, lineHeight: 1.2, marginBottom: 18 }}>
+            Mentalidade e princípios base
           </div>
-          <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
-            2 a 3 trades por dia. Seletivo. Só o que faria 100x de novo, independente do
-            resultado desse trade.
-          </div>
-        </div>
 
-        <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 8 }}>
-            Princípios-guia
+          <div
+            style={{
+              borderLeft: `2px solid ${theme.accent}`,
+              paddingLeft: 18,
+              paddingTop: 12,
+              paddingBottom: 12,
+              marginBottom: 18,
+              background: `${theme.accent}12`,
+              borderRadius: "0 10px 10px 0",
+            }}
+          >
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 4 }}>
+              Mentalidade
+            </div>
+            <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
+              2 a 3 trades por dia. Seletivo. Só o que faria 100x de novo, independente do
+              resultado desse trade.
+            </div>
           </div>
-          <Quote theme={theme}>
-            Profissionais pensam, sentem e agem diferente de perdedores. Mudar é difícil, mas
-            virar profissional exige comprometimento com essa mudança de postura.
-          </Quote>
-          <Quote theme={theme}>
-            Ir all-in no trading é fazer o que sei ser necessário para ter sucesso. Não vou
-            chegar lá mais rápido sendo exceção — preciso cortar a ideia de que "é diferente"
-            pra mim e realmente me comprometer.
-          </Quote>
-          <Quote theme={theme}>
-            No mercado, humildade é essencial — e às vezes a pessoa mais humilde que acho
-            que sou ainda precisa melhorar muito.
-          </Quote>
+
+          <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 8 }}>
+              Princípios-guia
+            </div>
+            <Quote theme={theme}>
+              Profissionais pensam, sentem e agem diferente de perdedores. Mudar é difícil, mas
+              virar profissional exige comprometimento com essa mudança de postura.
+            </Quote>
+            <Quote theme={theme}>
+              Ir all-in no trading é fazer o que sei ser necessário para ter sucesso. Não vou
+              chegar lá mais rápido sendo exceção — preciso cortar a ideia de que "é diferente"
+              pra mim e realmente me comprometer.
+            </Quote>
+            <Quote theme={theme}>
+              No mercado, humildade é essencial — e às vezes a pessoa mais humilde que acho
+              que sou ainda precisa melhorar muito.
+            </Quote>
+          </div>
         </div>
       </div>
 
       <hr style={{ border: "none", borderTop: `1px solid ${theme.border}`, margin: "28px 0" }} />
 
-      {/* GESTÃO DE SAÍDA — painel, sempre visível */}
+      {/* GESTÃO DE SAÍDA | REGRAS UNIVERSAIS — 2 colunas */}
       <div
         style={{
-          background: theme.card,
-          border: `1px solid ${theme.border}`,
-          borderRadius: 14,
-          padding: 20,
-          marginBottom: 16,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-          <IconDoorExit color={theme.accent} />
-          <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>
-            Gestão de saída · MEP/MEN real
-          </div>
-        </div>
-        <div style={{ fontSize: 13, color: theme.textMuted, lineHeight: 1.6, marginBottom: 14 }}>
-          Apenas 26% dos vencedores passam de 500pts. Fechar a maior parte da posição por
-          volta de 450pts captura a maioria do movimento antes da zona de reversão mais
-          provável. Detalhe completo do split por setup na tabela de setups abaixo.
-        </div>
-        <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
-          {[
-            { ctts: "7 ctts", pts: "150 pts" },
-            { ctts: "6 ctts", pts: "175 pts" },
-            { ctts: "5 ctts", pts: "200 pts" },
-            { ctts: "4 ctts", pts: "250 pts" },
-            { ctts: "3 ctts", pts: "300 pts" },
-          ].map((c) => (
-            <div
-              key={c.ctts}
-              style={{
-                background: theme.cardAlt,
-                borderRadius: 8,
-                padding: "8px 12px",
-                textAlign: "center",
-                minWidth: 70,
-                flexShrink: 0,
-              }}
-            >
-              <div style={{ fontSize: 11, color: theme.textMuted }}>{c.ctts}</div>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.text, marginTop: 2 }}>{c.pts}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* REGRAS UNIVERSAIS — painel, sempre visível */}
-      <div
-        style={{
-          background: theme.card,
-          border: `1px solid ${theme.border}`,
-          borderRadius: 14,
-          padding: 20,
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gap: 16,
           marginBottom: 28,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-          <IcoShield color={theme.accent} />
-          <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>Regras universais</div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-          {[
-            { Icon: IconMapPinOff, text: "Ponto de decisão: não faço nada" },
-            { Icon: IconRepeatOff, text: "Não tomo 2 stops na mesma região" },
-            { Icon: IconZoomQuestion, text: "Não pego trades que não fazem sentido no M5" },
-          ].map((r, i) => (
-            <div
-              key={i}
-              style={{
-                background: theme.cardAlt,
-                border: `1px solid ${theme.border}`,
-                borderRadius: 10,
-                padding: 14,
-              }}
-            >
-              <r.Icon color={theme.textMuted} />
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.text, marginTop: 10, lineHeight: 1.4 }}>
-                {r.text}
-              </div>
+        <div
+          style={{
+            background: theme.card,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 14,
+            padding: 20,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <IconDoorExit color={theme.accent} />
+            <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>
+              Gestão de saída · MEP/MEN real
             </div>
-          ))}
+          </div>
+          <div style={{ fontSize: 13, color: theme.textMuted, lineHeight: 1.6, marginBottom: 14 }}>
+            Apenas 26% dos vencedores passam de 500pts. Fechar a maior parte da posição por
+            volta de 450pts captura a maioria do movimento antes da zona de reversão mais
+            provável. Detalhe completo do split por setup na tabela de setups abaixo.
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {[
+              { ctts: "7 ctts", pts: "150 pts" },
+              { ctts: "6 ctts", pts: "175 pts" },
+              { ctts: "5 ctts", pts: "200 pts" },
+              { ctts: "4 ctts", pts: "250 pts" },
+              { ctts: "3 ctts", pts: "300 pts" },
+            ].map((c) => (
+              <div
+                key={c.ctts}
+                style={{
+                  background: theme.cardAlt,
+                  borderRadius: 8,
+                  padding: "8px 12px",
+                  textAlign: "center",
+                  minWidth: 70,
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ fontSize: 11, color: theme.textMuted }}>{c.ctts}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.text, marginTop: 2 }}>{c.pts}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: theme.card,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 14,
+            padding: 20,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <IcoShield color={theme.accent} />
+            <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>Regras universais</div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+            {[
+              { Icon: IconMapPinOff, text: "Ponto de decisão: não faço nada" },
+              { Icon: IconRepeatOff, text: "Não tomo 2 stops na mesma região" },
+              { Icon: IconZoomQuestion, text: "Não pego trades que não fazem sentido no M5" },
+            ].map((r, i) => (
+              <div
+                key={i}
+                style={{
+                  background: theme.cardAlt,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: 10,
+                  padding: 14,
+                }}
+              >
+                <r.Icon color={theme.textMuted} />
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.text, marginTop: 10, lineHeight: 1.4 }}>
+                  {r.text}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
