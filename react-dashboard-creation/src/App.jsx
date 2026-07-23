@@ -27,8 +27,8 @@ const LIGHT = {
 const DARK = {
   bg:"#050506", surface:"#17151d", border:"#2a2833", border2:"#343240",
   text:"#f2f2f5", textSub:"#c4c3cc", textMuted:"#8f8e9c",
-  navActiveBg:"#1e2440", cardBg:"#1a1820", cardShadow:"0 1px 6px rgba(0,0,0,0.5)",
-  resumeBg:"#211f28", skeletonA:"#2a2833", skeletonB:"#343240",
+  navActiveBg:"#2e1420", cardBg:"#0d0c0f", cardShadow:"0 1px 6px rgba(0,0,0,0.6)",
+  resumeBg:"#141218", skeletonA:"#211f26", skeletonB:"#2b2932",
   calDayBg:{ 1:"#182420", 2:"#211f18", 3:"#211a1a", 0:"#161520" },
   calDayBorder:{ 1:"#3d6b52", 2:"#6b6142", 3:"#6b4444", 0:"transparent" },
 };
