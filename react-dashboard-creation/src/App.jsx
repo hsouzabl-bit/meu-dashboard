@@ -12,7 +12,7 @@ const METAS_MENSAIS = { horasEstudo:80, paginasLidas:100, videoAulas:10, replays
 const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:500, videoAulas:60, replays:120 };
 const DIAS_SEMANA   = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
 const MESES_PT      = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const ACCENT_LIGHT  = "#0B0B45"; //  dark navy blue
+const ACCENT_LIGHT  = "#121269"; //  navy blue
 const ACCENT_DARK   = "#A83259"; // framboesa
 const ACCENT        = ACCENT_LIGHT;
 
