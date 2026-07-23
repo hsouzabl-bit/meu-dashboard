@@ -13,7 +13,7 @@ const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:500, videoAulas:60, replay
 const DIAS_SEMANA   = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
 const MESES_PT      = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const ACCENT_LIGHT  = "#2563EB";
-const ACCENT_DARK   = "#4C74C9";
+const ACCENT_DARK   = "#A83259"; // framboesa
 const ACCENT        = ACCENT_LIGHT;
 
 const LIGHT = {
