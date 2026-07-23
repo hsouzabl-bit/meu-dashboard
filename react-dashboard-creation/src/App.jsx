@@ -12,14 +12,14 @@ const METAS_MENSAIS = { horasEstudo:80, paginasLidas:100, videoAulas:10, replays
 const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:500, videoAulas:60, replays:120 };
 const DIAS_SEMANA   = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
 const MESES_PT      = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const ACCENT_LIGHT  = "#2563EB";
+const ACCENT_LIGHT  = "#3730A3"; // indigo mais escuro
 const ACCENT_DARK   = "#A83259"; // framboesa
 const ACCENT        = ACCENT_LIGHT;
 
 const LIGHT = {
-  bg:"#030303", surface:"#0d0c0f", border:"#211f26", border2:"#2b2932",
+  bg:"#f4f5f7", surface:"#ffffff", border:"#ebebeb", border2:"#e0e0e0",
   text:"#0f1117", textSub:"#4a5568", textMuted:"#8a96a3",
-  navActiveBg:"#EEF2FF", cardBg:"#ffffff", cardShadow:"0 1px 4px rgba(0,0,0,0.06)",
+  navActiveBg:"#E5E1F9", cardBg:"#ffffff", cardShadow:"0 1px 4px rgba(0,0,0,0.06)",
   resumeBg:"#f8f9fa", skeletonA:"#efefef", skeletonB:"#e5e5e5",
   calDayBg:{ 1:"#e6faf2", 2:"#fff8e1", 3:"#fce4ec", 0:"#f5f5f5" },
   calDayBorder:{ 1:"#a7e9c9", 2:"#ffe082", 3:"#f48fb1", 0:"transparent" },
