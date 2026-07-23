@@ -25,7 +25,7 @@ const LIGHT = {
   calDayBorder:{ 1:"#a7e9c9", 2:"#ffe082", 3:"#f48fb1", 0:"transparent" },
 };
 const DARK = {
-  bg:"#050506", surface:"#17151d", border:"#2a2833", border2:"#343240",
+  bg:"#030303", surface:"#0d0c0f", border:"#211f26", border2:"#2b2932",
   text:"#f2f2f5", textSub:"#c4c3cc", textMuted:"#8f8e9c",
   navActiveBg:"#2e1420", cardBg:"#0d0c0f", cardShadow:"0 1px 6px rgba(0,0,0,0.6)",
   resumeBg:"#141218", skeletonA:"#211f26", skeletonB:"#2b2932",
