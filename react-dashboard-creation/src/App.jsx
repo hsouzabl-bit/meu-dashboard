@@ -17,7 +17,7 @@ const ACCENT_DARK   = "#A83259"; // framboesa
 const ACCENT        = ACCENT_LIGHT;
 
 const LIGHT = {
-  bg:"#f4f5f7", surface:"#ffffff", border:"#ebebeb", border2:"#e0e0e0",
+  bg:"#030303", surface:"#0d0c0f", border:"#211f26", border2:"#2b2932",
   text:"#0f1117", textSub:"#4a5568", textMuted:"#8a96a3",
   navActiveBg:"#EEF2FF", cardBg:"#ffffff", cardShadow:"0 1px 4px rgba(0,0,0,0.06)",
   resumeBg:"#f8f9fa", skeletonA:"#efefef", skeletonB:"#e5e5e5",
