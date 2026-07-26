@@ -182,6 +182,7 @@ export default function App(){
 
 
   const [diaSel,setDiaSel]           = useState(null);
+  const [diaDisciplinaSel, setDiaDisciplinaSel] = useState(null);
   const hoje = new Date();
   const [mesVis,setMesVis]       = useState(hoje.getMonth());
   const [anoVis,setAnoVis]       = useState(hoje.getFullYear());
@@ -495,6 +496,34 @@ const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
       if (streakDias[i].status === "perfeito") streakAtual++;
       else break;
     }
+
+const disciplineDias = [];
+    let cursorD = new Date(hoje);
+    while (disciplineDias.length < 20) {
+      const diaSemanaD = cursorD.getDay();
+      if (diaSemanaD !== 0 && diaSemanaD !== 6) {
+        const chaveD = `${cursorD.getFullYear()}-${String(cursorD.getMonth()+1).padStart(2,"0")}-${String(cursorD.getDate()).padStart(2,"0")}`;
+        const errosDia = dadosDiario?.errosPorDia?.[chaveD];
+        const temTrade = tradesPorData[chaveD]?.["ION 3"] || tradesPorData[chaveD]?.["ION 2"];
+        const temEmocional = errosDia?.emocional?.length > 0;
+        const temTecnico = errosDia?.tecnico?.length > 0;
+        disciplineDias.unshift({
+          chave: chaveD,
+          dataObj: new Date(cursorD),
+          statusEmocional: !temTrade ? null : temEmocional ? "erro" : "ok",
+          statusTecnico: !temTrade ? null : temTecnico ? "erro" : "ok",
+          errosEmocional: errosDia?.emocional || [],
+          errosTecnico: errosDia?.tecnico || [],
+        });
+      }
+      cursorD.setDate(cursorD.getDate() - 1);
+    }
+    let disciplineStreakAtual = 0;
+    for (let i = disciplineDias.length - 1; i >= 0; i--) {
+      if (disciplineDias[i].statusEmocional === "ok" && disciplineDias[i].statusTecnico === "ok") disciplineStreakAtual++;
+      else break;
+    }
+    
     const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
     const primeiroDiaSemana = new Date(anoVis, mesVis, 1).getDay();
     const offsetInicio = primeiroDiaSemana===0 ? 6 : primeiroDiaSemana-1;
@@ -571,23 +600,92 @@ const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
               </div>
             </div>
 
-<div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Discipline Streak</span>
-                <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:700,color:streakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>
-                  <Ico.Growth s={13} c={streakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}/> {streakAtual}d
-                </span>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:18}}>
+              <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Studies Streak</span>
+                  <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:700,color:streakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>
+                    <Ico.Growth s={13} c={streakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}/> {streakAtual}d
+                  </span>
+                </div>
+                <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                  {streakDias.map((d,i)=>{
+                    const cor = d.status===null ? "transparent" : d.status==="perfeito" ? (dark?"#1a7048":"#5cb583") : d.status==="quase" ? (dark?"#856404":"#d1a53d") : (dark?"#8a3a3a":"#d9776b");
+                    return (
+                      <div key={i} title={d.dataObj.toLocaleDateString("pt-BR")} style={{width:18,height:18,borderRadius:5,background:cor,border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
+                    );
+                  })}
+                </div>
               </div>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                {streakDias.map((d,i)=>{
-                  const cor = d.status===null ? "transparent" : d.status==="perfeito" ? (dark?"#1a7048":"#5cb583") : d.status==="quase" ? (dark?"#856404":"#d1a53d") : (dark?"#8a3a3a":"#d9776b");
+
+<div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,position:"relative"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Discipline Streak</span>
+                  <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:700,color:disciplineStreakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>
+                    <Ico.Growth s={13} c={disciplineStreakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}/> {disciplineStreakAtual}d
+                  </span>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:9.5,color:th.textMuted,width:58,flexShrink:0}}>Emocional</span>
+                    <div style={{display:"flex",gap:5,flex:1}}>
+                      {disciplineDias.map((d,i)=>{
+                        const cor = d.statusEmocional===null ? "transparent" : d.statusEmocional==="ok" ? (dark?"#1a7048":"#5cb583") : (dark?"#8a3a3a":"#d9776b");
+                        return (
+                          <div key={i} onClick={()=>d.statusEmocional!==null&&setDiaDisciplinaSel(diaDisciplinaSel===d.chave?null:d.chave)}
+                            style={{width:15,height:15,borderRadius:4,background:cor,border:d.statusEmocional===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0,cursor:d.statusEmocional!==null?"pointer":"default"}}/>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:9.5,color:th.textMuted,width:58,flexShrink:0}}>Técnico</span>
+                    <div style={{display:"flex",gap:5,flex:1}}>
+                      {disciplineDias.map((d,i)=>{
+                        const cor = d.statusTecnico===null ? "transparent" : d.statusTecnico==="ok" ? (dark?"#1a7048":"#5cb583") : (dark?"#8a3a3a":"#d9776b");
+                        return (
+                          <div key={i} onClick={()=>d.statusTecnico!==null&&setDiaDisciplinaSel(diaDisciplinaSel===d.chave?null:d.chave)}
+                            style={{width:15,height:15,borderRadius:4,background:cor,border:d.statusTecnico===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0,cursor:d.statusTecnico!==null?"pointer":"default"}}/>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {diaDisciplinaSel && (() => {
+                  const dObj = disciplineDias.find(d=>d.chave===diaDisciplinaSel);
+                  if (!dObj) return null;
                   return (
-                    <div key={i} title={d.dataObj.toLocaleDateString("pt-BR")} style={{width:18,height:18,borderRadius:5,background:cor,border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
+                    <>
+                      <div onClick={()=>setDiaDisciplinaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
+                      <div style={{position:"absolute",top:52,right:8,left:8,background:th.cardBg,borderRadius:14,padding:"16px 18px",boxShadow:"0 8px 24px rgba(0,0,0,0.4)",border:`1px solid ${th.border}`,zIndex:10}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                          <span style={{fontSize:13,fontWeight:700,color:th.text}}>{dObj.dataObj.toLocaleDateString("pt-BR")}</span>
+                        </div>
+                        {dObj.errosEmocional.length===0 && dObj.errosTecnico.length===0 ? (
+                          <div style={{fontSize:12,color:th.textMuted}}>Nenhum erro registrado neste dia.</div>
+                        ) : (
+                          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                            {dObj.errosEmocional.length>0 && (
+                              <div>
+                                <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Emocional</div>
+                                {dObj.errosEmocional.map((e,i)=>(<div key={i} style={{fontSize:12,color:th.textSub}}>• {e}</div>))}
+                              </div>
+                            )}
+                            {dObj.errosTecnico.length>0 && (
+                              <div>
+                                <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Técnico</div>
+                                {dObj.errosTecnico.map((e,i)=>(<div key={i} style={{fontSize:12,color:th.textSub}}>• {e}</div>))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </>
                   );
-                })}
+                })()}
               </div>
             </div>
-
             {modoDia&&(
               <div style={{background:dark?"#1a3028":"#f0fdf8",border:`1px solid ${dark?"#2d6b4f":"#a7e9c9"}`,borderRadius:10,padding:"10px 18px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <span style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:600}}>📅 Exibindo dados de {String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}/{anoVis}</span>
