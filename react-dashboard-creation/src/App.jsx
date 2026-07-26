@@ -523,6 +523,17 @@ const disciplineDias = [];
       if (disciplineDias[i].statusEmocional === "ok" && disciplineDias[i].statusTecnico === "ok") disciplineStreakAtual++;
       else break;
     }
+
+    let streakEmocional = 0;
+    for (let i = disciplineDias.length - 1; i >= 0; i--) {
+      if (disciplineDias[i].statusEmocional === "ok") streakEmocional++;
+      else break;
+    }
+    let streakTecnico = 0;
+    for (let i = disciplineDias.length - 1; i >= 0; i--) {
+      if (disciplineDias[i].statusTecnico === "ok") streakTecnico++;
+      else break;
+    }
     
     const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
     const primeiroDiaSemana = new Date(anoVis, mesVis, 1).getDay();
@@ -619,10 +630,10 @@ const disciplineDias = [];
               </div>
 
 <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,position:"relative"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                   <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Discipline Streak</span>
-                  <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:700,color:disciplineStreakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>
-                    <Ico.Growth s={13} c={disciplineStreakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}/> {disciplineStreakAtual}d
+                  <span style={{display:"flex",alignItems:"center",gap:6,fontSize:15,fontWeight:800,color:disciplineStreakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>
+                    <Ico.Growth s={16} c={disciplineStreakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}/> {disciplineStreakAtual}d
                   </span>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -637,8 +648,10 @@ const disciplineDias = [];
                         );
                       })}
                     </div>
+                    <span style={{fontSize:10,fontWeight:700,color:streakEmocional>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted,flexShrink:0,minWidth:26,textAlign:"right"}}>{streakEmocional}d</span>
                   </div>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+
+                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{fontSize:9.5,color:th.textMuted,width:58,flexShrink:0}}>Técnico</span>
                     <div style={{display:"flex",gap:5,flex:1}}>
                       {disciplineDias.map((d,i)=>{
@@ -649,6 +662,7 @@ const disciplineDias = [];
                         );
                       })}
                     </div>
+                    <span style={{fontSize:10,fontWeight:700,color:streakTecnico>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted,flexShrink:0,minWidth:26,textAlign:"right"}}>{streakTecnico}d</span>
                   </div>
                 </div>
 
@@ -792,10 +806,31 @@ const disciplineDias = [];
                           <span style={{fontSize:14,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
                         </div>
                         <div style={{display:"flex",gap:16,marginBottom:14}}>
-                          <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
+<div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
                           <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
                           <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
                         </div>
+                        {(() => {
+                          const keyErros = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
+                          const erros = dadosDiario?.errosPorDia?.[keyErros];
+                          if (!erros || (erros.emocional.length===0 && erros.tecnico.length===0)) return null;
+                          return (
+                            <div style={{marginBottom:12,display:"flex",flexDirection:"column",gap:6}}>
+                              {erros.emocional.length>0 && (
+                                <div>
+                                  <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Emocionais</div>
+                                  {erros.emocional.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
+                                </div>
+                              )}
+                              {erros.tecnico.length>0 && (
+                                <div>
+                                  <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Técnicos</div>
+                                  {erros.tecnico.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer"}}>Mais detalhes →</div>
                       </div>
                     </>
