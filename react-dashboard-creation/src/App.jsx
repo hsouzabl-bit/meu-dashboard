@@ -518,19 +518,22 @@ const disciplineDias = [];
       }
       cursorD.setDate(cursorD.getDate() - 1);
     }
-    let disciplineStreakAtual = 0;
+let disciplineStreakAtual = 0;
     for (let i = disciplineDias.length - 1; i >= 0; i--) {
-      if (disciplineDias[i].statusEmocional === "ok" && disciplineDias[i].statusTecnico === "ok") disciplineStreakAtual++;
+      const d = disciplineDias[i];
+      if (d.statusEmocional === null && d.statusTecnico === null) continue;
+      if (d.statusEmocional === "ok" && d.statusTecnico === "ok") disciplineStreakAtual++;
       else break;
     }
-
     let streakEmocional = 0;
     for (let i = disciplineDias.length - 1; i >= 0; i--) {
+      if (disciplineDias[i].statusEmocional === null) continue;
       if (disciplineDias[i].statusEmocional === "ok") streakEmocional++;
       else break;
     }
     let streakTecnico = 0;
     for (let i = disciplineDias.length - 1; i >= 0; i--) {
+      if (disciplineDias[i].statusTecnico === null) continue;
       if (disciplineDias[i].statusTecnico === "ok") streakTecnico++;
       else break;
     }
