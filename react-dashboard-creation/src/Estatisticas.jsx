@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
+const API_OTS = API_DIARIO + "?action=getOTSData";
 const ACCENT_LIGHT = "#2563EB";
 const ACCENT_DARK  = "#38BDF8";
 const ACCENT = ACCENT_LIGHT; // fallback para componentes externos ao App
@@ -52,6 +53,38 @@ function ContaCard({ conta, dados, th }) {
           <div style={{ fontSize: 12, color: th.textMuted }}>{fmt(dados.piorSetup?.valor)}</div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ContaCardOTS({ dados, th, ACCENT }) {
+  if (!dados) return null;
+  const cor = dados.financTotal >= 0 ? ACCENT : "#f87171";
+  const setupsOrdenados = [...(dados.setups || [])].sort((a, b) => b.financTotal - a.financTotal);
+  const melhor = setupsOrdenados[0];
+  const pior = setupsOrdenados[setupsOrdenados.length - 1];
+  return (
+    <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow, flex: 1 }}>
+      <div style={{ fontWeight: 800, fontSize: 13, color: th.text, marginBottom: 16, letterSpacing: 0.5 }}>ION OTS</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
+        <StatCard th={th} label="Resultado" value={fmt(dados.financTotal)} color={cor} />
+        <StatCard th={th} label="Taxa de acerto" value={`${dados.taxaAcerto}%`} color={dados.taxaAcerto >= 50 ? ACCENT : "#f87171"} />
+        <StatCard th={th} label="Trades" value={dados.trades} />
+      </div>
+      {(melhor || pior) && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ background: th.resumeBg, borderRadius: 10, padding: "12px 16px", border: `1px solid ${th.border}` }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: th.textMuted, textTransform: "uppercase", marginBottom: 6 }}>🏆 Melhor Setup</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>{melhor?.nome || "—"}</div>
+            <div style={{ fontSize: 12, color: th.textMuted }}>{fmt(melhor?.financTotal)}</div>
+          </div>
+          <div style={{ background: th.resumeBg, borderRadius: 10, padding: "12px 16px", border: `1px solid ${th.border}` }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: th.textMuted, textTransform: "uppercase", marginBottom: 6 }}>⚠️ Pior Setup</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#f87171" }}>{pior?.nome || "—"}</div>
+            <div style={{ fontSize: 12, color: th.textMuted }}>{fmt(pior?.financTotal)}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -166,19 +199,27 @@ function GraficoPatrimonio({ graficoION2, graficoMIDE2, th }) {
 export default function Estatisticas({ th, dadosCache, loadingCache, onRecarregar }) {
   const isDark = th?.bg === "#111111" || th?.bg?.startsWith("#1") || th?.bg?.startsWith("#0");
   const ACCENT = isDark ? ACCENT_DARK : ACCENT_LIGHT;
-  const [dados, setDados]           = useState(dadosCache || null);
+const [dados, setDados]           = useState(dadosCache || null);
   const [loading, setLoading]       = useState(!dadosCache);
   const [erro, setErro]             = useState(null);
+  const [otsDados, setOtsDados]     = useState(null);
   const [inicio, setInicio]         = useState("");
   const [fim, setFim]               = useState("");
   const [filtroAtivo, setFiltroAtivo] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     if (dadosCache && !filtroAtivo) {
       setDados(dadosCache);
       setLoading(false);
     }
   }, [dadosCache]);
+
+  useEffect(() => {
+    fetch(API_OTS)
+      .then(r => r.json())
+      .then(j => { if (!j.erro) setOtsDados(j); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (loadingCache && !dadosCache && !filtroAtivo) setLoading(true);
@@ -232,8 +273,8 @@ export default function Estatisticas({ th, dadosCache, loadingCache, onRecarrega
       ) : dados ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div style={{ display: "flex", gap: 16 }}>
-            <ContaCard conta="ION 2"  dados={dados.contas?.["ION 2"]}  th={th} />
-            <ContaCard conta="MIDE 2" dados={dados.contas?.["MIDE 2"]} th={th} />
+            <ContaCard conta="ION 3" dados={dados.contas?.["ION 3"]} th={th} />
+            <ContaCardOTS dados={otsDados} th={th} ACCENT={ACCENT} />
           </div>
           <GraficoPatrimonio graficoION2={dados.graficoION2 || []} graficoMIDE2={dados.graficoMIDE2 || []} th={th} />
           <SetupTable setups={dados.setups || []} th={th} />
