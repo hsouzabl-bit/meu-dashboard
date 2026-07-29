@@ -175,7 +175,10 @@ function GraficoPatrimonio({ graficoION3, graficoOTS, th, ACCENT }) {
     if (!dadosCombinados[d.data]) dadosCombinados[d.data] = { data: d.data };
     dadosCombinados[d.data].ots = d.valor;
   });
-  const dados = Object.values(dadosCombinados).sort((a, b) => a.data.localeCompare(b.data));
+const dados = Object.values(dadosCombinados)
+    .filter(d => d.data >= "2026-07-07")
+    .sort((a, b) => a.data.localeCompare(b.data));
+  
   return (
     <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow }}>
       <div style={{ fontWeight: 800, fontSize: 12, color: th.text, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 20 }}>Patrimônio Acumulado</div>
@@ -186,8 +189,8 @@ function GraficoPatrimonio({ graficoION3, graficoOTS, th, ACCENT }) {
           <YAxis tick={{ fontSize: 11, fill: th.textMuted }} tickFormatter={v => `R$${v}`} />
           <Tooltip contentStyle={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 8, fontSize: 12 }} formatter={(v, n) => [fmt(v), n === "ion3" ? "ION 3" : "ION OTS"]} labelFormatter={l => `Data: ${l}`} />
           <ReferenceLine y={0} stroke={th.textMuted} strokeDasharray="4 4" />
-          <Line type="monotone" dataKey="ion3" stroke={ACCENT} strokeWidth={2} dot={false} name="ION 3" />
-          <Line type="monotone" dataKey="ots" stroke="#60a5fa" strokeWidth={2} dot={false} name="ION OTS" />
+          <Line type="monotone" dataKey="ion3" stroke={ACCENT} strokeWidth={2} dot={false} name="ION 3" connectNulls />
+          <Line type="monotone" dataKey="ots" stroke="#60a5fa" strokeWidth={2} dot={false} name="ION OTS" connectNulls />
         </LineChart>
       </ResponsiveContainer>
       <div style={{ display: "flex", gap: 20, justifyContent: "center", marginTop: 12 }}>
