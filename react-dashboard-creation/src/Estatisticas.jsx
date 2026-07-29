@@ -168,12 +168,12 @@ function ErrosCard({ errosMacro, top3Tecnicos, top3Emocionais, th }) {
   );
 }
 
-function GraficoPatrimonio({ graficoION2, graficoMIDE2, th }) {
+function GraficoPatrimonio({ graficoION3, graficoOTS, th, ACCENT }) {
   const dadosCombinados = {};
-  graficoION2.forEach(d => { dadosCombinados[d.data] = { data: d.data, ion2: d.valor }; });
-  graficoMIDE2.forEach(d => {
+  graficoION3.forEach(d => { dadosCombinados[d.data] = { data: d.data, ion3: d.valor }; });
+  graficoOTS.forEach(d => {
     if (!dadosCombinados[d.data]) dadosCombinados[d.data] = { data: d.data };
-    dadosCombinados[d.data].mide2 = d.valor;
+    dadosCombinados[d.data].ots = d.valor;
   });
   const dados = Object.values(dadosCombinados).sort((a, b) => a.data.localeCompare(b.data));
   return (
@@ -184,18 +184,18 @@ function GraficoPatrimonio({ graficoION2, graficoMIDE2, th }) {
           <CartesianGrid strokeDasharray="3 3" stroke={th.border} />
           <XAxis dataKey="data" tick={{ fontSize: 11, fill: th.textMuted }} tickFormatter={d => d.slice(5)} />
           <YAxis tick={{ fontSize: 11, fill: th.textMuted }} tickFormatter={v => `R$${v}`} />
-          <Tooltip contentStyle={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 8, fontSize: 12 }} formatter={(v, n) => [fmt(v), n === "ion2" ? "ION 2" : "MIDE 2"]} labelFormatter={l => `Data: ${l}`} />
+          <Tooltip contentStyle={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 8, fontSize: 12 }} formatter={(v, n) => [fmt(v), n === "ion3" ? "ION 3" : "ION OTS"]} labelFormatter={l => `Data: ${l}`} />
           <ReferenceLine y={0} stroke={th.textMuted} strokeDasharray="4 4" />
-          <Line type="monotone" dataKey="ion2" stroke={ACCENT} strokeWidth={2} dot={false} name="ION 2" />
-          <Line type="monotone" dataKey="mide2" stroke="#60a5fa" strokeWidth={2} dot={false} name="MIDE 2" />
+          <Line type="monotone" dataKey="ion3" stroke={ACCENT} strokeWidth={2} dot={false} name="ION 3" />
+          <Line type="monotone" dataKey="ots" stroke="#60a5fa" strokeWidth={2} dot={false} name="ION OTS" />
         </LineChart>
       </ResponsiveContainer>
       <div style={{ display: "flex", gap: 20, justifyContent: "center", marginTop: 12 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: th.textMuted }}>
-          <span style={{ width: 20, height: 3, background: ACCENT, borderRadius: 2, display: "inline-block" }} /> ION 2
+          <span style={{ width: 20, height: 3, background: ACCENT, borderRadius: 2, display: "inline-block" }} /> ION 3
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: th.textMuted }}>
-          <span style={{ width: 20, height: 3, background: "#60a5fa", borderRadius: 2, display: "inline-block" }} /> MIDE 2
+          <span style={{ width: 20, height: 3, background: "#60a5fa", borderRadius: 2, display: "inline-block" }} /> ION OTS
         </span>
       </div>
     </div>
@@ -282,8 +282,7 @@ useEffect(() => {
             <ContaCard conta="ION 3" dados={dados.contas?.["ION 3"]} th={th} />
             <ContaCardOTS dados={otsDados} th={th} ACCENT={ACCENT} />
           </div>
-          <GraficoPatrimonio graficoION2={dados.graficoION2 || []} graficoMIDE2={dados.graficoMIDE2 || []} th={th} />
-          <SetupTable setups={dados.setups || []} th={th} />
+          <GraficoPatrimonio graficoION3={dados.graficoION3 || []} graficoOTS={otsDados?.grafico || []} th={th} ACCENT={ACCENT} />          <SetupTable setups={dados.setups || []} th={th} />
           <ErrosCard errosMacro={dados.errosMacro || []} top3Tecnicos={dados.top3Tecnicos || []} top3Emocionais={dados.top3Emocionais || []} th={th} />
         </div>
       ) : null}
