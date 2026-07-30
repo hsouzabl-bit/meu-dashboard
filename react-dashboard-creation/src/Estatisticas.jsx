@@ -95,15 +95,18 @@ function ContaCardOTS({ dados, th, ACCENT }) {
   );
 }
 
-function SetupTable({ setups, th }) {
+function SetupTable({ setups, th, titulo, simples }) {
+  const colunas = simples
+    ? ["Setup", "Trades", "Acerto", "Resultado"]
+    : ["Setup", "Trades", "Acerto", "Resultado", "Média G", "Média L", "RxR"];
   return (
-    <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow }}>
-      <div style={{ fontWeight: 800, fontSize: 12, color: th.text, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 16 }}>Performance por Setup</div>
+    <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow, height: "100%" }}>
+      <div style={{ fontWeight: 800, fontSize: 12, color: th.text, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 16 }}>{titulo || "Performance por Setup"}</div>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: `2px solid ${th.border}` }}>
-              {["Setup", "Trades", "Acerto", "Resultado", "Média G", "Média L", "RxR"].map(h => (
+              {colunas.map(h => (
                 <th key={h} style={{ padding: "8px 12px", textAlign: h === "Setup" ? "left" : "right", fontSize: 11, fontWeight: 700, color: th.textMuted, textTransform: "uppercase", letterSpacing: 0.6 }}>{h}</th>
               ))}
             </tr>
@@ -115,9 +118,9 @@ function SetupTable({ setups, th }) {
                 <td style={{ padding: "10px 12px", textAlign: "right", color: th.textSub }}>{s.trades}</td>
                 <td style={{ padding: "10px 12px", textAlign: "right", color: s.taxaAcerto >= 50 ? ACCENT : "#f87171", fontWeight: 700 }}>{s.taxaAcerto}%</td>
                 <td style={{ padding: "10px 12px", textAlign: "right", color: s.financTotal >= 0 ? ACCENT : "#f87171", fontWeight: 700 }}>{fmt(s.financTotal)}</td>
-                <td style={{ padding: "10px 12px", textAlign: "right", color: ACCENT }}>{fmt(s.mediaGain)}</td>
-                <td style={{ padding: "10px 12px", textAlign: "right", color: "#f87171" }}>{fmt(s.mediaLoss)}</td>
-                <td style={{ padding: "10px 12px", textAlign: "right", color: s.rxrMedio >= 1 ? ACCENT : "#f87171", fontWeight: 700 }}>{s.rxrMedio}x</td>
+                {!simples && <td style={{ padding: "10px 12px", textAlign: "right", color: ACCENT }}>{fmt(s.mediaGain)}</td>}
+                {!simples && <td style={{ padding: "10px 12px", textAlign: "right", color: "#f87171" }}>{fmt(s.mediaLoss)}</td>}
+                {!simples && <td style={{ padding: "10px 12px", textAlign: "right", color: s.rxrMedio >= 1 ? ACCENT : "#f87171", fontWeight: 700 }}>{s.rxrMedio}x</td>}
               </tr>
             ))}
           </tbody>
@@ -127,42 +130,34 @@ function SetupTable({ setups, th }) {
   );
 }
 
-function ErrosCard({ errosMacro, top3Tecnicos, top3Emocionais, th }) {
+function ErrosCard({ top3Tecnicos, top3Emocionais, th }) {
   return (
     <div style={{ display: "flex", gap: 16 }}>
       <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow, flex: 1 }}>
-        <div style={{ fontWeight: 800, fontSize: 12, color: th.text, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 16 }}>Erros por Categoria</div>
-        {errosMacro.map(e => (
-          <div key={e.nome} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${th.border}` }}>
-            <div>
+        <div style={{ fontWeight: 800, fontSize: 12, color: th.text, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 14 }}>Top 5 Erros Técnicos</div>
+        {top3Tecnicos.length === 0 && <div style={{ fontSize: 13, color: th.textMuted }}>Nenhum registrado</div>}
+        {top3Tecnicos.map((e, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${th.border}` }}>
+            <div style={{ flex: 1, paddingRight: 8 }}>
               <div style={{ fontSize: 13, color: th.text, fontWeight: 600 }}>{e.nome}</div>
               <div style={{ fontSize: 11, color: th.textMuted }}>{e.count} ocorrência{e.count !== 1 ? "s" : ""}</div>
             </div>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "#f87171" }}>{fmt(e.custo)}</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "#f87171", flexShrink: 0 }}>{fmt(e.custo)}</span>
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
-        <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow, flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: 12, color: th.text, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 14 }}>Top 3 Erros Técnicos</div>
-          {top3Tecnicos.length === 0 && <div style={{ fontSize: 13, color: th.textMuted }}>Nenhum registrado</div>}
-          {top3Tecnicos.map((e, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${th.border}` }}>
-              <div style={{ fontSize: 12, color: th.textSub, flex: 1, paddingRight: 8 }}>{e.nome}</div>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#f87171", flexShrink: 0 }}>{fmt(e.custo)}</span>
+      <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow, flex: 1 }}>
+        <div style={{ fontWeight: 800, fontSize: 12, color: th.text, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 14 }}>Top 5 Erros Emocionais</div>
+        {top3Emocionais.length === 0 && <div style={{ fontSize: 13, color: th.textMuted }}>Nenhum registrado</div>}
+        {top3Emocionais.map((e, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${th.border}` }}>
+            <div style={{ flex: 1, paddingRight: 8 }}>
+              <div style={{ fontSize: 13, color: th.text, fontWeight: 600 }}>{e.nome}</div>
+              <div style={{ fontSize: 11, color: th.textMuted }}>{e.count} ocorrência{e.count !== 1 ? "s" : ""}</div>
             </div>
-          ))}
-        </div>
-        <div style={{ background: th.cardBg, borderRadius: 14, padding: "20px 24px", border: `1px solid ${th.border}`, boxShadow: th.cardShadow, flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: 12, color: th.text, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 14 }}>Top 3 Erros Emocionais</div>
-          {top3Emocionais.length === 0 && <div style={{ fontSize: 13, color: th.textMuted }}>Nenhum registrado</div>}
-          {top3Emocionais.map((e, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${th.border}` }}>
-              <div style={{ fontSize: 12, color: th.textSub, flex: 1, paddingRight: 8 }}>{e.nome}</div>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#f87171", flexShrink: 0 }}>{fmt(e.custo)}</span>
-            </div>
-          ))}
-        </div>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "#f87171", flexShrink: 0 }}>{fmt(e.custo)}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -285,9 +280,18 @@ useEffect(() => {
             <ContaCard conta="ION 3" dados={dados.contas?.["ION 3"]} th={th} />
             <ContaCardOTS dados={otsDados} th={th} ACCENT={ACCENT} />
           </div>
-          <GraficoPatrimonio graficoION3={dados.graficoION3 || []} graficoOTS={otsDados?.grafico || []} th={th} ACCENT={ACCENT} />          <SetupTable setups={dados.setups || []} th={th} />
-          <ErrosCard errosMacro={dados.errosMacro || []} top3Tecnicos={dados.top3Tecnicos || []} top3Emocionais={dados.top3Emocionais || []} th={th} />
-        </div>
+          <GraficoPatrimonio graficoION3={dados.graficoION3 || []} graficoOTS={otsDados?.grafico || []} th={th} ACCENT={ACCENT} />
+
+<div style={{ display: "flex", gap: 16, alignItems: "stretch" }}>
+            <div style={{ flex: 1 }}>
+              <SetupTable titulo="Performance por Setup — TSS" setups={dados.setups || []} th={th} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <SetupTable titulo="Performance por Setup — OTS" setups={otsDados?.setups || []} th={th} simples />
+            </div>
+          </div>       
+          
+          <ErrosCard top3Tecnicos={dados.top3Tecnicos || []} top3Emocionais={dados.top3Emocionais || []} th={th} />        </div>
       ) : null}
     </div>
   );
