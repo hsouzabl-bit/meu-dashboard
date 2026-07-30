@@ -3,8 +3,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 const API_OTS = API_DIARIO + "?action=getOTSData";
-const ACCENT_LIGHT = "#2563EB";
-const ACCENT_DARK  = "#38BDF8";
+const ACCENT_LIGHT = "#4ecb8d";
+const ACCENT_DARK  = "#4ecb8d";
 const ACCENT = ACCENT_LIGHT; // fallback para componentes externos ao App
 
 function fmt(val) {
@@ -187,7 +187,7 @@ const dados = Object.values(dadosCombinados)
           <CartesianGrid strokeDasharray="3 3" stroke={th.border} />
           <XAxis dataKey="data" tick={{ fontSize: 11, fill: th.textMuted }} tickFormatter={d => d.slice(5)} />
           <YAxis tick={{ fontSize: 11, fill: th.textMuted }} tickFormatter={v => `R$${v}`} />
-          <Tooltip contentStyle={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 8, fontSize: 12 }} formatter={(v, n) => [fmt(v), n]} labelFormatter={l => `Data: ${l}`} />
+          <Tooltip contentStyle={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 8, fontSize: 12, color: th.text }} itemStyle={{ color: th.text }} labelStyle={{ color: th.text }} formatter={(v, n) => [fmt(v), n]} labelFormatter={l => `Data: ${l}`} />
           <ReferenceLine y={0} stroke={th.textMuted} strokeDasharray="4 4" />
           <Line type="monotone" dataKey="ion3" stroke={ACCENT} strokeWidth={2} dot={false} name="ION 3" connectNulls />
           <Line type="monotone" dataKey="ots" stroke="#4ecb8d" strokeWidth={2} dot={false} name="ION OTS" connectNulls />
