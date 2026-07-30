@@ -189,13 +189,12 @@ const dados = Object.values(dadosCombinados)
           <YAxis tick={{ fontSize: 11, fill: th.textMuted }} tickFormatter={v => `R$${v}`} />
           <Tooltip contentStyle={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 8, fontSize: 12, color: th.text }} itemStyle={{ color: th.text }} labelStyle={{ color: th.text }} formatter={(v, n) => [fmt(v), n]} labelFormatter={l => `Data: ${l}`} />
           <ReferenceLine y={0} stroke={th.textMuted} strokeDasharray="4 4" />
-          <Line type="monotone" dataKey="ion3" stroke={ACCENT} strokeWidth={2} dot={false} name="ION 3" connectNulls />
+          <Line type="monotone" dataKey="ion3" stroke="#60a5fa" strokeWidth={2} dot={false} name="ION 3" connectNulls />
           <Line type="monotone" dataKey="ots" stroke="#4ecb8d" strokeWidth={2} dot={false} name="ION OTS" connectNulls />
         </LineChart>
       </ResponsiveContainer>
-      <div style={{ display: "flex", gap: 20, justifyContent: "center", marginTop: 12 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: th.textMuted }}>
-          <span style={{ width: 20, height: 3, background: ACCENT, borderRadius: 2, display: "inline-block" }} /> ION 3
+<span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: th.textMuted }}>
+          <span style={{ width: 20, height: 3, background: "#60a5fa", borderRadius: 2, display: "inline-block" }} /> ION 3
         </span>
 <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: th.textMuted }}>
           <span style={{ width: 20, height: 3, background: "#4ecb8d", borderRadius: 2, display: "inline-block" }} /> ION OTS
