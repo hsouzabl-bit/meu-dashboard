@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Estatisticas from "./Estatisticas";
 import Estudos from "./Estudos";
 import Revisoes from "./Revisoes";
