@@ -366,27 +366,6 @@ export default function App(){
     carregarTudoSequencial();
   },[]);
 
- fetch(`${API_DIARIO}?action=lerDSI`)
-      .then(r=>r.json())
-      .then(j=>{
-        setDsiValor(j.valor ?? "0");
-        setDsiMeta(j.meta ?? "0");
-      })
-      .catch(()=>{});
-    fetch(`${API_DIARIO}?action=lerChecklistDiario`)
-      .then(r=>r.json())
-      .then(j=>{
-        const hojeChave = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
-        const found = (j.dias||[]).find(d=>d.data===hojeChave);
-        if(found){
-          if(found.checklist?.length) setChecklistHoje(found.checklist);
-          setNaoDevoHoje(found.naoDevo||"");
-          setIntencaoHoje(found.intencao||"");
-        }
-      })
-      .catch(()=>{});
-  },[]);
-
   const m         = dados?.metricas    || {};
   const seq       = dados?.sequencias  || [];
   const rotinas   = dados?.rotinas     || [];
