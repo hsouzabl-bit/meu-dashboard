@@ -305,10 +305,22 @@ const planoSemanaRef = useRef([]);
     salvarChecklistHojeApp(novo, naoDevoHoje, intencaoHoje);
   }
 
-  const th = dark ? DARK : LIGHT;
+const th = dark ? DARK : LIGHT;
   const ACCENT_ATUAL = dark ? ACCENT_DARK : ACCENT_LIGHT;
 
+  function fetchComRetry(url, tentativas=3, delayMs=1200){
+    return fetch(url)
+      .then(r=>{ if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .catch(err=>{
+        if(tentativas<=1) throw err;
+        return new Promise(resolve=>setTimeout(resolve, delayMs))
+          .then(()=>fetchComRetry(url, tentativas-1, delayMs));
+      });
+  }
+
   const carregar=()=>{
+
+    
     setLoading(true);
     fetch(API_URL)
       .then(r=>r.json())
@@ -316,15 +328,14 @@ const planoSemanaRef = useRef([]);
       .catch(e=>{setErro(e.message);setLoading(false);});
   };
 
-  const carregarDiario=(ini="",fi="")=>{
+const carregarDiario=(ini="",fi="")=>{
     setLoadingDiario(true);
     let url = API_DIARIO;
     const params=[];
     if(ini) params.push(`inicio=${ini}`);
     if(fi)  params.push(`fim=${fi}`);
     if(params.length) url += "?" + params.join("&");
-    fetch(url)
-      .then(r=>r.json())
+    return fetchComRetry(url)
       .then(j=>{if(j.erro)throw new Error(j.erro);setDadosDiario(j);setLoadingDiario(false);})
       .catch(()=>setLoadingDiario(false));
   };
@@ -332,49 +343,47 @@ const planoSemanaRef = useRef([]);
   const carregarRevisoes=async()=>{
     setLoadingRevisoes(true);
     try {
-      const [rRev, rUpd, rTrades] = await Promise.all([
-        fetch(`${API_DIARIO}?action=lerRevisoes`).then(r=>r.json()),
-        fetch(`${API_DIARIO}?action=lerUpdates`).then(r=>r.json()),
-        fetch(`${API_DIARIO}?action=lerTradesPorData`).then(r=>r.json()),
-      ]);
+      const rRev = await fetchComRetry(`${API_DIARIO}?action=lerRevisoes`);
       setRevisoes(rRev.revisoes || []);
-      setUpdates(rUpd.updates   || []);
+      const rUpd = await fetchComRetry(`${API_DIARIO}?action=lerUpdates`);
+      setUpdates(rUpd.updates || []);
+      const rTrades = await fetchComRetry(`${API_DIARIO}?action=lerTradesPorData`);
       setTradesPorData(rTrades.porData || {});
     } catch(e){ console.error(e); }
     setLoadingRevisoes(false);
   };
 
- useEffect(()=>{
+useEffect(()=>{
     carregar(); // script separado (Estudos), não compete pela mesma cota
 
     const esperar = (ms) => new Promise(r=>setTimeout(r,ms));
 
     async function carregarTudoSequencial(){
-      carregarDiario();
-      await esperar(500);
+      await carregarDiario();
+      await esperar(600);
 
       await carregarRevisoes();
-      await esperar(500);
+      await esperar(600);
 
       const ini = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-01`;
       const fim = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
       try {
-        const j = await fetch(`${API_DIARIO}?inicio=${ini}&fim=${fim}`).then(r=>r.json());
+        const j = await fetchComRetry(`${API_DIARIO}?inicio=${ini}&fim=${fim}`);
         if(!j.erro) setDadosMes(j);
       } catch(e){}
-      await esperar(500);
+      await esperar(600);
 
       const {ano,semana} = semanaISOApp(new Date());
       const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
       try {
-        const j = await fetch(`${API_DIARIO}?action=lerObjetivos`).then(r=>r.json());
+        const j = await fetchComRetry(`${API_DIARIO}?action=lerObjetivos`);
         const found=(j.objetivos||[]).find(o=>o.chave===chave);
         setObjetivosSemanaAtual(found||null);
       } catch(e){}
-      await esperar(500);
+      await esperar(600);
 
       try {
-        const j = await fetch(`${API_DIARIO}?action=lerDashboardSemanal`).then(r=>r.json());
+        const j = await fetchComRetry(`${API_DIARIO}?action=lerDashboardSemanal`);
         const { ano, semana } = semanaISOApp(new Date());
         const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
         setChaveSemanaAtual(chave);
@@ -382,10 +391,10 @@ const planoSemanaRef = useRef([]);
         setPlanoSemana(found?.planoSemana || []);
         setPontosAtencao(found?.pontosAtencao || []);
       } catch(e){}
-      await esperar(500);
+      await esperar(600);
 
       try {
-        const j = await fetch(`${API_DIARIO}?action=lerDSI`).then(r=>r.json());
+        const j = await fetchComRetry(`${API_DIARIO}?action=lerDSI`);
         setDsiValor(j.valor ?? "0");
         setDsiMeta(j.meta ?? "0");
         setHorasEstudoValor(j.horasEstudoValor ?? "0");
@@ -395,11 +404,11 @@ const planoSemanaRef = useRef([]);
         setReplaysManualValor(j.replaysValor ?? "0");
         setReplaysManualMeta(j.replaysMeta ?? "20");
       } catch(e){}
-        
-      await esperar(500);
+
+      await esperar(600);
 
       try {
-        const j = await fetch(`${API_DIARIO}?action=lerChecklistDiario`).then(r=>r.json());
+        const j = await fetchComRetry(`${API_DIARIO}?action=lerChecklistDiario`);
         const hojeChave = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
         const found = (j.dias||[]).find(d=>d.data===hojeChave);
         if(found){
