@@ -368,7 +368,6 @@ export default function App(){
       await esperar(500);
 
       try {
-try {
         const j = await fetch(`${API_DIARIO}?action=lerDSI`).then(r=>r.json());
         setDsiValor(j.valor ?? "0");
         setDsiMeta(j.meta ?? "0");
