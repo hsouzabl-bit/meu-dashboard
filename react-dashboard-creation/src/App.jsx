@@ -204,6 +204,12 @@ export default function App(){
   const [showFormPonto, setShowFormPonto] = useState(false);
   const [chaveSemanaAtual, setChaveSemanaAtual] = useState("");
 
+const planoSemanaRef = useRef([]);
+  const pontosAtencaoRef = useRef([]);
+  const salvarTimeoutRef = useRef(null);
+  useEffect(()=>{ planoSemanaRef.current = planoSemana; },[planoSemana]);
+  useEffect(()=>{ pontosAtencaoRef.current = pontosAtencao; },[pontosAtencao]);
+
   function salvarDashboardSemanalApp(novoPlanoArr, novosPontosArr){
     const { ano, semana } = semanaISOApp(new Date());
     const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
@@ -211,29 +217,40 @@ export default function App(){
     fetch(`${API_DIARIO}?action=salvarDashboardSemanal&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(()=>{});
   }
 
+  function salvarDashboardSemanalDebounced(){
+    if(salvarTimeoutRef.current) clearTimeout(salvarTimeoutRef.current);
+    salvarTimeoutRef.current = setTimeout(()=>{
+      salvarDashboardSemanalApp(planoSemanaRef.current, pontosAtencaoRef.current);
+    }, 700);
+  }
+
   function addPlanoItem(){
     if(!novoPlano.trim()) return;
-    const novo = [...planoSemana, { id: Date.now(), texto: novoPlano.trim() }];
+    const novo = [...planoSemanaRef.current, { id: Date.now(), texto: novoPlano.trim() }];
+    planoSemanaRef.current = novo;
     setPlanoSemana(novo);
     setNovoPlano("");
-    salvarDashboardSemanalApp(novo, pontosAtencao);
+    salvarDashboardSemanalDebounced();
   }
   function removePlanoItem(id){
-    const novo = planoSemana.filter(p=>p.id!==id);
+    const novo = planoSemanaRef.current.filter(p=>p.id!==id);
+    planoSemanaRef.current = novo;
     setPlanoSemana(novo);
-    salvarDashboardSemanalApp(novo, pontosAtencao);
+    salvarDashboardSemanalDebounced();
   }
   function addPontoItem(){
     if(!novoPonto.trim()) return;
-    const novo = [...pontosAtencao, { id: Date.now(), texto: novoPonto.trim() }];
+    const novo = [...pontosAtencaoRef.current, { id: Date.now(), texto: novoPonto.trim() }];
+    pontosAtencaoRef.current = novo;
     setPontosAtencao(novo);
     setNovoPonto("");
-    salvarDashboardSemanalApp(planoSemana, novo);
+    salvarDashboardSemanalDebounced();
   }
   function removePontoItem(id){
-    const novo = pontosAtencao.filter(p=>p.id!==id);
+    const novo = pontosAtencaoRef.current.filter(p=>p.id!==id);
+    pontosAtencaoRef.current = novo;
     setPontosAtencao(novo);
-    salvarDashboardSemanalApp(planoSemana, novo);
+    salvarDashboardSemanalDebounced();
   }
 
   const [checklistHoje, setChecklistHoje] = useState([
