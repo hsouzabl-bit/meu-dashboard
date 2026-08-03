@@ -247,11 +247,34 @@ export default function App(){
   const [naoDevoHoje, setNaoDevoHoje] = useState("");
   const [intencaoHoje, setIntencaoHoje] = useState("");
   const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+
   const [dsiValor, setDsiValor] = useState("0");
   const [dsiMeta, setDsiMeta] = useState("0");
+  const [horasEstudoValor, setHorasEstudoValor] = useState("0");
+  const [horasEstudoMeta, setHorasEstudoMeta]   = useState("80");
+  const [backtestsValor, setBacktestsValor]     = useState("0");
+  const [backtestsMeta, setBacktestsMeta]       = useState("100");
+  const [replaysManualValor, setReplaysManualValor] = useState("0");
+  const [replaysManualMeta, setReplaysManualMeta]   = useState("20");
 
   function salvarDSIApp(valor, meta){
-    fetch(`${API_DIARIO}?action=salvarDSI&dados=${encodeURIComponent(JSON.stringify({valor,meta}))}`).catch(()=>{});
+    fetch(`${API_DIARIO}?action=salvarDSI&dados=${encodeURIComponent(JSON.stringify({
+      valor, meta,
+      horasEstudoValor, horasEstudoMeta,
+      backtestsValor, backtestsMeta,
+      replaysValor: replaysManualValor, replaysMeta: replaysManualMeta,
+    }))}`).catch(()=>{});
+  }
+
+  function salvarMetricasManuaisApp(overrides={}){
+    const payload = {
+      valor: dsiValor, meta: dsiMeta,
+      horasEstudoValor, horasEstudoMeta,
+      backtestsValor, backtestsMeta,
+      replaysValor: replaysManualValor, replaysMeta: replaysManualMeta,
+      ...overrides,
+    };
+    fetch(`${API_DIARIO}?action=salvarDSI&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(()=>{});
   }
 
   function salvarChecklistHojeApp(novoChecklist, novoNaoDevo, novaIntencao){
@@ -345,10 +368,18 @@ export default function App(){
       await esperar(500);
 
       try {
+try {
         const j = await fetch(`${API_DIARIO}?action=lerDSI`).then(r=>r.json());
         setDsiValor(j.valor ?? "0");
         setDsiMeta(j.meta ?? "0");
+        setHorasEstudoValor(j.horasEstudoValor ?? "0");
+        setHorasEstudoMeta(j.horasEstudoMeta ?? "80");
+        setBacktestsValor(j.backtestsValor ?? "0");
+        setBacktestsMeta(j.backtestsMeta ?? "100");
+        setReplaysManualValor(j.replaysValor ?? "0");
+        setReplaysManualMeta(j.replaysMeta ?? "20");
       } catch(e){}
+        
       await esperar(500);
 
       try {
@@ -580,9 +611,40 @@ let disciplineStreakAtual = 0;
                   <Skeleton h={10} w="55%" th={th}/><Skeleton h={26} w="70%" th={th}/><Skeleton h={6} th={th}/>
                 </div>
               )):<>
-                <MetricCard th={th} icon={<Ico.Trend  s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Horas de Estudo" value={modoDia?minParaHM((cardHoras||0)*60):`${cardHoras}h`} unit="" sub={`Meta: ${modoDia?"4h/dia":`${metaH}h/mês`}`} pctVal={pct(modoDia?(cardHoras||0)*60:cardHoras*60,metaH*60)} barColor={ACCENT_ATUAL}/>
-                <MetricCard th={th} icon={<Ico.BookOpen s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Backtests" value={cardPaginas} unit="" sub={`Meta: ${modoDia?"3/dia":`${metaP}/mês`}`} pctVal={pct(cardPaginas,metaP)} barColor={ACCENT_ATUAL}/>
-<MetricCard th={th} icon={<Ico.Repeat s={18} c={ACCENT_ATUAL}/>} color={ACCENT_ATUAL} label="Replays" value={cardReplays} unit="" sub={`Meta: ${modoDia?"1/dia":`${metaR}/mês`}`} pctVal={pct(cardReplays,metaR)} barColor={ACCENT_ATUAL}/>
+
+                <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
+                  <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Horas de Estudo</span>
+                  <input type="number" value={horasEstudoValor} onChange={e=>setHorasEstudoValor(e.target.value)} onBlur={()=>salvarMetricasManuaisApp({horasEstudoValor})}
+                    style={{fontSize:26,fontWeight:800,color:ACCENT_ATUAL,background:"transparent",border:"none",outline:"none",width:"100%",padding:0,fontFamily:"inherit"}}/>
+                  <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:th.textMuted}}>
+                    Meta:
+                    <input type="number" value={horasEstudoMeta} onChange={e=>setHorasEstudoMeta(e.target.value)} onBlur={()=>salvarMetricasManuaisApp({horasEstudoMeta})}
+                      style={{fontSize:11,color:th.textMuted,background:"transparent",border:"none",outline:"none",width:50,padding:0,fontFamily:"inherit"}}/>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
+                    <div style={{flex:1,background:th.resumeBg,borderRadius:4,height:5}}>
+                      <div style={{width:`${pct(Number(horasEstudoValor)||0, Number(horasEstudoMeta)||1)}%`,background:ACCENT_ATUAL,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
+                    </div>
+                    <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pct(Number(horasEstudoValor)||0, Number(horasEstudoMeta)||1)}%</span>
+                  </div>
+                </div>
+
+                <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
+                  <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Replays</span>
+                  <input type="number" value={replaysManualValor} onChange={e=>setReplaysManualValor(e.target.value)} onBlur={()=>salvarMetricasManuaisApp({replaysValor: replaysManualValor})}
+                    style={{fontSize:26,fontWeight:800,color:ACCENT_ATUAL,background:"transparent",border:"none",outline:"none",width:"100%",padding:0,fontFamily:"inherit"}}/>
+                  <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:th.textMuted}}>
+                    Meta:
+                    <input type="number" value={replaysManualMeta} onChange={e=>setReplaysManualMeta(e.target.value)} onBlur={()=>salvarMetricasManuaisApp({replaysMeta: replaysManualMeta})}
+                      style={{fontSize:11,color:th.textMuted,background:"transparent",border:"none",outline:"none",width:50,padding:0,fontFamily:"inherit"}}/>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
+                    <div style={{flex:1,background:th.resumeBg,borderRadius:4,height:5}}>
+                      <div style={{width:`${pct(Number(replaysManualValor)||0, Number(replaysManualMeta)||1)}%`,background:ACCENT_ATUAL,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
+                    </div>
+                    <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pct(Number(replaysManualValor)||0, Number(replaysManualMeta)||1)}%</span>
+                  </div>
+                </div>
 
 <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
                   <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>DSI</span>
