@@ -304,39 +304,67 @@ export default function App(){
     setLoadingRevisoes(false);
   };
 
-  useEffect(()=>{
-    carregar();
-    carregarDiario();
-    carregarRevisoes();
+ useEffect(()=>{
+    carregar(); // script separado (Estudos), não compete pela mesma cota
 
-    const ini = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-01`;
-    const fim = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
-    fetch(`${API_DIARIO}?inicio=${ini}&fim=${fim}`)
-      .then(r=>r.json())
-      .then(j=>{ if(!j.erro) setDadosMes(j); })
-      .catch(()=>{});
+    const esperar = (ms) => new Promise(r=>setTimeout(r,ms));
 
-    const {ano,semana} = semanaISOApp(new Date());
-    const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
-    fetch(`${API_DIARIO}?action=lerObjetivos`)
-      .then(r=>r.json())
-      .then(j=>{
+    async function carregarTudoSequencial(){
+      carregarDiario();
+      await esperar(500);
+
+      await carregarRevisoes();
+      await esperar(500);
+
+      const ini = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-01`;
+      const fim = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+      try {
+        const j = await fetch(`${API_DIARIO}?inicio=${ini}&fim=${fim}`).then(r=>r.json());
+        if(!j.erro) setDadosMes(j);
+      } catch(e){}
+      await esperar(500);
+
+      const {ano,semana} = semanaISOApp(new Date());
+      const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
+      try {
+        const j = await fetch(`${API_DIARIO}?action=lerObjetivos`).then(r=>r.json());
         const found=(j.objetivos||[]).find(o=>o.chave===chave);
         setObjetivosSemanaAtual(found||null);
-      })
-      .catch(()=>{});
+      } catch(e){}
+      await esperar(500);
 
-    fetch(`${API_DIARIO}?action=lerDashboardSemanal`)
-      .then(r=>r.json())
-      .then(j=>{
+      try {
+        const j = await fetch(`${API_DIARIO}?action=lerDashboardSemanal`).then(r=>r.json());
         const { ano, semana } = semanaISOApp(new Date());
         const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
         setChaveSemanaAtual(chave);
         const found = (j.semanas||[]).find(s=>s.chave===chave);
         setPlanoSemana(found?.planoSemana || []);
         setPontosAtencao(found?.pontosAtencao || []);
-      })
-      .catch(()=>{});
+      } catch(e){}
+      await esperar(500);
+
+      try {
+        const j = await fetch(`${API_DIARIO}?action=lerDSI`).then(r=>r.json());
+        setDsiValor(j.valor ?? "0");
+        setDsiMeta(j.meta ?? "0");
+      } catch(e){}
+      await esperar(500);
+
+      try {
+        const j = await fetch(`${API_DIARIO}?action=lerChecklistDiario`).then(r=>r.json());
+        const hojeChave = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+        const found = (j.dias||[]).find(d=>d.data===hojeChave);
+        if(found){
+          if(found.checklist?.length) setChecklistHoje(found.checklist);
+          setNaoDevoHoje(found.naoDevo||"");
+          setIntencaoHoje(found.intencao||"");
+        }
+      } catch(e){}
+    }
+
+    carregarTudoSequencial();
+  },[]);
 
  fetch(`${API_DIARIO}?action=lerDSI`)
       .then(r=>r.json())
