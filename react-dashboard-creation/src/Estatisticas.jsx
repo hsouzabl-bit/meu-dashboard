@@ -2,7 +2,19 @@ import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
+
 const API_OTS = API_DIARIO + "?action=getOTSData";
+
+function fetchComRetryOTS(url, tentativas=3, delayMs=1200){
+  return fetch(url)
+    .then(r=>{ if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .catch(err=>{
+      if(tentativas<=1) throw err;
+      return new Promise(resolve=>setTimeout(resolve, delayMs))
+        .then(()=>fetchComRetryOTS(url, tentativas-1, delayMs));
+    });
+}
+
 const ACCENT_LIGHT = "#4ecb8d";
 const ACCENT_DARK  = "#4ecb8d";
 const ACCENT = ACCENT_LIGHT; // fallback para componentes externos ao App
@@ -218,10 +230,18 @@ useEffect(() => {
     }
   }, [dadosCache]);
 
-  useEffect(() => {
-    fetch(API_OTS)
-      .then(r => r.json())
-      .then(j => { if (!j.erro) setOtsDados(j); })
+useEffect(() => {
+    const cacheOts = localStorage.getItem("cache_ots");
+    if(cacheOts){
+      try { setOtsDados(JSON.parse(cacheOts)); } catch(e){}
+    }
+    fetchComRetryOTS(API_OTS)
+      .then(j => {
+        if (!j.erro) {
+          setOtsDados(j);
+          try { localStorage.setItem("cache_ots", JSON.stringify(j)); } catch(e){}
+        }
+      })
       .catch(() => {});
   }, []);
 
