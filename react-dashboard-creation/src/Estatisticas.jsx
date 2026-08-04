@@ -212,7 +212,7 @@ const dados = Object.values(dadosCombinados)
   );
 }
 
-export default function Estatisticas({ th, dadosCache, loadingCache, onRecarregar }) {
+export default function Estatisticas({ th, dadosCache, otsCache, loadingCache, onRecarregar }) {
   const isDark = th?.bg === "#111111" || th?.bg?.startsWith("#1") || th?.bg?.startsWith("#0");
   const ACCENT = isDark ? ACCENT_DARK : ACCENT_LIGHT;
 const [dados, setDados]           = useState(dadosCache || null);
@@ -231,24 +231,8 @@ useEffect(() => {
   }, [dadosCache]);
 
 useEffect(() => {
-    const cacheOts = localStorage.getItem("cache_ots");
-    if(cacheOts){
-      try { setOtsDados(JSON.parse(cacheOts)); } catch(e){}
-    }
-    // Espera o carregamento inicial do Dashboard terminar antes de disparar,
-    // pra não competir pela mesma cota de concorrência do GAS.
-    const timer = setTimeout(() => {
-      fetchComRetryOTS(API_OTS)
-        .then(j => {
-          if (!j.erro) {
-            setOtsDados(j);
-            try { localStorage.setItem("cache_ots", JSON.stringify(j)); } catch(e){}
-          }
-        })
-        .catch(() => {});
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (otsCache) setOtsDados(otsCache);
+  }, [otsCache]);
 
   useEffect(() => {
     if (loadingCache && !dadosCache && !filtroAtivo) setLoading(true);
