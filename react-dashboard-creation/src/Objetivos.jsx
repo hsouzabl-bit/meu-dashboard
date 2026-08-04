@@ -2,6 +2,17 @@ import { useState, useEffect } from "react";
 
 const GAS_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 const ACCENT_LIGHT = "#2563EB";
+
+function fetchComRetryObj(url, tentativas=3, delayMs=1200){
+  return fetch(url)
+    .then(r=>{ if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .catch(err=>{
+      if(tentativas<=1) throw err;
+      return new Promise(resolve=>setTimeout(resolve, delayMs))
+        .then(()=>fetchComRetryObj(url, tentativas-1, delayMs));
+    });
+}
+
 const ACCENT_DARK  = "#38BDF8";
 const IcoMoon = ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
 const IcoSun  = ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
@@ -79,15 +90,23 @@ export default function Objetivos({ th, dark, setDark }) {
   const chaveAtual = `${semSel.ano}-S${String(semSel.semana).padStart(2, "0")}`;
   const semDados = dadosSem[chaveAtual] || { objetivos: [], cor: "neutro", comentario: "" };
 
-  useEffect(() => { carregar(); }, []);
+useEffect(() => {
+    const cache = localStorage.getItem("cache_objetivos");
+    if (cache) {
+      try { setDadosSem(JSON.parse(cache)); setLoading(false); } catch(e) {}
+    }
+    const timer = setTimeout(() => { carregar(!cache); }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
-  async function carregar() {
-    setLoading(true);
+  async function carregar(mostrarLoading = true) {
+    if (mostrarLoading) setLoading(true);
     try {
-      const r = await fetch(`${GAS_DIARIO}?action=lerObjetivos`).then(r => r.json());
+      const r = await fetchComRetryObj(`${GAS_DIARIO}?action=lerObjetivos`);
       const mapa = {};
       (r.objetivos || []).forEach(s => { mapa[s.chave] = s; });
       setDadosSem(mapa);
+      try { localStorage.setItem("cache_objetivos", JSON.stringify(mapa)); } catch(e) {}
     } catch(e) { console.error(e); }
     setLoading(false);
   }
