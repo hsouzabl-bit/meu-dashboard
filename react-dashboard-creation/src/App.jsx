@@ -262,8 +262,10 @@ const planoSemanaRef = useRef([]);
     { id:5, label:"Diário de trades", done:false },
     { id:6, label:"Pós MKT com Coach", done:false },
   ]);
-  const [naoDevoHoje, setNaoDevoHoje] = useState("");
-  const [intencaoHoje, setIntencaoHoje] = useState("");
+  
+const [checklistAlterado, setChecklistAlterado] = useState(false);
+  const [checklistSalvando, setChecklistSalvando] = useState(false);
+  
   const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
 
   const [dsiValor, setDsiValor] = useState("0");
@@ -295,15 +297,17 @@ const planoSemanaRef = useRef([]);
     fetch(`${API_DIARIO}?action=salvarDSI&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(()=>{});
   }
 
-  function salvarChecklistHojeApp(novoChecklist, novoNaoDevo, novaIntencao){
-    const payload = { data: hojeStr, checklist: novoChecklist, naoDevo: novoNaoDevo, intencao: novaIntencao };
-    fetch(`${API_DIARIO}?action=salvarChecklistDiario&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(()=>{});
+function salvarChecklistHojeApp(){
+    setChecklistSalvando(true);
+    const payload = { data: hojeStr, checklist: checklistHoje, naoDevo: "", intencao: "" };
+    fetch(`${API_DIARIO}?action=salvarChecklistDiario&dados=${encodeURIComponent(JSON.stringify(payload))}`)
+      .catch(()=>{})
+      .finally(()=>{ setChecklistSalvando(false); setChecklistAlterado(false); });
   }
 
   function toggleChecklistHoje(id){
-    const novo = checklistHoje.map(i=>i.id===id?{...i,done:!i.done}:i);
-    setChecklistHoje(novo);
-    salvarChecklistHojeApp(novo, naoDevoHoje, intencaoHoje);
+    setChecklistHoje(prev => prev.map(i=>i.id===id?{...i,done:!i.done}:i));
+    setChecklistAlterado(true);
   }
 
 const th = dark ? DARK : LIGHT;
@@ -395,12 +399,8 @@ useEffect(()=>{
       }
 
       const hojeChave = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
-      const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
-      if(foundDia){
-        if(foundDia.checklist?.length) setChecklistHoje(foundDia.checklist);
-        setNaoDevoHoje(foundDia.naoDevo||"");
-        setIntencaoHoje(foundDia.intencao||"");
-      }
+const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
+      if(foundDia && foundDia.checklist?.length) setChecklistHoje(foundDia.checklist);
     }
 
     async function carregarDashboardInit(){
@@ -970,42 +970,35 @@ let disciplineStreakAtual = 0;
 {/* Linha 2, Coluna B: Hoje | Não devo + Intenção */}
               <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
                 <div style={{fontWeight:700,fontSize:11.5,color:"transparent",marginBottom:10,userSelect:"none"}}>.</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,flex:1}}>
-                  <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow}}>
+                
+<div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
-                    <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12}}>
-                      {checklistHoje.map(item=>(
-                        <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-                          <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
-                          <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {checklistAlterado && !checklistSalvando && (
+                      <span style={{fontSize:10,fontWeight:700,color:"#d97706",background:dark?"#2a2210":"#fef3c7",padding:"2px 8px",borderRadius:20,border:`1px solid ${dark?"#5c4a10":"#fcd34d"}`}}>
+                        Não salvo
+                      </span>
+                    )}
                   </div>
-
-                  <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                    <div style={{flex:1,background:th.cardBg,borderRadius:14,padding:"14px 16px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,borderLeft:"3px solid #A6795F",display:"flex",flexDirection:"column"}}>
-                      <div style={{fontSize:9,fontWeight:700,color:"#A6795F",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>⚠ Hoje eu NÃO devo</div>
-                      <textarea
-                        value={naoDevoHoje}
-                        onChange={e=>setNaoDevoHoje(e.target.value)}
-                        onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-                        placeholder="O que evitar hoje..."
-                        style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.textSub,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                      />
-                    </div>
-
-                    <div style={{flex:1,background:ACCENT_ATUAL+"0f",borderRadius:14,padding:"14px 16px",border:`1px solid ${ACCENT_ATUAL}33`,display:"flex",flexDirection:"column"}}>
-                      <div style={{fontSize:9,fontWeight:800,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Intenção do dia</div>
-                      <textarea
-                        value={intencaoHoje}
-                        onChange={e=>setIntencaoHoje(e.target.value)}
-                        onBlur={()=>salvarChecklistHojeApp(checklistHoje, naoDevoHoje, intencaoHoje)}
-                        placeholder="Foco de hoje..."
-                        style={{width:"100%",flex:1,background:"transparent",border:"none",outline:"none",fontSize:12.5,color:th.text,lineHeight:1.5,resize:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                      />
-                    </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12,flex:1}}>
+                    {checklistHoje.map(item=>(
+                      <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                        <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
+                        <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
+                      </div>
+                    ))}
                   </div>
+                  <button onClick={salvarChecklistHojeApp} disabled={!checklistAlterado||checklistSalvando}
+                    style={{
+                      marginTop:14,
+                      background:checklistAlterado&&!checklistSalvando?ACCENT_ATUAL:"transparent",
+                      color:checklistAlterado&&!checklistSalvando?"#fff":th.textMuted,
+                      border:`1px solid ${checklistAlterado&&!checklistSalvando?ACCENT_ATUAL:th.border2}`,
+                      borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,
+                      cursor:checklistAlterado&&!checklistSalvando?"pointer":"default",fontFamily:"inherit",width:"100%",
+                    }}>
+                    {checklistSalvando?"Salvando…":"Salvar"}
+                  </button>
                 </div>
               </div>
             </div>
