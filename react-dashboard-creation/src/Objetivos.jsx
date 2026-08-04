@@ -84,8 +84,9 @@ export default function Objetivos({ th, dark, setDark }) {
   const [semSel, setSemSel]       = useState({ ano: anoAtual, semana: semAtual });
   const [dadosSem, setDadosSem]   = useState({});
   const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(false);
+const [saving, setSaving]       = useState(false);
   const [expandidos, setExpandidos] = useState({});
+  const [temAlteracoes, setTemAlteracoes] = useState(false);
 
   const chaveAtual = `${semSel.ano}-S${String(semSel.semana).padStart(2, "0")}`;
   const semDados = dadosSem[chaveAtual] || { objetivos: [], cor: "neutro", comentario: "" };
@@ -111,41 +112,63 @@ useEffect(() => {
     setLoading(false);
   }
 
-  async function salvar(novosDados) {
+// Edita só localmente e marca que há alterações pendentes
+  function editarLocal(novosDados) {
+    setDadosSem(prev => ({ ...prev, [chaveAtual]: { ...(prev[chaveAtual] || { objetivos: [], cor: "neutro", comentario: "" }), ...novosDados } }));
+    setTemAlteracoes(true);
+  }
+
+  // Único ponto que envia ao GAS
+  async function salvarTudo() {
     setSaving(true);
-    const payload = { chave: chaveAtual, ano: semSel.ano, semana: semSel.semana, ...novosDados };
-    fetch(`${GAS_DIARIO}?action=salvarObjetivos&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(() => {});
-    setDadosSem(prev => ({ ...prev, [chaveAtual]: { ...semDados, ...novosDados } }));
+    setDadosSem(prev => {
+      const atual = prev[chaveAtual] || { objetivos: [], cor: "neutro", comentario: "" };
+      const payload = { chave: chaveAtual, ano: semSel.ano, semana: semSel.semana, ...atual };
+      fetch(`${GAS_DIARIO}?action=salvarObjetivos&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(() => {});
+      try { localStorage.setItem("cache_objetivos", JSON.stringify(prev)); } catch(e) {}
+      return prev;
+    });
+    setTemAlteracoes(false);
     setSaving(false);
   }
 
-  function setCor(cor) { salvar({ ...semDados, cor }); }
-  function setComentario(comentario) { setDadosSem(prev => ({ ...prev, [chaveAtual]: { ...semDados, comentario } })); }
-  function salvarComentario() { salvar({ ...semDados }); }
+  function setCor(cor) { editarLocal({ cor }); }
+  function setComentario(comentario) { editarLocal({ comentario }); }
 
   function addObjetivo() {
     const novo = { id: gerarId(), texto: "", categoria: "Técnico", feito: false, nota: "", comentario: "" };
-    const obj = [...(semDados.objetivos || []), novo];
-    salvar({ ...semDados, objetivos: obj });
+    setDadosSem(prev => {
+      const atual = prev[chaveAtual] || { objetivos: [], cor: "neutro", comentario: "" };
+      return { ...prev, [chaveAtual]: { ...atual, objetivos: [...(atual.objetivos || []), novo] } };
+    });
+    setTemAlteracoes(true);
   }
 
   function updateObjetivo(id, campo, valor) {
-    const obj = (semDados.objetivos || []).map(o => o.id === id ? { ...o, [campo]: valor } : o);
-    setDadosSem(prev => ({ ...prev, [chaveAtual]: { ...semDados, objetivos: obj } }));
-  }
-
-  function salvarObjetivo() {
-    salvar({ ...semDados });
+    setDadosSem(prev => {
+      const atual = prev[chaveAtual] || { objetivos: [] };
+      const obj = (atual.objetivos || []).map(o => o.id === id ? { ...o, [campo]: valor } : o);
+      return { ...prev, [chaveAtual]: { ...atual, objetivos: obj } };
+    });
+    setTemAlteracoes(true);
   }
 
   function removeObjetivo(id) {
-    const obj = (semDados.objetivos || []).filter(o => o.id !== id);
-    salvar({ ...semDados, objetivos: obj });
+    setDadosSem(prev => {
+      const atual = prev[chaveAtual] || { objetivos: [] };
+      const obj = (atual.objetivos || []).filter(o => o.id !== id);
+      return { ...prev, [chaveAtual]: { ...atual, objetivos: obj } };
+    });
+    setTemAlteracoes(true);
   }
 
   function toggleFeito(id) {
-    const obj = (semDados.objetivos || []).map(o => o.id === id ? { ...o, feito: !o.feito } : o);
-    salvar({ ...semDados, objetivos: obj });
+    setDadosSem(prev => {
+      const atual = prev[chaveAtual] || { objetivos: [] };
+      const obj = (atual.objetivos || []).map(o => o.id === id ? { ...o, feito: !o.feito } : o);
+      return { ...prev, [chaveAtual]: { ...atual, objetivos: obj } };
+    });
+    setTemAlteracoes(true);
   }
 
   const corSel = CORES_SEMANA.find(c => c.id === semDados.cor) || CORES_SEMANA[3];
@@ -180,7 +203,25 @@ useEffect(() => {
                 {feitosObj}/{totalObj} feitos
               </span>
             )}
+
             {saving && <span style={{ fontSize: 11, color: textMuted }}>Salvando…</span>}
+            {temAlteracoes && !saving && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#d97706", background: isDark ? "#2a2210" : "#fef3c7", padding: "2px 10px", borderRadius: 20, border: `1px solid ${isDark ? "#5c4a10" : "#fcd34d"}` }}>
+                Alterações não salvas
+              </span>
+            )}
+            <button onClick={salvarTudo} disabled={!temAlteracoes || saving}
+              style={{
+                background: temAlteracoes && !saving ? ACCENT : "transparent",
+                color: temAlteracoes && !saving ? "#fff" : textMuted,
+                border: `1px solid ${temAlteracoes && !saving ? ACCENT : border2}`,
+                borderRadius: 8, padding: "6px 18px", fontSize: 12, fontWeight: 700,
+                cursor: temAlteracoes && !saving ? "pointer" : "default", fontFamily: "inherit",
+              }}>
+              {saving ? "Salvando…" : "Salvar"}
+            </button>
+          </div>
+          
           </div>
           {/* Seletor de cor */}
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -206,19 +247,19 @@ useEffect(() => {
                 <div onClick={() => toggleFeito(obj.id)} style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${obj.feito ? ACCENT : border2}`, background: obj.feito ? ACCENT : "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {obj.feito && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                 </div>
-                <select value={obj.categoria} onChange={e => updateObjetivo(obj.id, "categoria", e.target.value)} onBlur={salvarObjetivo}
+                <select value={obj.categoria} onChange={e => updateObjetivo(obj.id, "categoria", e.target.value)} onBlur={salvarComentario}
                   style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, border: "none", cursor: "pointer", outline: "none", fontFamily: "inherit", background: tagColors[obj.categoria]?.bg, color: tagColors[obj.categoria]?.text, flexShrink: 0 }}>
                   {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                <input value={obj.texto} onChange={e => updateObjetivo(obj.id, "texto", e.target.value)} onBlur={salvarObjetivo}
+                <input value={obj.texto} onChange={e => updateObjetivo(obj.id, "texto", e.target.value)} onBlur={salvarComentario}
                   placeholder="Descreva o objetivo..."
                   style={{ ...inputStyle, flex: 1, textDecoration: obj.feito ? "line-through" : "none", color: obj.feito ? textMuted : text }} />
-                <input type="number" min="1" max="10" value={obj.nota} onChange={e => updateObjetivo(obj.id, "nota", e.target.value)} onBlur={salvarObjetivo}
+                <input type="number" min="1" max="10" value={obj.nota} onChange={e => updateObjetivo(obj.id, "nota", e.target.value)} onBlur={salvarComentario}
                   placeholder="Nota"
                   style={{ ...inputStyle, width: 64, textAlign: "center" }} />
                 <button onClick={() => removeObjetivo(obj.id)} style={{ background: "none", border: "none", cursor: "pointer", color: textMuted, fontSize: 18, lineHeight: 1, padding: "0 4px", flexShrink: 0 }}>×</button>
               </div>
-              <input value={obj.comentario || ""} onChange={e => updateObjetivo(obj.id, "comentario", e.target.value)} onBlur={salvarObjetivo}
+              <input value={obj.comentario || ""} onChange={e => updateObjetivo(obj.id, "comentario", e.target.value)} onBlur={salvarComentario}
                 placeholder="Comentário sobre este objetivo..."
                 style={{ ...inputStyle, fontSize: 12, color: textMuted }} />
             </div>
