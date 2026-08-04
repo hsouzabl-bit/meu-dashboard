@@ -318,14 +318,21 @@ const th = dark ? DARK : LIGHT;
       });
   }
 
-  const carregar=()=>{
-
-    
-    setLoading(true);
-    fetch(API_URL)
-      .then(r=>r.json())
-      .then(j=>{if(j.erro)throw new Error(j.erro);setDados(j);setLoading(false);})
-      .catch(e=>{setErro(e.message);setLoading(false);});
+const carregar=()=>{
+    const cacheEstudos = localStorage.getItem("cache_estudos");
+    if(cacheEstudos){
+      try { setDados(JSON.parse(cacheEstudos)); setLoading(false); } catch(e){}
+    } else {
+      setLoading(true);
+    }
+    fetchComRetry(API_URL)
+      .then(j=>{
+        if(j.erro) throw new Error(j.erro);
+        setDados(j);
+        setLoading(false);
+        try { localStorage.setItem("cache_estudos", JSON.stringify(j)); } catch(e){}
+      })
+      .catch(e=>{ if(!cacheEstudos){ setErro(e.message); } setLoading(false); });
   };
 
 const carregarDiario=(ini="",fi="")=>{
@@ -356,70 +363,69 @@ const carregarDiario=(ini="",fi="")=>{
 useEffect(()=>{
     carregar(); // script separado (Estudos), não compete pela mesma cota
 
-    const esperar = (ms) => new Promise(r=>setTimeout(r,ms));
-
-    async function carregarTudoSequencial(){
-      await carregarDiario();
-      await esperar(600);
-
-      await carregarRevisoes();
-      await esperar(600);
-
-      const ini = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-01`;
-      const fim = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
-      try {
-        const j = await fetchComRetry(`${API_DIARIO}?inicio=${ini}&fim=${fim}`);
-        if(!j.erro) setDadosMes(j);
-      } catch(e){}
-      await esperar(600);
+    function aplicarDashboardInit(j){
+      if(j.diario && !j.diario.erro) setDadosDiario(j.diario);
+      if(j.mes && !j.mes.erro) setDadosMes(j.mes);
+      setRevisoes(j.revisoes || []);
+      setUpdates(j.updates || []);
+      setTradesPorData(j.tradesPorData || {});
 
       const {ano,semana} = semanaISOApp(new Date());
       const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
-      try {
-        const j = await fetchComRetry(`${API_DIARIO}?action=lerObjetivos`);
-        const found=(j.objetivos||[]).find(o=>o.chave===chave);
-        setObjetivosSemanaAtual(found||null);
-      } catch(e){}
-      await esperar(600);
 
-      try {
-        const j = await fetchComRetry(`${API_DIARIO}?action=lerDashboardSemanal`);
-        const { ano, semana } = semanaISOApp(new Date());
-        const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
-        setChaveSemanaAtual(chave);
-        const found = (j.semanas||[]).find(s=>s.chave===chave);
-        setPlanoSemana(found?.planoSemana || []);
-        setPontosAtencao(found?.pontosAtencao || []);
-      } catch(e){}
-      await esperar(600);
+      const foundObjetivo = (j.objetivos||[]).find(o=>o.chave===chave);
+      setObjetivosSemanaAtual(foundObjetivo||null);
 
-      try {
-        const j = await fetchComRetry(`${API_DIARIO}?action=lerDSI`);
-        setDsiValor(j.valor ?? "0");
-        setDsiMeta(j.meta ?? "0");
-        setHorasEstudoValor(j.horasEstudoValor ?? "0");
-        setHorasEstudoMeta(j.horasEstudoMeta ?? "80");
-        setBacktestsValor(j.backtestsValor ?? "0");
-        setBacktestsMeta(j.backtestsMeta ?? "100");
-        setReplaysManualValor(j.replaysValor ?? "0");
-        setReplaysManualMeta(j.replaysMeta ?? "20");
-      } catch(e){}
+      setChaveSemanaAtual(chave);
+      const foundSemana = (j.semanas||[]).find(s=>s.chave===chave);
+      setPlanoSemana(foundSemana?.planoSemana || []);
+      setPontosAtencao(foundSemana?.pontosAtencao || []);
 
-      await esperar(600);
+      if(j.dsi){
+        setDsiValor(j.dsi.valor ?? "0");
+        setDsiMeta(j.dsi.meta ?? "0");
+        setHorasEstudoValor(j.dsi.horasEstudoValor ?? "0");
+        setHorasEstudoMeta(j.dsi.horasEstudoMeta ?? "80");
+        setBacktestsValor(j.dsi.backtestsValor ?? "0");
+        setBacktestsMeta(j.dsi.backtestsMeta ?? "100");
+        setReplaysManualValor(j.dsi.replaysValor ?? "0");
+        setReplaysManualMeta(j.dsi.replaysMeta ?? "20");
+      }
 
-      try {
-        const j = await fetchComRetry(`${API_DIARIO}?action=lerChecklistDiario`);
-        const hojeChave = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
-        const found = (j.dias||[]).find(d=>d.data===hojeChave);
-        if(found){
-          if(found.checklist?.length) setChecklistHoje(found.checklist);
-          setNaoDevoHoje(found.naoDevo||"");
-          setIntencaoHoje(found.intencao||"");
-        }
-      } catch(e){}
+      const hojeChave = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+      const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
+      if(foundDia){
+        if(foundDia.checklist?.length) setChecklistHoje(foundDia.checklist);
+        setNaoDevoHoje(foundDia.naoDevo||"");
+        setIntencaoHoje(foundDia.intencao||"");
+      }
     }
 
-    carregarTudoSequencial();
+    async function carregarDashboardInit(){
+      const cacheDash = localStorage.getItem("cache_dashboard");
+      if(cacheDash){
+        try {
+          aplicarDashboardInit(JSON.parse(cacheDash));
+          setLoadingDiario(false);
+          setLoadingRevisoes(false);
+        } catch(e){}
+      } else {
+        setLoadingDiario(true);
+        setLoadingRevisoes(true);
+      }
+
+      try {
+        const j = await fetchComRetry(`${API_DIARIO}?action=getDashboardInit`);
+        aplicarDashboardInit(j);
+        try { localStorage.setItem("cache_dashboard", JSON.stringify(j)); } catch(e){}
+      } catch(e){
+        console.error(e);
+      }
+      setLoadingDiario(false);
+      setLoadingRevisoes(false);
+    }
+
+    carregarDashboardInit();
   },[]);
 
   const m         = dados?.metricas    || {};
