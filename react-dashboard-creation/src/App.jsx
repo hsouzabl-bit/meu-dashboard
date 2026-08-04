@@ -503,22 +503,27 @@ const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
       </div>
     );
 
-    const GRUPO_SETUP = { TRM:"#6B8CC4", FQ:"#B98FC2", TC:"#5FA8AE" };
+const GRUPO_SETUP = { TRM:"#6B8CC4", FQ:"#B98FC2", TC:"#5FA8AE", TL:"#C2A15F", AB:"#9B7FC2" };
     function corWRDash(wr){
       if(wr>=60) return dark?{bg:"#182420",border:"#3d6b52",text:"#7fb89a"}:{bg:"#eaf7f0",border:"#5cb583",text:"#2f7d52"};
       if(wr>=45) return dark?{bg:"#211f18",border:"#6b6142",text:"#c2b184"}:{bg:"#fbf6e6",border:"#d1a53d",text:"#8a6f1a"};
       return dark?{bg:"#211a1a",border:"#6b4444",text:"#c68888"}:{bg:"#fbeceb",border:"#d9776b",text:"#a83f31"};
     }
-    function classificarSetup(nome){
+
+function classificarSetup(nome){
       const n = (nome||"").toLowerCase();
       if(n === "trm") return {grupo:"TRM", label:"TRM"};
       if(n === "fq") return {grupo:"FQ", label:"FQ"};
+      if(n === "tl" || n.includes("lateralidade")) return {grupo:"TL", label:"TL"};
+      if(n.includes("barra de for")) return {grupo:"AB", label:"Abertura – Barra de Força"};
+      if(n.includes("abertura")) return {grupo:"AB", label:"Trade de Abertura"};
       if(n.includes("meio de mov")) return {grupo:"TC", label:"TC Meio de Mov."};
       if(n.includes("supertrend")) return {grupo:"TC", label:"TC Supertrend"};
       if(n.includes("pós bo")||n.includes("pos bo")) return {grupo:"TC", label:"TC Pós BO"};
       if(n.includes("pré bo")||n.includes("pre bo")) return {grupo:"TC", label:"TC Pré BO"};
       return null;
     }
+    
 const setupsClassificados = {};
     (dadosDiario?.setups||[]).forEach(s=>{
       const c = classificarSetup(s.nome);
@@ -537,11 +542,12 @@ const setupsClassificados = {};
       setupsClassificados[label].financTotal = financPorSetup[label] || 0;
     });
     
-    const setupsLinhasDash = [
-      [setupsClassificados["TRM"], setupsClassificados["TC Pré BO"]],
-      [setupsClassificados["FQ"], setupsClassificados["TC Pós BO"]],
-      [setupsClassificados["TC Meio de Mov."], setupsClassificados["TC Supertrend"]],
+const setupsLinhasDash = [
+      [setupsClassificados["Trade de Abertura"], setupsClassificados["Abertura – Barra de Força"]],
+      [setupsClassificados["TC Meio de Mov."], setupsClassificados["TC Pós BO"], setupsClassificados["TC Supertrend"]],
+      [setupsClassificados["TRM"], setupsClassificados["TL"]],
     ];
+    
 const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
       const c = classificarSetup(s.nome);
       return c ? { nome:c.label, wr:s.taxaAcerto, financ:s.financTotal } : null;
@@ -948,7 +954,7 @@ let disciplineStreakAtual = 0;
                 <div style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Status dos Setups</div>
                 <div style={{display:"flex",flexDirection:"column",gap:6,flex:1}}>
                   {setupsLinhasDash.map((linha,li)=>(
-                    <div key={li} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,flex:1}}>
+                    <div key={li} style={{display:"grid",gridTemplateColumns:`repeat(${linha.length},1fr)`,gap:6,flex:1}}>
                       {linha.map((s,ci)=> s ? (
                         <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`,height:"100%",boxSizing:"border-box"}}>
                           <span style={{fontSize:11.5,fontWeight:700,color:th.text}}>{s.label}</span>
