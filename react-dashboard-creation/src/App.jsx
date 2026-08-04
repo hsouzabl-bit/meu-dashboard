@@ -187,6 +187,7 @@ export default function App(){
   const [mesVis,setMesVis]       = useState(hoje.getMonth());
   const [anoVis,setAnoVis]       = useState(hoje.getFullYear());
   const [dadosMes, setDadosMes] = useState(null);
+    const [dadosOts, setDadosOts] = useState(null);
   const [objetivosSemanaAtual, setObjetivosSemanaAtual] = useState(null);
 
   function semanaISOApp(date){
@@ -366,6 +367,7 @@ useEffect(()=>{
     function aplicarDashboardInit(j){
       if(j.diario && !j.diario.erro) setDadosDiario(j.diario);
       if(j.mes && !j.mes.erro) setDadosMes(j.mes);
+            if(j.ots && !j.ots.erro) setDadosOts(j.ots);
       setRevisoes(j.revisoes || []);
       setUpdates(j.updates || []);
       setTradesPorData(j.tradesPorData || {});
@@ -477,7 +479,7 @@ useEffect(()=>{
   const renderMain = () => {
     if(activeNav === "Estatísticas") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
-        <Estatisticas th={th} dark={dark} setDark={setDark} dadosCache={dadosDiario} loadingCache={loadingDiario} onRecarregar={carregarDiario}/>
+        <Estatisticas th={th} dark={dark} setDark={setDark} dadosCache={dadosDiario} otsCache={dadosOts} loadingCache={loadingDiario} onRecarregar={carregarDiario}/>
       </div>
     );
     if(activeNav === "Estudos") return (
