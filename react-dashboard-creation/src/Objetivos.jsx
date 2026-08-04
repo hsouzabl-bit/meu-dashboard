@@ -220,8 +220,7 @@ useEffect(() => {
               }}>
               {saving ? "Salvando…" : "Salvar"}
             </button>
-          </div>
-          
+            
           </div>
           {/* Seletor de cor */}
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -247,19 +246,19 @@ useEffect(() => {
                 <div onClick={() => toggleFeito(obj.id)} style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${obj.feito ? ACCENT : border2}`, background: obj.feito ? ACCENT : "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {obj.feito && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                 </div>
-                <select value={obj.categoria} onChange={e => updateObjetivo(obj.id, "categoria", e.target.value)} onBlur={salvarComentario}
+                <select value={obj.categoria} onChange={e => updateObjetivo(obj.id, "categoria", e.target.value)}
                   style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, border: "none", cursor: "pointer", outline: "none", fontFamily: "inherit", background: tagColors[obj.categoria]?.bg, color: tagColors[obj.categoria]?.text, flexShrink: 0 }}>
                   {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                <input value={obj.texto} onChange={e => updateObjetivo(obj.id, "texto", e.target.value)} onBlur={salvarComentario}
+                <input value={obj.texto} onChange={e => updateObjetivo(obj.id, "texto", e.target.value)}
                   placeholder="Descreva o objetivo..."
                   style={{ ...inputStyle, flex: 1, textDecoration: obj.feito ? "line-through" : "none", color: obj.feito ? textMuted : text }} />
-                <input type="number" min="1" max="10" value={obj.nota} onChange={e => updateObjetivo(obj.id, "nota", e.target.value)} onBlur={salvarComentario}
+                <input type="number" min="1" max="10" value={obj.nota} onChange={e => updateObjetivo(obj.id, "nota", e.target.value)}
                   placeholder="Nota"
                   style={{ ...inputStyle, width: 64, textAlign: "center" }} />
                 <button onClick={() => removeObjetivo(obj.id)} style={{ background: "none", border: "none", cursor: "pointer", color: textMuted, fontSize: 18, lineHeight: 1, padding: "0 4px", flexShrink: 0 }}>×</button>
               </div>
-              <input value={obj.comentario || ""} onChange={e => updateObjetivo(obj.id, "comentario", e.target.value)} onBlur={salvarComentario}
+              <input value={obj.comentario || ""} onChange={e => updateObjetivo(obj.id, "comentario", e.target.value)}
                 placeholder="Comentário sobre este objetivo..."
                 style={{ ...inputStyle, fontSize: 12, color: textMuted }} />
             </div>
@@ -272,7 +271,7 @@ useEffect(() => {
 
         <div>
           <label style={{ fontSize: 10, fontWeight: 700, color: textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6, display: "block" }}>Comentário geral da semana</label>
-          <textarea value={semDados.comentario || ""} onChange={e => setComentario(e.target.value)} onBlur={salvarComentario}
+          <textarea value={semDados.comentario || ""} onChange={e => setComentario(e.target.value)}
             placeholder="Como foi a semana? O que funcionou? O que melhorar?"
             rows={3} style={{ ...inputStyle, resize: "vertical" }} />
         </div>
