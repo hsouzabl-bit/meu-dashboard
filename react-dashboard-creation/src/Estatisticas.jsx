@@ -231,8 +231,22 @@ useEffect(() => {
   }, [dadosCache]);
 
 useEffect(() => {
-    if (otsCache) setOtsDados(otsCache);
-  }, [otsCache]);
+    const cacheOts = localStorage.getItem("cache_ots");
+    if(cacheOts){
+      try { setOtsDados(JSON.parse(cacheOts)); } catch(e){}
+    }
+    const timer = setTimeout(() => {
+      fetchComRetryOTS(API_OTS)
+        .then(j => {
+          if (!j.erro) {
+            setOtsDados(j);
+            try { localStorage.setItem("cache_ots", JSON.stringify(j)); } catch(e){}
+          }
+        })
+        .catch(() => {});
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (loadingCache && !dadosCache && !filtroAtivo) setLoading(true);
