@@ -235,14 +235,19 @@ useEffect(() => {
     if(cacheOts){
       try { setOtsDados(JSON.parse(cacheOts)); } catch(e){}
     }
-    fetchComRetryOTS(API_OTS)
-      .then(j => {
-        if (!j.erro) {
-          setOtsDados(j);
-          try { localStorage.setItem("cache_ots", JSON.stringify(j)); } catch(e){}
-        }
-      })
-      .catch(() => {});
+    // Espera o carregamento inicial do Dashboard terminar antes de disparar,
+    // pra não competir pela mesma cota de concorrência do GAS.
+    const timer = setTimeout(() => {
+      fetchComRetryOTS(API_OTS)
+        .then(j => {
+          if (!j.erro) {
+            setOtsDados(j);
+            try { localStorage.setItem("cache_ots", JSON.stringify(j)); } catch(e){}
+          }
+        })
+        .catch(() => {});
+    }, 4000);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
