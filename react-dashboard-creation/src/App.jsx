@@ -64,10 +64,41 @@ const THEMES = [
     cardBg:"#e8e8ea", resumeBg:"#dfdfe2", navActiveBg:"#cdcdd3",
     skeletonA:"#d8d8dc", skeletonB:"#cccdd1" },
 
-  { id:"musgo", nome:"Musgo", dark:false, accent:"#2F7D5A", ...BASE_LIGHT,
+{ id:"musgo", nome:"Musgo", dark:false, accent:"#2F7D5A", ...BASE_LIGHT,
     bg:"#f3f6f4", surface:"#ffffff", border:"#e6ebe8", border2:"#dae1dd",
     cardBg:"#ffffff", resumeBg:"#f6f9f7", navActiveBg:"#dcefe5",
     skeletonA:"#eef1ef", skeletonB:"#e3e8e5" },
+
+  { id:"ametista", nome:"Ametista", dark:true, accent:"#8B5CF6", ...BASE_DARK,
+    bg:"#030304", surface:"#151418", border:"#27262e", border2:"#32313a",
+    cardBg:"#18171c", resumeBg:"#201f26", navActiveBg:"#2b1d47",
+    skeletonA:"#27262e", skeletonB:"#32313a" },
+
+  { id:"aco", nome:"Aço", dark:true, accent:"#5B7C99", ...BASE_DARK,
+    bg:"#030405", surface:"#141618", border:"#262a2e", border2:"#313539",
+    cardBg:"#17191c", resumeBg:"#1f2226", navActiveBg:"#1d2f3d",
+    skeletonA:"#262a2e", skeletonB:"#313539" },
+
+  { id:"areia", nome:"Areia", dark:false, accent:"#8A6A3D", ...BASE_LIGHT,
+    text:"#2a2721", textSub:"#55514a", textMuted:"#85807a",
+    cardShadow:"0 1px 3px rgba(0,0,0,0.05)",
+    bg:"#e3dfd8", surface:"#efece6", border:"#d4cfc5", border2:"#c8c2b6",
+    cardBg:"#ebe8e2", resumeBg:"#e3dfd8", navActiveBg:"#d8cdb9",
+    skeletonA:"#ddd8cf", skeletonB:"#d0cabf" },
+
+  { id:"nevoa", nome:"Névoa", dark:false, accent:"#3E6C8C", ...BASE_LIGHT,
+    text:"#22282c", textSub:"#4b5359", textMuted:"#7b848a",
+    cardShadow:"0 1px 3px rgba(0,0,0,0.05)",
+    bg:"#dce1e4", surface:"#eaeef0", border:"#cbd2d6", border2:"#bec6cb",
+    cardBg:"#e6eaed", resumeBg:"#dde2e5", navActiveBg:"#c9dae4",
+    skeletonA:"#d6dcdf", skeletonB:"#c9d1d5" },
+
+  { id:"oliva", nome:"Oliva", dark:false, accent:"#5C7343", ...BASE_LIGHT,
+    text:"#262a20", textSub:"#4f5449", textMuted:"#7e8378",
+    cardShadow:"0 1px 3px rgba(0,0,0,0.05)",
+    bg:"#dfe1da", surface:"#ebede6", border:"#cdd0c5", border2:"#c0c4b7",
+    cardBg:"#e7e9e1", resumeBg:"#dfe1da", navActiveBg:"#d3ddc4",
+    skeletonA:"#d9dbd2", skeletonB:"#cccfc3" },
 ];
 
 function pct(v,total){ return !total?0:Math.min(100,Math.round((v/total)*100)); }
