@@ -57,10 +57,12 @@ const THEMES = [
     cardBg:"#ffffff", resumeBg:"#f8f9fa", navActiveBg:"#E5E1F9",
     skeletonA:"#efefef", skeletonB:"#e5e5e5" },
 
-  { id:"grafite", nome:"Grafite", dark:false, accent:"#2b2b30", ...BASE_LIGHT,
-    bg:"#f6f6f7", surface:"#ffffff", border:"#e8e8ea", border2:"#dcdcdf",
-    cardBg:"#ffffff", resumeBg:"#f5f5f6", navActiveBg:"#e4e4e7",
-    skeletonA:"#efefef", skeletonB:"#e5e5e5" },
+{ id:"grafite", nome:"Grafite", dark:false, accent:"#3a3a42", ...BASE_LIGHT,
+    text:"#23242a", textSub:"#4d4f57", textMuted:"#7c7e88",
+    cardShadow:"0 1px 3px rgba(0,0,0,0.05)",
+    bg:"#dedee1", surface:"#ececed", border:"#cfcfd4", border2:"#c2c2c8",
+    cardBg:"#e8e8ea", resumeBg:"#dfdfe2", navActiveBg:"#cdcdd3",
+    skeletonA:"#d8d8dc", skeletonB:"#cccdd1" },
 
   { id:"musgo", nome:"Musgo", dark:false, accent:"#2F7D5A", ...BASE_LIGHT,
     bg:"#f3f6f4", surface:"#ffffff", border:"#e6ebe8", border2:"#dae1dd",
