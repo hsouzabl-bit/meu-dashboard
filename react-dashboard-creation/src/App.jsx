@@ -12,26 +12,61 @@ const METAS_MENSAIS = { horasEstudo:80, paginasLidas:100, videoAulas:10, replays
 const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:500, videoAulas:60, replays:120 };
 const DIAS_SEMANA   = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
 const MESES_PT      = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const ACCENT_LIGHT  = "#2e2e8c"; //  navy blue
-const ACCENT_DARK   = "#A83259"; // framboesa
+
+
+const ACCENT_LIGHT  = "#2e2e8c";
+const ACCENT_DARK   = "#A83259";
 const ACCENT        = ACCENT_LIGHT;
 
-const LIGHT = {
-  bg:"#f4f5f7", surface:"#ffffff", border:"#ebebeb", border2:"#e0e0e0",
+const BASE_DARK = {
+  text:"#f2f2f5", textSub:"#c4c3cc", textMuted:"#8f8e9c",
+  cardShadow:"0 1px 6px rgba(0,0,0,0.6)",
+  calDayBg:{ 1:"#182420", 2:"#211f18", 3:"#211a1a", 0:"#1c1a22" },
+  calDayBorder:{ 1:"#3d6b52", 2:"#6b6142", 3:"#6b4444", 0:"transparent" },
+};
+const BASE_LIGHT = {
   text:"#0f1117", textSub:"#4a5568", textMuted:"#8a96a3",
-  navActiveBg:"#E5E1F9", cardBg:"#ffffff", cardShadow:"0 1px 4px rgba(0,0,0,0.06)",
-  resumeBg:"#f8f9fa", skeletonA:"#efefef", skeletonB:"#e5e5e5",
+  cardShadow:"0 1px 4px rgba(0,0,0,0.06)",
   calDayBg:{ 1:"#e6faf2", 2:"#fff8e1", 3:"#fce4ec", 0:"#f5f5f5" },
   calDayBorder:{ 1:"#a7e9c9", 2:"#ffe082", 3:"#f48fb1", 0:"transparent" },
 };
-const DARK = {
-  bg:"#030303", surface:"#0d0c0f", border:"#211f26", border2:"#2b2932",
-  text:"#f2f2f5", textSub:"#c4c3cc", textMuted:"#8f8e9c",
-  navActiveBg:"#2e1420", cardBg:"#0d0c0f", cardShadow:"0 1px 6px rgba(0,0,0,0.6)",
-  resumeBg:"#141218", skeletonA:"#211f26", skeletonB:"#2b2932",
-  calDayBg:{ 1:"#182420", 2:"#211f18", 3:"#211a1a", 0:"#161520" },
-  calDayBorder:{ 1:"#3d6b52", 2:"#6b6142", 3:"#6b4444", 0:"transparent" },
-};
+
+const THEMES = [
+  { id:"framboesa", nome:"Framboesa", dark:true, accent:"#A83259", ...BASE_DARK,
+    bg:"#030303", surface:"#131218", border:"#26242d", border2:"#312e3a",
+    cardBg:"#16151a", resumeBg:"#1e1c24", navActiveBg:"#2e1420",
+    skeletonA:"#26242d", skeletonB:"#312e3a" },
+
+  { id:"esmeralda", nome:"Esmeralda", dark:true, accent:"#2E9E6B", ...BASE_DARK,
+    bg:"#020505", surface:"#101715", border:"#1f2a26", border2:"#2a3630",
+    cardBg:"#141c19", resumeBg:"#1b2521", navActiveBg:"#123024",
+    skeletonA:"#1f2a26", skeletonB:"#2a3630" },
+
+  { id:"cobalto", nome:"Cobalto", dark:true, accent:"#3B6FD4", ...BASE_DARK,
+    bg:"#020305", surface:"#101319", border:"#1f2531", border2:"#2a313f",
+    cardBg:"#14181f", resumeBg:"#1b202a", navActiveBg:"#14264a",
+    skeletonA:"#1f2531", skeletonB:"#2a313f" },
+
+  { id:"ambar", nome:"Âmbar", dark:true, accent:"#C77A2B", ...BASE_DARK,
+    bg:"#050403", surface:"#181510", border:"#2b2620", border2:"#37312a",
+    cardBg:"#1c1814", resumeBg:"#25201a", navActiveBg:"#3a2712",
+    skeletonA:"#2b2620", skeletonB:"#37312a" },
+
+  { id:"indigo", nome:"Índigo", dark:false, accent:"#2e2e8c", ...BASE_LIGHT,
+    bg:"#f4f5f7", surface:"#ffffff", border:"#ebebeb", border2:"#e0e0e0",
+    cardBg:"#ffffff", resumeBg:"#f8f9fa", navActiveBg:"#E5E1F9",
+    skeletonA:"#efefef", skeletonB:"#e5e5e5" },
+
+  { id:"grafite", nome:"Grafite", dark:false, accent:"#2b2b30", ...BASE_LIGHT,
+    bg:"#f6f6f7", surface:"#ffffff", border:"#e8e8ea", border2:"#dcdcdf",
+    cardBg:"#ffffff", resumeBg:"#f5f5f6", navActiveBg:"#e4e4e7",
+    skeletonA:"#efefef", skeletonB:"#e5e5e5" },
+
+  { id:"musgo", nome:"Musgo", dark:false, accent:"#2F7D5A", ...BASE_LIGHT,
+    bg:"#f3f6f4", surface:"#ffffff", border:"#e6ebe8", border2:"#dae1dd",
+    cardBg:"#ffffff", resumeBg:"#f6f9f7", navActiveBg:"#dcefe5",
+    skeletonA:"#eef1ef", skeletonB:"#e3e8e5" },
+];
 
 function pct(v,total){ return !total?0:Math.min(100,Math.round((v/total)*100)); }
 function minParaHM(min){ const h=Math.floor(min/60),m=min%60; return m>0?`${h}h ${m}m`:`${h}h`; }
@@ -68,7 +103,9 @@ const Ico = {
   Bell:    ({s=16,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
   Expand:  ({s=14,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
   Collapse:({s=14,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
-  Clipboard:({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>,
+
+  Palette:({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".8"/><circle cx="17.5" cy="10.5" r=".8"/><circle cx="8.5" cy="7.5" r=".8"/><circle cx="6.5" cy="12.5" r=".8"/><path d="M12 2a10 10 0 0 0 0 20 2 2 0 0 0 2-2 2 2 0 0 1 2-2h2a4 4 0 0 0 4-4 10 10 0 0 0-10-10z"/></svg>,
+  Clipboard:({s=18,c})=>
 };
 
 function Skeleton({w="100%",h=20,r=6,th}){
@@ -175,7 +212,16 @@ export default function App(){
   const [loadingRevisoes, setLoadingRevisoes] = useState(true);
 
   const [activeNav,setActiveNav]     = useState("Dashboard");
-  const [dark,setDark]               = useState(true);
+
+  const [temaId,setTemaId] = useState(()=>{
+    try { return localStorage.getItem("tema_app") || "framboesa"; } catch(e){ return "framboesa"; }
+  });
+  const [menuTemaAberto,setMenuTemaAberto] = useState(false);
+  const trocarTema = (id)=>{
+    setTemaId(id);
+    try { localStorage.setItem("tema_app", id); } catch(e){}
+  };
+  
   const [sidebarExpandido,setSidebarExpandido] = useState(true);
   const [metasExpandido, setMetasExpandido] = useState(false);
     const [seqExpandido, setSeqExpandido] = useState(false);
@@ -310,8 +356,15 @@ function salvarChecklistHojeApp(){
     setChecklistAlterado(true);
   }
 
-const th = dark ? DARK : LIGHT;
-  const ACCENT_ATUAL = dark ? ACCENT_DARK : ACCENT_LIGHT;
+const tema = THEMES.find(t=>t.id===temaId) || THEMES[0];
+  const th = tema;
+  const dark = tema.dark;
+  const ACCENT_ATUAL = tema.accent;
+  // compatibilidade: componentes filhos ainda chamam setDark
+  const setDark = (v)=>{
+    const querEscuro = typeof v === "function" ? v(tema.dark) : v;
+    trocarTema(querEscuro ? "framboesa" : "indigo");
+  };
 
   function fetchComRetry(url, tentativas=3, delayMs=1200){
     return fetch(url)
@@ -1199,16 +1252,39 @@ let disciplineStreakAtual = 0;
           })}
         </nav>
 
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <button onClick={()=>setDark(d=>!d)} style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} title={dark?"Tema claro":"Tema escuro"}>
-            {dark?<Ico.Sun s={15} c={th.textMuted}/>:<Ico.Moon s={15} c={th.textMuted}/>}
-          </button>
-          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-            <Ico.Search c={th.textMuted}/>
+<div style={{position:"relative"}}>
+          <div onClick={()=>setMenuTemaAberto(v=>!v)} style={{
+            padding:"9px 20px",borderRadius:24,fontSize:12.5,fontWeight:600,whiteSpace:"nowrap",cursor:"pointer",
+            background:th.surface,border:`1px solid ${th.border}`,color:th.textMuted,
+            display:"flex",alignItems:"center",gap:8,
+          }}>
+            <Ico.Palette s={15} c={ACCENT_ATUAL}/> Temas
           </div>
-          <div style={{width:36,height:36,borderRadius:"50%",background:th.surface,border:`1px solid ${th.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-            <Ico.Bell c={th.textMuted}/>
-          </div>
+          {menuTemaAberto && (
+            <>
+              <div onClick={()=>setMenuTemaAberto(false)} style={{position:"fixed",inset:0,zIndex:19,background:"transparent"}}/>
+              <div style={{
+                position:"absolute",top:46,right:0,zIndex:20,minWidth:190,
+                background:th.cardBg,border:`1px solid ${th.border}`,borderRadius:14,padding:6,
+                boxShadow:"0 12px 32px rgba(0,0,0,0.35)",
+              }}>
+                {["Escuros","Claros"].map(grupo=>(
+                  <div key={grupo}>
+                    <div style={{fontSize:9.5,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",padding:"8px 10px 4px"}}>{grupo}</div>
+                    {THEMES.filter(t=>t.dark===(grupo==="Escuros")).map(t=>(
+                      <div key={t.id} onClick={()=>{trocarTema(t.id);setMenuTemaAberto(false);}} style={{
+                        display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:9,cursor:"pointer",
+                        background:t.id===temaId?th.navActiveBg:"transparent",
+                      }}>
+                        <span style={{width:14,height:14,borderRadius:"50%",background:t.accent,border:`1px solid ${th.border2}`,flexShrink:0}}/>
+                        <span style={{fontSize:13,color:t.id===temaId?th.text:th.textSub,fontWeight:t.id===temaId?700:500}}>{t.nome}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
