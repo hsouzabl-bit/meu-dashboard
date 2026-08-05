@@ -37,20 +37,20 @@ const THEMES = [
     cardBg:"#16151a", resumeBg:"#1e1c24", navActiveBg:"#2e1420",
     skeletonA:"#26242d", skeletonB:"#312e3a" },
 
-  { id:"esmeralda", nome:"Esmeralda", dark:true, accent:"#2E9E6B", ...BASE_DARK,
-    bg:"#020505", surface:"#101715", border:"#1f2a26", border2:"#2a3630",
-    cardBg:"#141c19", resumeBg:"#1b2521", navActiveBg:"#123024",
-    skeletonA:"#1f2a26", skeletonB:"#2a3630" },
+{ id:"esmeralda", nome:"Esmeralda", dark:true, accent:"#2E9E6B", ...BASE_DARK,
+    bg:"#030403", surface:"#141614", border:"#252a27", border2:"#303632",
+    cardBg:"#171917", resumeBg:"#1f221f", navActiveBg:"#16291f",
+    skeletonA:"#252a27", skeletonB:"#303632" },
 
   { id:"cobalto", nome:"Cobalto", dark:true, accent:"#3B6FD4", ...BASE_DARK,
     bg:"#020305", surface:"#101319", border:"#1f2531", border2:"#2a313f",
     cardBg:"#14181f", resumeBg:"#1b202a", navActiveBg:"#14264a",
     skeletonA:"#1f2531", skeletonB:"#2a313f" },
 
-  { id:"ambar", nome:"Âmbar", dark:true, accent:"#C77A2B", ...BASE_DARK,
-    bg:"#050403", surface:"#181510", border:"#2b2620", border2:"#37312a",
-    cardBg:"#1c1814", resumeBg:"#25201a", navActiveBg:"#3a2712",
-    skeletonA:"#2b2620", skeletonB:"#37312a" },
+{ id:"ambar", nome:"Âmbar", dark:true, accent:"#C77A2B", ...BASE_DARK,
+    bg:"#040403", surface:"#161514", border:"#2a2723", border2:"#35322d",
+    cardBg:"#191714", resumeBg:"#221f1b", navActiveBg:"#2e2214",
+    skeletonA:"#2a2723", skeletonB:"#35322d" },
 
   { id:"indigo", nome:"Índigo", dark:false, accent:"#2e2e8c", ...BASE_LIGHT,
     bg:"#f4f5f7", surface:"#ffffff", border:"#ebebeb", border2:"#e0e0e0",
