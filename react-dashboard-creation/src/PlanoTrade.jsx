@@ -3,20 +3,15 @@ import React, { useState, useEffect } from "react";
 /*
   PlanoTrade.jsx
   ---------------------------------------------------------------
-  Nova página do dashboard: "Plano de Trade"
-  Segue o padrão do projeto: tema recebido via prop `th`
-  (mesmo padrão de App.jsx / Estatisticas.jsx / Estudos.jsx),
-  accent #4ecb8d, fonte Plus Jakarta Sans.
+  Página "Plano de Trade" — atualizada conforme o Plano Operacional
+  de Agosto/2026.
 
-  COMO INTEGRAR:
-  1. Copie este arquivo para src/PlanoTrade.jsx
-  2. No App.jsx, importe: import PlanoTrade from './PlanoTrade';
-  3. Adicione um item na sidebar (mesmo padrão dos outros) e
-     renderize <PlanoTrade th={th} /> quando a aba estiver ativa.
-  4. Se seu objeto de tema (LIGHT/DARK) tiver chaves diferentes das
-     usadas abaixo (th.bg, th.card, th.border, th.text, th.textMuted,
-     th.accent), ajuste os nomes de propriedade no topo do arquivo
-     ou no objeto FALLBACK_THEME.
+  Principais mudanças desta versão:
+  - FQ encerrado (mantido na tabela, riscado e em cinza, por último)
+  - Novos setups: Trade de Abertura (TSS), Abertura Barra de Força, TL
+  - Stop técnico substituindo stop aritmético
+  - Regra de saída: o ALVO decide, não a quantidade
+  - Risco e tabela de contratos de agosto
   ---------------------------------------------------------------
 */
 
@@ -189,6 +184,7 @@ function Pill({ children, theme, tone = "neutral" }) {
     good: { bg: `${theme.accent}22`, text: theme.accent },
     warn: { bg: "#e0a63a22", text: "#e0a63a" },
     bad: { bg: "#e0555522", text: "#e05555" },
+    off: { bg: "#88888818", text: "#7d838d" },
   };
   const c = tones[tone] || tones.neutral;
   return (
@@ -217,7 +213,7 @@ function Quote({ children, theme }) {
         margin: "10px 0",
         fontSize: 13.5,
         fontStyle: "italic",
-        color: theme.textMuted,
+        color: theme.text,
         lineHeight: 1.6,
       }}
     >
@@ -234,11 +230,18 @@ function toneBg(tone, theme) {
     good: `${theme.accent}22`,
     warn: "#e0a63a22",
     bad: "#e0555522",
+    off: "#88888818",
   };
   return tones[tone] || tones.neutral;
 }
 function toneColor(tone, theme) {
-  const tones = { neutral: theme.textMuted, good: theme.accent, warn: "#e0a63a", bad: "#e05555" };
+  const tones = {
+    neutral: theme.textMuted,
+    good: theme.accent,
+    warn: "#e0a63a",
+    bad: "#e05555",
+    off: "#7d838d",
+  };
   return tones[tone] || tones.neutral;
 }
 
@@ -267,6 +270,21 @@ const IconTCPos = ({ color }) => (
 const IconTCSuper = ({ color }) => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="5" cy="14" r="1.6" /><circle cx="12" cy="7" r="1.6" /><circle cx="19" cy="16" r="1.6" /><path d="M6.3 12.8L10.7 8.5M13.3 8.3l4.4 6" />
+  </svg>
+);
+const IconAbertura = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+  </svg>
+);
+const IconForca = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13 2L5 13h6l-1 9 8-11h-6l1-9z" />
+  </svg>
+);
+const IconTL = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 7h18" /><path d="M3 17h18" /><path d="M7 7v10M17 7v10" />
   </svg>
 );
 
@@ -307,6 +325,13 @@ const IcoShield = ({ color }) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 3l7 3v6c0 4.4-2.9 7.6-7 9-4.1-1.4-7-4.6-7-9V6l7-3z" />
     <path d="M9 12l2 2 4-4" />
+  </svg>
+);
+const IcoRisk = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3l9 16H3l9-16z" />
+    <line x1="12" y1="10" x2="12" y2="14" />
+    <line x1="12" y1="17" x2="12" y2="17" />
   </svg>
 );
 
@@ -406,14 +431,32 @@ function SectionLabel({ theme, children, danger }) {
 function SetupDetail({ s, theme }) {
   return (
     <div style={{ padding: "24px 26px 28px" }}>
+      {/* Aviso de setup encerrado */}
+      {s.encerrado && (
+        <div
+          style={{
+            background: "#88888814",
+            border: `1px solid ${theme.border}`,
+            borderRadius: 12,
+            padding: "14px 16px",
+            marginBottom: 22,
+          }}
+        >
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: "#7d838d", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 }}>
+            Setup encerrado — 30/07/2026
+          </div>
+          <div style={{ fontSize: 13, color: theme.textMuted, lineHeight: 1.6 }}>{s.motivoEncerramento}</div>
+        </div>
+      )}
+
       {/* 1. Descrição do setup */}
       <div style={{ fontSize: 13.5, color: theme.textMuted, lineHeight: 1.7, marginBottom: 24 }}>
         {s.descricao}
       </div>
 
-      {/* 2. Cards: stop aceito, gestão dos ganhos, RxR pretendido */}
+      {/* 2. Cards: stop, gestão dos ganhos, RxR pretendido */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 26 }}>
-        <StatCard theme={theme} label="Stop aceito" value={s.stopAceito} />
+        <StatCard theme={theme} label="Stop (técnico)" value={s.stopAceito} />
         <StatCard theme={theme} label="Gestão dos ganhos" value={s.gestaoGanhos} />
         <StatCard theme={theme} label="RxR pretendido" value={s.rxr} accent />
       </div>
@@ -430,7 +473,7 @@ function SetupDetail({ s, theme }) {
         <NumberedList theme={theme} items={s.filtrosList} />
       </div>
 
-      {/* 5. Onde invalida (veto + invalidação consolidados) */}
+      {/* 5. Onde invalida */}
       <div
         style={{
           background: "#e0555518",
@@ -533,7 +576,16 @@ function SetupPopover({ s, theme, onClose }) {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <s.Icon color={toneColor(s.fluencia.tone, theme)} />
-            <div style={{ fontWeight: 700, color: theme.text, fontSize: 14.5 }}>{s.nome}</div>
+            <div
+              style={{
+                fontWeight: 700,
+                color: s.encerrado ? "#7d838d" : theme.text,
+                fontSize: 14.5,
+                textDecoration: s.encerrado ? "line-through" : "none",
+              }}
+            >
+              {s.nome}
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -581,7 +633,7 @@ function SetupsTable({ theme, setups }) {
         >
           <thead>
             <tr>
-              {["Setup", "Timeframe", "Barra de sinal", "Split / RxR", "Fluência", ""].map((h) => (
+              {["Setup", "Timeframe", "Barra de sinal", "Saída / RxR", "Fluência", ""].map((h) => (
                 <th
                   key={h}
                   style={{
@@ -603,6 +655,10 @@ function SetupsTable({ theme, setups }) {
           <tbody>
             {setups.map((s, i) => {
               const Icon = s.Icon;
+              const off = !!s.encerrado;
+              const corTexto = off ? "#7d838d" : theme.text;
+              const corSub = off ? "#6b7078" : theme.textMuted;
+              const risco = off ? "line-through" : "none";
               return (
                 <tr
                   key={s.id}
@@ -610,6 +666,7 @@ function SetupsTable({ theme, setups }) {
                   style={{
                     cursor: "pointer",
                     background: i % 2 === 1 ? `${theme.cardAlt}80` : "transparent",
+                    opacity: off ? 0.6 : 1,
                   }}
                 >
                   <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}` }}>
@@ -629,20 +686,20 @@ function SetupsTable({ theme, setups }) {
                         <Icon color={toneColor(s.fluencia.tone, theme)} />
                       </div>
                       <div>
-                        <div style={{ fontWeight: 700, color: theme.text }}>{s.nomeCurto}</div>
-                        <div style={{ fontSize: 11, color: theme.textMuted }}>{s.subtitulo}</div>
+                        <div style={{ fontWeight: 700, color: corTexto, textDecoration: risco }}>{s.nomeCurto}</div>
+                        <div style={{ fontSize: 11, color: corSub }}>{s.subtitulo}</div>
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}`, color: theme.textMuted }}>
+                  <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}`, color: corSub }}>
                     {s.timeframeShort}
                   </td>
-                  <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}`, color: theme.textMuted }}>
+                  <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}`, color: corSub }}>
                     {s.barraSinalChips.join(" · ")}
                   </td>
                   <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}` }}>
-                    <div style={{ fontWeight: 700, color: theme.text }}>{s.split}</div>
-                    <div style={{ fontSize: 11, color: theme.textMuted }}>{s.rxr}</div>
+                    <div style={{ fontWeight: 700, color: corTexto, textDecoration: risco }}>{s.split}</div>
+                    <div style={{ fontSize: 11, color: corSub }}>{s.rxr}</div>
                   </td>
                   <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}` }}>
                     <Pill theme={theme} tone={s.fluencia.tone}>{s.fluencia.label}</Pill>
@@ -662,66 +719,6 @@ function SetupsTable({ theme, setups }) {
   );
 }
 
-/* ---------------- Tabela de gestão de saída por contrato ---------------- */
-
-function TabelaSaida({ theme }) {
-  const rows = [
-    { ctts: 7, stopMax: "150 pts", plano: "Parcial de 2x1 ainda antes dos 450pts" },
-    { ctts: 6, stopMax: "175 pts", plano: "Parcial de 2x1 ainda antes dos 450pts" },
-    { ctts: 5, stopMax: "200 pts", plano: "Parcial de 2x1 ainda antes dos 450pts" },
-    { ctts: 4, stopMax: "250 pts", plano: "Parcial de 2x1 pouco além dos 450 → realizar em 450" },
-    { ctts: 3, stopMax: "300 pts", plano: "1 em 1x1, 1 em 1,5x1 (450), 1 em 2x1" },
-  ];
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          fontSize: 13,
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-        }}
-      >
-        <thead>
-          <tr>
-            {["Contratos", "Stop máximo", "Plano de saída"].map((h) => (
-              <th
-                key={h}
-                style={{
-                  textAlign: "left",
-                  padding: "8px 10px",
-                  borderBottom: `1px solid ${theme.border}`,
-                  color: theme.accent,
-                  fontSize: 11,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.4,
-                }}
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.ctts}>
-              <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.text, fontWeight: 700 }}>
-                {r.ctts} ctts
-              </td>
-              <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.text }}>
-                {r.stopMax}
-              </td>
-              <td style={{ padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, color: theme.textMuted }}>
-                {r.plano}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 /* ---------------- Dados dos setups ---------------- */
 
 const SETUPS = [
@@ -732,81 +729,40 @@ const SETUPS = [
     subtitulo: "Retorno às médias",
     Icon: IconTRM,
     timeframeShort: "M5 → M2",
-    barraSinalChips: ["Inside/outside", "Martelo/invertido", "Engolfo"],
-    stopAceito: "Até 300pts",
-    split: "3/1/1",
-    rxr: "1,2x1",
-    gestaoGanhos: "60% em 1x1 · 20% em 300pts · 20% em 400pts",
-    badge: "Fluente",
-    badgeColor: { bg: "#4ecb8d22", text: "#4ecb8d" },
-    fluencia: { label: "Fluente", tone: "good", detalhe: "80% de acerto no período (4G/1L/1BE em 6 trades)" },
+    barraSinalChips: ["Inside", "Outside", "2BR"],
+    stopAceito: "Atrás da barra de sinal + gordura 20–30%",
+    split: "Alvo decide",
+    rxr: "1,5x1+",
+    gestaoGanhos: "Alvo curto: 100% no alvo · Alvo aberto: parcial 1x1 + carrega (3+ ctts)",
+    badge: "Atenção",
+    badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
+    fluencia: { label: "Atenção", tone: "warn", detalhe: "Historicamente o setup mais confiável, mas fechou julho em −4R" },
     descricao: "Mercado esticado demais de um movimento direcional atinge um ponto de resistência real (confluência de níveis), onde a probabilidade de continuidade cai e a de reação/correção sobe — captura o \"elástico esticado\" antes de um retorno às médias.",
     regrasList: [
-      "Mercado esticado — 3+ barras do M5 sem tocar a MME9 do M5",
-      "Região de trava presente — S/R, LT/CL, Fibo, MA longa ou VWAP",
+      "Mercado esticado — 3+ barras afastado da MME9",
+      "Região de trava / alvo / confluência presente — S/R, LT/CL, Fibo, MA longa ou VWAP",
       "Gatilho de qualidade adequada dentro da região",
     ],
     filtrosList: [
       "Confluência de 2 a 3 níveis coincidindo na mesma região",
       "A favor da tendência macro (semanal/diário)",
       "Espaço até a MME9 do M2 suficiente para viabilizar a parcial",
+      "Só entrar quando a direção contrária não fizer sentido — havendo argumento razoável para o outro lado, segurar",
     ],
-    ondeInvalida: "Sem o esticamento mínimo (3+ barras sem tocar a MME9 do M5), o setup nem é candidato. Já posicionado, invalida se o preço romper além do nível de origem da reação — na maioria dos casos, isso já coincide com o stop técnico.",
+    ondeInvalida: "Stop técnico atrás da barra de sinal, com gordura de 20–30% do tamanho da barra: barra de ~100–150 pts → ~30 pts; ~200 pts → 50–60 pts; ~400 pts → 50–100 pts no máximo. Sem o esticamento mínimo de 3+ barras da MME9, o setup nem é candidato.",
     gatilhos: [
-      { label: "Melhor", text: "inside/outside favoráveis à reversão" },
-      { label: "Bom", text: "martelo/invertido, engolfo" },
-      { label: "Aceitável", text: "doji ou cor oposta, só como inside e com pavio de força clara a favor da reversão — do contrário, não se enquadra" },
+      { label: "a", text: "Inside bar" },
+      { label: "b", text: "Outside bar" },
+      { label: "c", text: "2BR" },
     ],
     redFlagsList: [
       "Entrar sem espaço até a MME9 do M2 — mata a possibilidade de realizar a parcial",
-      "Pegar reação contra o M2 sem confirmação de fechamento — entrada por violação antecipa o que a barra ainda não provou",
-      "Doji fora do critério — cor a favor da reversão mas sem pavio de força real, tratado como se fosse válido",
+      "Pegar reação contra o M2 sem confirmação de fechamento",
+      "Ignorar o caso contrário legítimo na mesma região — foi o que gerou o −4R de julho",
     ],
     exemplosList: [
       "22/06 — DB exato macro + alvo 3 pivô + alvo 1 pivô maior + inside. Trade impecável.",
-      "12/06 — DB exato + inside positiva na região + 61,8% da perna macro.",
-    ],
-  },
-  {
-    id: "fq",
-    nomeCurto: "FQ",
-    nome: "FQ — Falha de Estrutura",
-    subtitulo: "Falha de estrutura",
-    Icon: IconFQ,
-    timeframeShort: "M5 → M2",
-    barraSinalChips: ["Martelo/invertido", "2BR", "Inside", "Outside"],
-    stopAceito: "Até 250pts",
-    split: "3/1/1",
-    rxr: "1,3x1",
-    gestaoGanhos: "60% em 1x1 · 20% em 300pts · 20% em 400pts",
-    badge: "Em validação",
-    badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
-    fluencia: { label: "Em validação", tone: "warn", detalhe: "Reformulado com o Mateus, jul/2026 — histórico anterior: 41% de acerto" },
-    descricao: "Falha de continuidade expõe traders posicionados a favor da tendência com stop técnico no nível que acabou de ser rompido — a quebra de estrutura gera o próprio combustível da reversão ao acionar esses stops. Fechado para exigir região de alta confluência e condição que já demonstre força reversiva real, não hipotética. Papel no operacional: (a) alternativa ao TRM quando esticado mas sem ter dado para participar; (b) captura de reversão real numa localização onde a reversão já era esperada e a força reversiva já aconteceu, deixando correção + gatilho.",
-    regrasList: [
-      "Região — mínimo 2 de 4 simultâneas: topo/fundo isolado",
-      "S/R validado (2+ toques prévios)",
-      "Médias do tempo gráfico maior",
-      "Alvo de fibo + 1 confluência adicional",
-    ],
-    filtrosList: [
-      "Condição (uma das duas) — Esticado: 3+ candles afastado da MME9 do M5, com espaço para 1x1 na MME9 do M2",
-      "Estruturado: quebra de microestrutura anterior + calço da MME9 do M2 + espaço gráfico de 1x1 até o T/F mais próximo",
-    ],
-    ondeInvalida: "Sem uma das duas condições (esticado ou estruturado) com o espaço gráfico exigido, não há trade — veto automático. Já posicionado, invalida se o preço retornar além do nível que gerou a falha — isso é continuação disfarçada, não FQ.",
-    gatilhos: [
-      { label: "a", text: "Martelo/martelo invertido" },
-      { label: "b", text: "2BR (inclui engolfo)" },
-      { label: "c", text: "Inside bar favorável, ou doji com fechamento nos 30% superiores/inferiores + pavio consistente" },
-      { label: "d", text: "Outside bar" },
-    ],
-    redFlagsList: [
-      "Doji fora do critério objetivo de pavio — cor a favor sem o fechamento nos 30% + pavio consistente exigido",
-      "Região com só 1 confluência — abaixo do mínimo de 2 exigido",
-      "Condição sem espaço gráfico (esticado sem espaço até a 9 do M2, ou estruturado sem espaço até o T/F) — veto automático, não apenas red flag",
-    ],
-    exemplosList: [
-      "29/06 — FQ realmente acima da 9 e da VWAP, vindo da MM20 do 60' + 50% fibo do dia anterior.",
+      "29/07 — TRM de compra das ~10h30: havia argumentos a favor E contra na mesma região. Deu mais peso ao lado a favor e stopou. Origem do filtro do lado contrário.",
     ],
   },
   {
@@ -816,17 +772,17 @@ const SETUPS = [
     subtitulo: "Pullback na MME9",
     Icon: IconTCMM,
     timeframeShort: "M5 → M2",
-    barraSinalChips: ["Padrão", "Inside/outside reforça"],
-    stopAceito: "Até 300pts",
-    split: "3/1/1",
-    rxr: "1,2x1",
-    gestaoGanhos: "60% em 1x1 · 20% em 300pts · 20% em 400pts",
+    barraSinalChips: ["Inside", "Outside", "2BR"],
+    stopAceito: "Barra de sinal (se excelente) ou T/F prévio",
+    split: "Alvo decide",
+    rxr: "1,5x1+",
+    gestaoGanhos: "2 ctts: 100% no 1x1 (regra de agosto) · 3+ ctts: parcial 1x1 + carrega",
     badge: "Funcional",
     badgeColor: { bg: "#4ecb8d22", text: "#4ecb8d" },
-    fluencia: { label: "Funcional", tone: "good", detalhe: "54% de acerto no período" },
-    descricao: "Dentro de uma tendência já estabelecida, o pullback até a média de referência oferece entrada de continuidade — o viés a favor já está validado pelo alinhamento das médias.",
+    fluencia: { label: "Funcional", tone: "good", detalhe: "Setup de continuidade — apoia-se no que o mercado já demonstrou" },
+    descricao: "Dentro de uma tendência já estabelecida, o pullback até a média de referência oferece entrada de continuidade — o viés a favor já está validado pelo alinhamento completo das médias.",
     regrasList: [
-      "Médias alinhadas — 9>20>50>200 (ou inverso na baixa)",
+      "Alinhamento COMPLETO de todas as médias — 200/50/20/9 (regra nova de agosto)",
       "Estrutura de tendência prévia — mínimo 2 T/F/T/F",
       "Preço calçado na MME9 ou MME20",
     ],
@@ -834,20 +790,21 @@ const SETUPS = [
       "Espaço gráfico mínimo 1x1 até o próximo alvo",
       "Gatilho a favor do 60'/D",
       "VWAP próxima e confluência no ponto de PB",
-      "Ausência de FQ contra (ou FQ a favor reforça)",
     ],
-    ondeInvalida: "Sem médias alinhadas e estrutura de tendência prévia, o setup não é candidato. Já posicionado, invalida no T/F prévio do swing que sustenta a correção — a menos que a barra de sinal seja especial (inside/outside), que já protege sozinha contra violinada.",
+    ondeInvalida: "Stop atrás da barra de sinal se ela for excelente (mesma gordura de 20–30%); caso contrário, no T/F prévio ou no ponto de invalidação total da leitura. Sem alinhamento completo das médias e estrutura de tendência prévia, o setup não é candidato.",
     gatilhos: [
-      { label: "Padrão", text: "não precisa ser excepcional" },
-      { label: "Reforça", text: "inside/outside, quando é ela mesma a fonte de invalidação" },
+      { label: "a", text: "Inside bar" },
+      { label: "b", text: "Outside bar" },
+      { label: "c", text: "2BR — barra de força revertendo barra de força contrária" },
     ],
     redFlagsList: [
-      "Entrar sem estrutura de tendência clara no M5",
+      "Entrar sem alinhamento completo das médias",
       "Pullback raso após pullback profundo exige barra de sinal 10/10",
-      "Usar doji fora de contexto muito favorável",
+      "Com 2 contratos, tentar carregar em vez de sair 100% no 1x1 — decisão discricionária com lucro na tela é onde a execução mais oscila",
     ],
     exemplosList: [
-      "15/06 — TC na 9 com boa barra, manteve disciplina apesar de tensão durante o trade (\"MUITO BOM não ter desistido\"), pagou bem.",
+      "29/07 — b30 do M5: 1º PB na MME9 após impulso + micro canal, quase 20 barras abaixo da MM20, barra de sinal inside minúscula. Pagou.",
+      "29/07 — b44 do M5: MME9 seguindo segurando os preços, excelente barra de sinal quase tocando a MM20, bom espaço até as mínimas do dia.",
     ],
   },
   {
@@ -857,32 +814,31 @@ const SETUPS = [
     subtitulo: "Continuidade pós-rompimento",
     Icon: IconTCPos,
     timeframeShort: "M2 / M5 (janela 40 barras)",
-    barraSinalChips: ["Inside", "Outside", "Martelo/shooting star", "2BR"],
-    stopAceito: "Até 300pts",
-    split: "2/2/1",
-    rxr: "1,6x1",
-    gestaoGanhos: "40% em 1x1 · 40% em 400pts · 20% em 550pts",
+    barraSinalChips: ["Inside", "Outside", "2BR"],
+    stopAceito: "Barra de sinal (se excelente) ou T/F prévio",
+    split: "Alvo decide",
+    rxr: "1,5x1+",
+    gestaoGanhos: "2 ctts: 100% no 1x1 (regra de agosto) · 3+ ctts: parcial 1x1 + carrega",
     badge: "Em validação",
     badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
-    fluencia: { label: "Em validação", tone: "warn", detalhe: "44% de acerto no período, raiz recém-reformulada" },
+    fluencia: { label: "Em validação", tone: "warn", detalhe: "Subtipo com histórico mais fraco — exige rigor no critério de rompimento" },
     descricao: "Captura continuidade após um rompimento genuíno de uma região relevante (lateralidade mín. 2T/2F, triângulo, ou máx/mín do dia) que já provou ter distanciado e retornado — é o teste do rompimento, não a entrada nele.",
     regrasList: [
       "Precisa ter rompido de fato — sem TC de pós de topo/fundo micro",
       "Barra de rompimento fechando perto do extremo",
       "Barra de continuidade a favor — peso inverso: rompimento fraco pede continuidade forte, e vice-versa",
+      "Alinhamento completo das médias (regra de agosto)",
     ],
     filtrosList: [
       "Timeframe M2 se o nível está contido em até ~40 barras (~80min); acima disso, sobe para M5/M15",
       "Gatilho a favor do 60'/D e VWAP próxima",
       "Confluência no ponto de retorno",
-      "Ausência de FQ contra",
     ],
-    ondeInvalida: "Sem afastamento real e barra de continuidade a favor, não há candidato — mesmo com as duas confirmadas, se o preço não avançar antes de puxar o pullback, desconfiar. Já posicionado, invalida na própria barra de sinal: perder a mín/máx dela na sequência é falha confirmada.",
+    ondeInvalida: "Stop atrás da barra de sinal se ela for excelente; caso contrário, no T/F prévio. Sem afastamento real e barra de continuidade a favor, não há candidato — mesmo com as duas confirmadas, se o preço não avançar antes de puxar o pullback, desconfiar.",
     gatilhos: [
       { label: "a", text: "Inside bar" },
       { label: "b", text: "Outside bar" },
-      { label: "c", text: "Martelo/shooting star" },
-      { label: "d", text: "2BR" },
+      { label: "c", text: "2BR" },
     ],
     redFlagsList: [
       "Romper topo/fundo micro sem afastamento real — \"fez zero sentido no M5\"",
@@ -901,34 +857,203 @@ const SETUPS = [
     subtitulo: "9 do M2",
     Icon: IconTCSuper,
     timeframeShort: "M5 → M2",
-    barraSinalChips: ["Padrão"],
-    stopAceito: "Até 300pts",
-    split: "—",
-    rxr: "—",
-    gestaoGanhos: "— (amostra insuficiente)",
+    barraSinalChips: ["Inside", "Outside", "2BR"],
+    stopAceito: "Barra de sinal (se excelente) ou T/F prévio",
+    split: "Alvo decide",
+    rxr: "1,5x1+",
+    gestaoGanhos: "2 ctts: 100% no 1x1 (regra de agosto) · 3+ ctts: parcial 1x1 + carrega",
     badge: "Coletando dados",
     badgeColor: { bg: "#88888822", text: "#9aa3b2" },
     fluencia: { label: "Sem amostra", tone: "neutral", detalhe: "Poucas ocorrências com a regra já formalizada — observar próximas entradas" },
     descricao: "Mesmo cenário de tendência com médias alinhadas do TC de MM, mas usa especificamente a MME9 do M2 — exige que ela já tenha se provado como suporte/resistência viva antes, evitando ser o primeiro a testar um nível ainda não validado.",
     regrasList: [
-      "Médias alinhadas (9>20>50>200)",
+      "Alinhamento completo das médias (200/50/20/9)",
       "MME9 do M2 já reagiu pelo menos 1x antes — nunca ser o primeiro",
       "Pullback até a MME9 do M2, dentro do histórico de reação já estabelecido",
     ],
     filtrosList: [
       "Mesmos do TC de Meio de Movimento — gatilho a favor do 60'/D",
-      "Confluência e ausência de FQ contra",
+      "Confluência no ponto de entrada",
     ],
-    ondeInvalida: "Sem histórico de reação prévia na 9 do M2, o setup não é candidato. Já posicionado, invalida no T/F prévio do swing — mesmo princípio do TC de Meio de Movimento.",
+    ondeInvalida: "Stop atrás da barra de sinal se excelente; caso contrário, no T/F prévio do swing. Sem histórico de reação prévia na 9 do M2, o setup não é candidato.",
     gatilhos: [
-      { label: "Padrão", text: "mesma lógica do TC de Meio de Movimento" },
+      { label: "a", text: "Inside bar" },
+      { label: "b", text: "Outside bar" },
+      { label: "c", text: "2BR" },
     ],
     redFlagsList: [
       "Ser pioneiro na 9 do 2' sem histórico de reação prévia",
       "Médias desalinhadas mascarando tendência ainda não confirmada",
     ],
     exemplosList: [
-      "A acumular — nenhum caso recente isolado o suficiente com a regra já formalizada.",
+      "29/07 — b26 do M5: acionado na b65 do M2 com inside bar; 1ª correção após micro canal de 6 barras sem sinal de CLX; inside tanto no M5 quanto no M2.",
+    ],
+  },
+  {
+    id: "ta",
+    nomeCurto: "Trade de Abertura",
+    nome: "TA — Trade de Abertura (TSS)",
+    subtitulo: "Volatilidade inicial",
+    Icon: IconAbertura,
+    timeframeShort: "M5/M15 · entrada a mercado",
+    barraSinalChips: ["Não se aplica"],
+    stopAceito: "Máximo 250 pts",
+    split: "Parcial 1x1 fixa",
+    rxr: "2x1+",
+    gestaoGanhos: "Parcial no 1x1 com 50% ou 2/3 · alvo final 2x1 em diante",
+    badge: "Ativo",
+    badgeColor: { bg: "#4ecb8d22", text: "#4ecb8d" },
+    fluencia: { label: "Ativo", tone: "good", detalhe: "Setup do repertório TSS — gestão validada estatisticamente pelo Mateus" },
+    descricao: "Capturar a volatilidade inicial do mercado, levando em conta como estão os mercados externos correlacionados ao nosso antes da nossa abertura. Entrada sempre a mercado — não espera barra de sinal.",
+    regrasList: [
+      "Cálculo da abertura aponta a direção (alta / baixa / lateral)",
+      "Trade precisa estar em região de compra ou de venda",
+      "Entrada sempre a mercado — não espera barra de sinal",
+      "Só nos primeiros 15 minutos de mercado",
+    ],
+    filtrosList: [
+      "Só faço TA se houver escora",
+      "Só faço TA se já queria comprar ou vender naquela região no pré-mercado",
+      "Mercados externos correlacionados lidos antes da abertura",
+    ],
+    ondeInvalida: "Stop máximo de 250 pts. Fora da janela dos primeiros 15 minutos, sem escora, ou em região que não estava no plano do pré-mercado, o trade não existe.",
+    gatilhos: [
+      { label: "Entrada", text: "a mercado — não há barra de sinal neste setup" },
+    ],
+    redFlagsList: [
+      "Entrar sem escora",
+      "Entrar em região que não estava no plano do pré-mercado",
+      "Esticar a janela além dos primeiros 15 minutos",
+      "Mexer na parcial do 1x1 — é regra do Mateus e a estatística do setup toda se apoia nela",
+    ],
+    exemplosList: [
+      "A acumular — tag própria criada no diário em agosto/2026.",
+    ],
+  },
+  {
+    id: "abertura-forca",
+    nomeCurto: "Abertura — Barra de Força",
+    nome: "Abertura com Barra de FORÇA",
+    subtitulo: "Impulso da b1/b2",
+    Icon: IconForca,
+    timeframeShort: "M5 (janela) → M2 (gatilho)",
+    barraSinalChips: ["A própria barra de força"],
+    stopAceito: "Atrás da barra forte · teto 600 pts",
+    split: "100% no alvo",
+    rxr: "1x1",
+    gestaoGanhos: "Alvo SEMPRE 1x1 da própria barra · saída 100% no alvo, sem parcial",
+    badge: "Novo",
+    badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
+    fluencia: { label: "Novo", tone: "warn", detalhe: "Setup novo, sem histórico — tag própria no diário para atribuição em setembro" },
+    descricao: "A primeira barra forte da abertura carrega o desequilíbrio inicial do dia. Opera esse impulso enquanto ele ainda é jovem, com alvo curto e objetivo.",
+    regrasList: [
+      "Janela até a b2 do M5 (até 9h10)",
+      "Um dos três gatilhos presentes (ver abaixo)",
+      "Não operar contra a força do gap",
+    ],
+    filtrosList: [
+      "Premissa prévia definida no pré-mercado",
+      "Localização da abertura — compradora / vendedora / neutra (neutra não opera)",
+      "Teto de stop de 600 pts na abertura",
+    ],
+    ondeInvalida: "Stop atrás da própria barra forte; ou na abertura da barra, se a reversão do corpo já invalidar a leitura. Fora da janela até a b2 do M5, não é mais este setup.",
+    gatilhos: [
+      { label: "a", text: "Barra expressiva no M2+ revertendo fechamentos anteriores" },
+      { label: "b", text: "Rompimento de região importante a favor de premissa prévia" },
+      { label: "c", text: "Falha de gap em região de trava — sem operar contra a força do gap" },
+    ],
+    redFlagsList: [
+      "Perseguir movimento já esticado",
+      "Operar contra o gap",
+      "Forçar entrada fora da janela da b2",
+      "Segurar além do 1x1 — o alvo deste setup é fixo",
+    ],
+    exemplosList: [
+      "A acumular — setup estreando em agosto/2026.",
+    ],
+  },
+  {
+    id: "tl",
+    nomeCurto: "TL",
+    nome: "TL — Trade de Lateralidade",
+    subtitulo: "Extremos de range",
+    Icon: IconTL,
+    timeframeShort: "M5 (range) → M2 (gatilho)",
+    barraSinalChips: ["Inside/outside favorável", "Martelo", "Shooting star"],
+    stopAceito: "20% além do extremo do range (recalibrar)",
+    split: "100% no alvo",
+    rxr: "1x1",
+    gestaoGanhos: "Alvo = 50% do range · saída 100% no alvo, sem parcial",
+    badge: "Novo no TSS",
+    badgeColor: { bg: "#4ecb8d22", text: "#4ecb8d" },
+    fluencia: { label: "Maduro", tone: "good", detalhe: "Configuração já executada com sucesso no OTS (EQL) — nova apenas no operacional TSS" },
+    descricao: "Em lateralidade, os extremos do range são onde a probabilidade de reversão é maior e o risco é mais barato. Opera o que o mercado já demonstrou — range validado — e não o que ele pode vir a fazer. Ocupa o vácuo que antes era preenchido pelo FQ: operar extremos em dias travados.",
+    regrasList: [
+      "TR com 2 topos E 2 fundos JÁ demarcados — estrutura pré-existente, nunca antecipada",
+      "Preço tocando extremo do range validado",
+      "Barra de sinal clara obrigatória",
+      "Espaço de 1x1 até os 50% do range",
+    ],
+    filtrosList: [
+      "Direção preferida da lateralidade, quando houver",
+      "Qualidade do extremo — isolado, já testado",
+      "Variação: ordem limite abaixo/acima da b1 quando ela for doji AMPLO (500pts+), a favor de premissa",
+    ],
+    ondeInvalida: "20% além do extremo do range — nunca colado em máxima/mínima isolada. ATENÇÃO: esta regra foi herdada do EQL do OTS e os replays mostraram que todos os stops levados em EQL vieram de stop muito próximo dos 20%, com o preço violando e o trade dando certo depois. Recalibrar antes de rodar em volume.",
+    gatilhos: [
+      { label: "a", text: "Inside bar favorável" },
+      { label: "b", text: "Outside bar favorável" },
+      { label: "c", text: "Martelo / shooting star" },
+    ],
+    redFlagsList: [
+      "Operar range que ainda está se formando — exige 2 topos E 2 fundos já demarcados",
+      "Passar a depender de antecipar algo — se isso acontecer, virou outra coisa",
+      "Stop colado no extremo — é justamente o defeito herdado a corrigir",
+    ],
+    exemplosList: [
+      "Julho/2026 — diversos EQL executados na conta OTS, mês que fechou +6R.",
+    ],
+  },
+  {
+    id: "fq",
+    nomeCurto: "FQ",
+    nome: "FQ — Falha de Estrutura",
+    subtitulo: "Encerrado em 30/07/2026",
+    Icon: IconFQ,
+    timeframeShort: "—",
+    barraSinalChips: ["—"],
+    stopAceito: "—",
+    split: "—",
+    rxr: "—",
+    gestaoGanhos: "—",
+    encerrado: true,
+    badge: "Encerrado",
+    badgeColor: { bg: "#88888818", text: "#7d838d" },
+    fluencia: { label: "Encerrado", tone: "off", detalhe: "Fora do operacional desde 31/07/2026" },
+    motivoEncerramento: "Não é mais \"em avaliação\" — está fora do operacional. A partir de 31/07 nem procurar o padrão, usando os dias como treino de desaprender a busca.",
+    descricao: "Falha de continuidade expõe traders posicionados a favor da tendência com stop técnico no nível que acabou de ser rompido. Mantido nesta tabela apenas como registro histórico e como trava anti-recaída.",
+    regrasList: [
+      "Dados do Mateus: mesmo com ~60% de assertividade, representa MENOS DE 20% do resultado anual dele",
+      "Dados próprios: setup de maior volume (29 trades desde março), 41% de acerto, maior detrator financeiro do período",
+      "É reversão — entra contra a pressão dominante, logo nasce com desconforto máximo em posição aberta",
+      "Permite empilhar argumentos a favor que mascaram o argumento contra",
+      "Consumia o recurso mais escasso (atenção e regulação emocional) no setup que menos paga",
+    ],
+    filtrosList: [
+      "Diagnóstico estrutural: o FQ era SUBSTITUTO de uma capacidade ausente no repertório — operar extremos em lateralidade",
+      "Em dias travados, era a única porta disponível para clicar, e por isso aparecia justamente nos piores dias",
+      "Esse vácuo passa a ser ocupado pelo TL",
+    ],
+    ondeInvalida: "Setup encerrado. Conclusão de 30/07: falta a habilidade de TIMING que o FQ exige — mesmo com construção macro e ideia direcional boas, participar gera perdas consistentes.",
+    gatilhos: [
+      { label: "—", text: "Setup fora do operacional" },
+    ],
+    redFlagsList: [
+      "Qualquer tentativa de reintroduzir o padrão com nome novo",
+      "TL que passe a depender de FALHA + QUEBRA antecipada — isso é FQ disfarçado",
+    ],
+    exemplosList: [
+      "30/07 — último teste consciente: 2 FQs, 2 stops, −R$320 no dia. Confirmou a decisão de 27/07.",
     ],
   },
 ];
@@ -937,6 +1062,13 @@ const SETUPS = [
 
 export default function PlanoTrade({ th }) {
   const theme = useTheme(th);
+
+  const contratos = [
+    { stop: "500 pts", ctts: "2 ctts" },
+    { stop: "350 pts", ctts: "3 ctts" },
+    { stop: "250 pts", ctts: "4 ctts" },
+    { stop: "200 pts", ctts: "5 ctts" },
+  ];
 
   return (
     <div
@@ -959,11 +1091,11 @@ export default function PlanoTrade({ th }) {
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: theme.text }}>Plano de trade</div>
         <div style={{ fontSize: 13, color: theme.textMuted, marginTop: 4 }}>
-          Trading System Starter · atualizado julho/2026
+          Trading System Starter · atualizado agosto/2026
         </div>
       </div>
 
-      {/* FILOSOFIA — 2 colunas: Filosofia Operacional | Mentalidade e Princípios base */}
+      {/* FILOSOFIA — 2 colunas: Filosofia Operacional | Mentalidade */}
       <div
         style={{
           display: "grid",
@@ -982,19 +1114,20 @@ export default function PlanoTrade({ th }) {
               O que procuro no mercado
             </div>
             <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
-              Não movimentos. Meu operacional nos melhores contextos — momentos raros de
-              probabilidade elevada onde o preço se encaixa naquilo que meu repertório permite
-              operar com convicção.
+              Não preciso acertar tudo ou de muitos trades. 2 a 3 trades por dia, os melhores
+              trades, onde eu entre confortável com tudo que está acontecendo.
             </div>
           </div>
 
           <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
-              Objetivo
+              Objetivo do mês
             </div>
             <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
-              Seguir o plano. Não é ganhar dinheiro no trade de hoje — é executar o processo que,
-              seguido com consistência, gera resultado ao longo do tempo.
+              Máximo de 40 trades no mês (~10/semana em ~20 pregões). Só operar dentro dos
+              setups. Zero erro operacional intencional. Acompanhar a performance semanal —
+              objetivo, não meta de resultado: o mecanismo é forçar a pergunta "encaixa, mas é
+              BOM mesmo?".
             </div>
           </div>
 
@@ -1003,53 +1136,30 @@ export default function PlanoTrade({ th }) {
               Critério de seletividade
             </div>
             <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
-              Sempre que parecer "mais ou menos", esperar. Vem sinal melhor. Só o que eu faria
-              100 vezes de novo, independente do resultado desse trade específico.
+              Se parecer "mais ou menos", esperar. Só operar o que eu faria 100 vezes de novo,
+              independente do resultado desse trade específico.
             </div>
           </div>
         </div>
 
         <div>
           <div style={{ fontSize: 20, fontWeight: 800, color: theme.text, lineHeight: 1.2, marginBottom: 18 }}>
-            Mentalidade e princípios base
-          </div>
-
-          <div
-            style={{
-              borderLeft: `2px solid ${theme.accent}`,
-              paddingLeft: 18,
-              paddingTop: 12,
-              paddingBottom: 12,
-              marginBottom: 18,
-              background: `${theme.accent}12`,
-              borderRadius: "0 10px 10px 0",
-            }}
-          >
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 4 }}>
-              Mentalidade
-            </div>
-            <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
-              2 a 3 trades por dia. Seletivo. Só o que faria 100x de novo, independente do
-              resultado desse trade.
-            </div>
+            Mentalidade
           </div>
 
           <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 8 }}>
-              Princípios-guia
-            </div>
             <Quote theme={theme}>
-              Profissionais pensam, sentem e agem diferente de perdedores. Mudar é difícil, mas
-              virar profissional exige comprometimento com essa mudança de postura.
+              Professionals think, feel and act differently from losers. Changing is hard, but
+              becoming a professional demands commitment to that shift in posture.
             </Quote>
             <Quote theme={theme}>
-              Ir all-in no trading é fazer o que sei ser necessário para ter sucesso. Não vou
-              chegar lá mais rápido sendo exceção — preciso cortar a ideia de que "é diferente"
-              pra mim e realmente me comprometer.
+              Going all-in on trading is doing what I know is necessary to succeed. I won't get
+              there faster by being an exception — I need to cut the idea that it's "different"
+              for me and truly commit.
             </Quote>
             <Quote theme={theme}>
-              No mercado, humildade é essencial — e às vezes a pessoa mais humilde que acho
-              que sou ainda precisa melhorar muito.
+              No mercado, a gente tem que ser muito humilde e, às vezes, a pessoa mais humilde
+              que você acha que é, ainda precisa melhorar muito.
             </Quote>
           </div>
         </div>
@@ -1057,7 +1167,7 @@ export default function PlanoTrade({ th }) {
 
       <hr style={{ border: "none", borderTop: `1px solid ${theme.border}`, margin: "28px 0" }} />
 
-      {/* GESTÃO DE SAÍDA | REGRAS UNIVERSAIS — 2 colunas */}
+      {/* RISCO | GESTÃO DE SAÍDA | REGRAS UNIVERSAIS */}
       <div
         style={{
           display: "grid",
@@ -1075,26 +1185,29 @@ export default function PlanoTrade({ th }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <IconDoorExit color={theme.accent} />
-            <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>
-              Gestão de saída · MEP/MEN real
-            </div>
+            <IcoRisk color={theme.accent} />
+            <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>Risco · agosto/2026</div>
           </div>
-          <div style={{ fontSize: 13, color: theme.textMuted, lineHeight: 1.6, marginBottom: 14 }}>
-            Apenas 26% dos vencedores passam de 500pts. Fechar a maior parte da posição por
-            volta de 450pts captura a maioria do movimento antes da zona de reversão mais
-            provável. Detalhe completo do split por setup na tabela de setups abaixo.
+          <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 14 }}>
+            {[
+              { k: "R fixo", v: "R$ 200" },
+              { k: "Stop diário", v: "R$ 500" },
+              { k: "Stop por trade", v: "R$ 200–250 (até 300 em caso excepcional)" },
+              { k: "Teto em pontos", v: "600 na abertura · 500 no resto do dia" },
+            ].map((r) => (
+              <div key={r.k} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 12.5 }}>
+                <span style={{ color: theme.textMuted }}>{r.k}</span>
+                <span style={{ color: theme.text, fontWeight: 700, textAlign: "right" }}>{r.v}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11.5, color: theme.textMuted, marginBottom: 8 }}>
+            Contratos são <b style={{ color: theme.text }}>consequência</b> do stop, não escolha:
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {[
-              { ctts: "7 ctts", pts: "150 pts" },
-              { ctts: "6 ctts", pts: "175 pts" },
-              { ctts: "5 ctts", pts: "200 pts" },
-              { ctts: "4 ctts", pts: "250 pts" },
-              { ctts: "3 ctts", pts: "300 pts" },
-            ].map((c) => (
+            {contratos.map((c) => (
               <div
-                key={c.ctts}
+                key={c.stop}
                 style={{
                   background: theme.cardAlt,
                   borderRadius: 8,
@@ -1104,10 +1217,66 @@ export default function PlanoTrade({ th }) {
                   flexShrink: 0,
                 }}
               >
-                <div style={{ fontSize: 11, color: theme.textMuted }}>{c.ctts}</div>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.text, marginTop: 2 }}>{c.pts}</div>
+                <div style={{ fontSize: 11, color: theme.textMuted }}>{c.stop}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.text, marginTop: 2 }}>{c.ctts}</div>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: theme.card,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 14,
+            padding: 20,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <IconDoorExit color={theme.accent} />
+            <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>
+              Gestão de saída · o alvo decide
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: theme.textMuted, lineHeight: 1.6, marginBottom: 14 }}>
+            Quem decide a saída é o <b style={{ color: theme.text }}>alvo</b>, não a quantidade de
+            contratos.
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ background: theme.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
+                Alvo fixo e curto
+              </div>
+              <div style={{ fontSize: 12.5, color: theme.text, lineHeight: 1.5 }}>
+                Abertura 1x1 · TRM de correção simples · TL nos 50% do range → sai 100% no alvo,
+                sem parcial.
+              </div>
+            </div>
+            <div style={{ background: theme.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
+                Alvo aberto
+              </div>
+              <div style={{ fontSize: 12.5, color: theme.text, lineHeight: 1.5 }}>
+                TC em tendência · TRM em confluência de reversão → parcial no 1x1 + carrega. Só
+                faz sentido com 3+ contratos.
+              </div>
+            </div>
+            <div
+              style={{
+                background: "#e0a63a14",
+                border: "1px solid #e0a63a40",
+                borderRadius: 10,
+                padding: "10px 12px",
+              }}
+            >
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: "#e0a63a", marginBottom: 3 }}>
+                Decisão de agosto · revisar em setembro
+              </div>
+              <div style={{ fontSize: 12.5, color: theme.text, lineHeight: 1.5 }}>
+                TC de 2 contratos sai 100% no 1x1, sem exceção. Contrapartida obrigatória: anotar
+                no diário quanto teria pago se carregasse (MEP máximo).
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1148,11 +1317,52 @@ export default function PlanoTrade({ th }) {
         </div>
       </div>
 
+      {/* TAXONOMIA */}
+      <div
+        style={{
+          background: theme.card,
+          border: `1px solid ${theme.border}`,
+          borderRadius: 14,
+          padding: 20,
+          marginBottom: 28,
+        }}
+      >
+        <div style={{ fontSize: 15, fontWeight: 800, color: theme.text, marginBottom: 4 }}>
+          Que setup para que mercado
+        </div>
+        <div style={{ fontSize: 12.5, color: theme.textMuted, marginBottom: 16 }}>
+          TC para tendência · TRM para reversões · TL para lateralidades
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 10 }}>
+          {[
+            { m: "Movimentos climáticos", s: "TRM" },
+            { m: "Tendência clara", s: "TC Meio de Movimento · TC Supertrend" },
+            { m: "Rompimento e correção", s: "TC Pós BO" },
+            { m: "Tendência testando S/R estruturado", s: "TC Pré BO (pausado)" },
+            { m: "Laterais com direção preferida", s: "TL" },
+            { m: "Abertura com força direcional", s: "Trade de Abertura · Barra de Força" },
+          ].map((t) => (
+            <div
+              key={t.m}
+              style={{
+                background: theme.cardAlt,
+                border: `1px solid ${theme.border}`,
+                borderRadius: 10,
+                padding: "12px 14px",
+              }}
+            >
+              <div style={{ fontSize: 11.5, color: theme.textMuted, marginBottom: 4 }}>{t.m}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text, lineHeight: 1.4 }}>{t.s}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* SETUPS */}
       <div style={{ margin: "24px 0 12px" }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>Setups — Trading System Starter</div>
         <div style={{ fontSize: 12.5, color: theme.textMuted, marginTop: 2 }}>
-          Pré BO pausado no momento.
+          TC Pré BO pausado · FQ encerrado em 30/07/2026
         </div>
       </div>
 
