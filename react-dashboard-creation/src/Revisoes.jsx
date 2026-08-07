@@ -50,15 +50,15 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   const camada2 = isDark ? "rgba(255,255,255,0.085)" : resumeBg;
   const bordaSuave = isDark ? "rgba(255,255,255,0.12)" : border2;
 
-  function corResultado(total) {
+function corResultado(total, limite = 100) {
     const n = parseFloat(total);
     if (isNaN(n)) return null;
-    if (n >= 100)  return {
+    if (n >= limite)  return {
       bg:     isDark ? "#1e3329" : "#f0faf5",
       border: isDark ? "#44916a" : "#6bbf96",
       text:   isDark ? "#6fdda6" : "#2e7d5a",
     };
-    if (n <= -100) return {
+    if (n <= -limite) return {
       bg:     isDark ? "#33211f" : "#faf0f0",
       border: isDark ? "#9a4444" : "#c47878",
       text:   isDark ? "#e07d7d" : "#a04040",
@@ -366,6 +366,8 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   };
 
   function renderCalendario() {
+    // ION OTS opera valores menores: ±50 já é gain/loss, não empate
+    const limiteConta = contaSel === "ION OTS" ? 49 : 100;
     const total = new Date(ano, mes + 1, 0).getDate();
     const cells = [];
 
@@ -400,7 +402,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
         const sem = resumoSemana(dataStr, contaSel);
         const temDados = sem.diasComDados > 0;
         const revSem = semanasPorSab[dataStr] || null;
-        const cores = temDados ? corResultado(sem.totalRes) : null;
+        const cores = temDados ? corResultado(sem.totalRes, limiteConta) : null;
         const sabBg = isAberto ? ACCENT + "22" : (cores ? cores.bg : camada1);
         const sabBorder = isAberto ? ACCENT : (cores ? cores.border : bordaSuave);
 
@@ -438,7 +440,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       const rVal = parseFloat(dd?.resultado ?? "NaN");
       const temDados = !isNaN(rVal);
       const semTrades = !dd && !rev;
-      const cores = temDados ? corResultado(rVal) : null;
+      const cores = temDados ? corResultado(rVal, limiteConta) : null;
       const bgCard = semTrades ? (isDark ? "rgba(255,255,255,0.025)" : "#e8e8e8") : isAberto ? ACCENT + "22" : (cores ? cores.bg : camada1);
       const bdCard = isAberto ? ACCENT : semTrades ? bordaSuave : cores ? cores.border : isHoje ? ACCENT + "88" : bordaSuave;
       const corApagada = isDark ? "rgba(255,255,255,0.3)" : "#aaa";
@@ -498,8 +500,8 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     if (resto !== 0) for (let i = 0; i < (6 - resto); i++) cells.push(<div key={`ef${i}`} />);
 
     const mesR = resumoMensal(contaSel);
-    const coresMes = mesR.diasComDados > 0 ? corResultado(mesR.totalRes) : null;
-
+    const coresMes = mesR.diasComDados > 0 ? corResultado(mesR.totalRes, limiteConta) : null;
+    
     cells.push(
       <div key="card-mensal" style={{ gridColumn: "1 / -1", background: coresMes ? coresMes.bg : camada1, border: `2px solid ${coresMes ? coresMes.border : bordaSuave}`, borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 150 }}>
@@ -748,8 +750,8 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
           </div>
 
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16, fontSize: 13, color: textSub }}>
-            {[["#4ecb8d","Gain (≥ +R$ 100)"],["#e0c040","Breakeven"],["#f06b6b","Loss (≤ −R$ 100)"]].map(([c,l]) => (
-              <span key={l} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          {[["#4ecb8d",`Gain (≥ +R$ ${contaSel === "ION OTS" ? 40 : 100})`],["#e0c040","Breakeven"],["#f06b6b",`Loss (≤ −R$ ${contaSel === "ION OTS" ? 40 : 100})`]].map(([c,l]) => (
+  <span key={l} style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <span style={{ width: 9, height: 9, borderRadius: 3, background: c, display: "inline-block" }} />{l}
               </span>
             ))}
