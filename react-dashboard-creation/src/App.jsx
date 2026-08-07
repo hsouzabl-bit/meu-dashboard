@@ -344,6 +344,10 @@ const planoSemanaRef = useRef([]);
   
 const [checklistAlterado, setChecklistAlterado] = useState(false);
   const [checklistSalvando, setChecklistSalvando] = useState(false);
+
+  const [habitosHoje, setHabitosHoje] = useState({ horas:"", replays:"", paginas:"" });
+  const [habitosAlterado, setHabitosAlterado] = useState(false);
+  const [habitosSalvando, setHabitosSalvando] = useState(false);
   
   const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
 
@@ -387,6 +391,24 @@ function salvarChecklistHojeApp(){
   function toggleChecklistHoje(id){
     setChecklistHoje(prev => prev.map(i=>i.id===id?{...i,done:!i.done}:i));
     setChecklistAlterado(true);
+  }
+
+  function alterarHabito(campo, valor){
+    setHabitosHoje(prev=>({ ...prev, [campo]: valor }));
+    setHabitosAlterado(true);
+  }
+
+  function salvarHabitosHojeApp(){
+    setHabitosSalvando(true);
+    const payload = {
+      data: hojeStr,
+      horas:   Number(habitosHoje.horas)   || 0,
+      replays: Number(habitosHoje.replays) || 0,
+      paginas: Number(habitosHoje.paginas) || 0,
+    };
+    fetch(`${API_DIARIO}?action=salvarHabitos&dados=${encodeURIComponent(JSON.stringify(payload))}`)
+      .catch(()=>{})
+      .finally(()=>{ setHabitosSalvando(false); setHabitosAlterado(false); });
   }
 
 const tema = THEMES.find(t=>t.id===temaId) || THEMES[0];
@@ -514,6 +536,28 @@ const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
     }
 
     carregarDashboardInit();
+  },[]);
+
+  useEffect(()=>{
+    const hojeChaveH = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+    function aplicar(lista){
+      const d = (lista||[]).find(h=>h.data===hojeChaveH);
+      if(d) setHabitosHoje({ horas:String(d.horas||""), replays:String(d.replays||""), paginas:String(d.paginas||"") });
+    }
+    try {
+      const c = localStorage.getItem("cache_habitos");
+      if(c) aplicar(JSON.parse(c));
+    } catch(e){}
+    const t = setTimeout(()=>{
+      fetchComRetry(`${API_DIARIO}?action=lerHabitos`)
+        .then(j=>{
+          const lista = j.habitos || [];
+          try { localStorage.setItem("cache_habitos", JSON.stringify(lista)); } catch(e){}
+          aplicar(lista);
+        })
+        .catch(()=>{});
+    }, 3000);
+    return ()=>clearTimeout(t);
   },[]);
 
   const m         = dados?.metricas    || {};
@@ -1082,9 +1126,11 @@ let disciplineStreakAtual = 0;
               <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
                 <div style={{fontWeight:700,fontSize:11.5,color:"transparent",marginBottom:10,userSelect:"none"}}>.</div>
                 
-<div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
+<div style={{display:"flex",gap:14,flex:1,alignItems:"stretch"}}>
+                <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje</span>
+                    <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje — Rotinas</span>
+                
                     {checklistAlterado && !checklistSalvando && (
                       <span style={{fontSize:10,fontWeight:700,color:"#d97706",background:dark?"#2a2210":"#fef3c7",padding:"2px 8px",borderRadius:20,border:`1px solid ${dark?"#5c4a10":"#fcd34d"}`}}>
                         Não salvo
@@ -1108,11 +1154,49 @@ let disciplineStreakAtual = 0;
                       borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,
                       cursor:checklistAlterado&&!checklistSalvando?"pointer":"default",fontFamily:"inherit",width:"100%",
                     }}>
+
                     {checklistSalvando?"Salvando…":"Salvar"}
+                  </button>
+                </div>
+
+                <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje — Hábitos</span>
+                    {habitosAlterado && !habitosSalvando && (
+                      <span style={{fontSize:10,fontWeight:700,color:"#d97706",background:dark?"#2a2210":"#fef3c7",padding:"2px 8px",borderRadius:20,border:`1px solid ${dark?"#5c4a10":"#fcd34d"}`}}>
+                        Não salvo
+                      </span>
+                    )}
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:16,marginTop:14,flex:1}}>
+                    {[
+                      {campo:"horas",   label:"Horas de estudo", step:"0.5"},
+                      {campo:"replays", label:"Replays",         step:"1"},
+                      {campo:"paginas", label:"Páginas lidas",   step:"1"},
+                    ].map(h=>(
+                      <div key={h.campo} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                        <span style={{fontSize:14,color:th.textSub}}>{h.label}</span>
+                        <input type="number" step={h.step} min="0" placeholder="0"
+                          value={habitosHoje[h.campo]} onChange={e=>alterarHabito(h.campo,e.target.value)}
+                          style={{width:66,fontSize:17,fontWeight:800,color:ACCENT_ATUAL,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",padding:"5px 8px",textAlign:"center",fontFamily:"inherit"}}/>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={salvarHabitosHojeApp} disabled={!habitosAlterado||habitosSalvando}
+                    style={{
+                      marginTop:14,
+                      background:habitosAlterado&&!habitosSalvando?ACCENT_ATUAL:"transparent",
+                      color:habitosAlterado&&!habitosSalvando?"#fff":th.textMuted,
+                      border:`1px solid ${habitosAlterado&&!habitosSalvando?ACCENT_ATUAL:th.border2}`,
+                      borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,
+                      cursor:habitosAlterado&&!habitosSalvando?"pointer":"default",fontFamily:"inherit",width:"100%",
+                    }}>
+                    {habitosSalvando?"Salvando…":"Salvar"}
                   </button>
                 </div>
               </div>
             </div>
+                
 
             </main>
 
