@@ -189,7 +189,7 @@ export default function Objetivos({ th, dark, setDark }) {
 
   const inputStyle = {
     background: camada2, border: `1px solid ${bordaSuave}`, borderRadius: 8,
-    color: text, padding: "10px 13px", fontSize: 14.5, outline: "none",
+    color: text, padding: "10px 13px", fontSize: 15.5, outline: "none",
     fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", width: "100%", boxSizing: "border-box",
   };
 
@@ -265,7 +265,7 @@ export default function Objetivos({ th, dark, setDark }) {
               </div>
               <input value={obj.comentario || ""} onChange={e => updateObjetivo(obj.id, "comentario", e.target.value)}
                 placeholder="Comentário sobre este objetivo..."
-                style={{ ...inputStyle, fontSize: 13.5, color: textSub }} />
+                style={{ ...inputStyle, fontSize: 15.5, color: text }} />
             </div>
           ))}
         </div>
