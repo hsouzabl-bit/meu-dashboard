@@ -13,8 +13,8 @@ function fetchComRetryRev(url, tentativas = 3, delayMs = 1200) {
     });
 }
 
-// Seg a Sáb — domingo eliminado do calendário
-const DIAS_SEMANA = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+// Seg a Sex + coluna de respiro + bloco Semana (sábado). Domingo não é exibido.
+const CABECALHOS = ["Seg", "Ter", "Qua", "Qui", "Sex", "", "Semana"];
 const DIAS_NOME = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
@@ -50,7 +50,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   const camada2 = isDark ? "rgba(255,255,255,0.085)" : resumeBg;
   const bordaSuave = isDark ? "rgba(255,255,255,0.12)" : border2;
 
-function corResultado(total, limite = 100) {
+  function corResultado(total, limite = 100) {
     const n = parseFloat(total);
     if (isNaN(n)) return null;
     if (n >= limite)  return {
@@ -366,75 +366,87 @@ function corResultado(total, limite = 100) {
   };
 
   function renderCalendario() {
-    // ION OTS opera valores menores: ±50 já é gain/loss, não empate
-    const limiteConta = contaSel === "ION OTS" ? 49 : 100;
+    // ION OTS opera valores menores: ±50 já e gain/loss, nao empate
+    const limiteConta = contaSel === "ION OTS" ? 50 : 100;
     const total = new Date(ano, mes + 1, 0).getDate();
     const cells = [];
 
-    DIAS_SEMANA.forEach((d, i) => (
+    // Cabecalhos: Seg..Sex + coluna de respiro + "Semana"
+    CABECALHOS.forEach((d, i) => (
       cells.push(
-        <div key={`h${i}`} style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: textSub, padding: "8px 0", letterSpacing: "0.05em", textTransform: "uppercase" }}>{d}</div>
+        <div key={`h${i}`} style={{
+          textAlign: "center", fontSize: i === 6 ? 12 : 13, fontWeight: i === 6 ? 800 : 700,
+          color: i === 6 ? ACCENT : textSub, padding: "4px 0",
+          letterSpacing: "0.06em", textTransform: "uppercase",
+        }}>{d}</div>
       )
     ));
 
-    // coluna 0 = Segunda ... coluna 5 = Sábado (domingo não é renderizado)
-    const colDe = (diaSem) => diaSem === 0 ? null : diaSem - 1;
+    // espacos iniciais ate a coluna do primeiro dia renderizado
+    let primeiroDia = 1;
+    while (new Date(ano, mes, primeiroDia).getDay() === 0) primeiroDia++;
+    const diaSemInicial = new Date(ano, mes, primeiroDia).getDay();
+    const brancosIniciais = diaSemInicial === 6 ? 5 : diaSemInicial - 1;
+    for (let i = 0; i < brancosIniciais; i++) cells.push(<div key={`e${i}`} />);
 
-    // espaços iniciais até a coluna do primeiro dia útil do mês
-    let primeiroDiaRenderizado = 1;
-    while (new Date(ano, mes, primeiroDiaRenderizado).getDay() === 0) primeiroDiaRenderizado++;
-    const colInicial = colDe(new Date(ano, mes, primeiroDiaRenderizado).getDay());
-    for (let i = 0; i < colInicial; i++) cells.push(<div key={`e${i}`} />);
-
-    let renderizados = 0;
+    let slots = brancosIniciais;
 
     for (let d = 1; d <= total; d++) {
       const diaSem = new Date(ano, mes, d).getDay();
-      if (diaSem === 0) continue; // domingo eliminado
+      if (diaSem === 0) continue; // domingo nao e exibido
 
       const dataStr  = isoData(ano, mes, d);
       const isSab    = diaSem === 6;
       const isHoje   = dataStr === hojeISO();
       const isAberto = painelDia === dataStr;
-      renderizados++;
 
       if (isSab) {
+        // coluna estreita de respiro antes do bloco da semana
+        cells.push(<div key={`sp${d}`} />);
+        slots++;
+
         const sem = resumoSemana(dataStr, contaSel);
         const temDados = sem.diasComDados > 0;
         const revSem = semanasPorSab[dataStr] || null;
         const cores = temDados ? corResultado(sem.totalRes, limiteConta) : null;
-        const sabBg = isAberto ? ACCENT + "22" : (cores ? cores.bg : camada1);
-        const sabBorder = isAberto ? ACCENT : (cores ? cores.border : bordaSuave);
 
         cells.push(
-          <div key={d} onClick={() => abrirSemana(dataStr)} style={{ background: sabBg, border: `2px solid ${sabBorder}`, borderRadius: 10, padding: "11px 12px 10px", cursor: "pointer", height: "100%", display: "flex", flexDirection: "column", gap: 5, boxSizing: "border-box", overflow: "hidden", userSelect: "none" }}>
+          <div key={d} onClick={() => abrirSemana(dataStr)} style={{
+            background: isAberto ? ACCENT + "22" : (cores ? cores.bg : camada1),
+            border: `2px solid ${isAberto ? ACCENT : (cores ? cores.border : ACCENT + "55")}`,
+            borderLeft: `5px solid ${ACCENT}`,
+            borderRadius: 10, padding: "10px 12px", cursor: "pointer", height: "100%",
+            display: "flex", flexDirection: "column", gap: 4, boxSizing: "border-box",
+            overflow: "hidden", userSelect: "none",
+          }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 14, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : textSub }}>{d}</span>
-              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: ACCENT, letterSpacing: "0.06em", textTransform: "uppercase" }}>Resumo</span>
+              <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                 {revSem && <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />}
-                <span style={{ fontSize: 10, fontWeight: 800, color: ACCENT, background: ACCENT + "20", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.04em", textTransform: "uppercase" }}>semana</span>
+                <span style={{ fontSize: 12, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : textSub }}>{d}</span>
               </div>
             </div>
             {temDados ? (
               <>
-                <div style={{ fontSize: 16, fontWeight: 800, color: cores ? cores.text : textSub, lineHeight: 1.1, marginTop: 2 }}>{fmtVal(sem.totalRes)}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: cores ? cores.text : textSub, lineHeight: 1.1, marginTop: 1 }}>{fmtVal(sem.totalRes)}</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.06em" }}>{contaSel} · {sem.diasComDados}d</div>
                 <div style={{ height: 1, background: bordaSuave, margin: "1px 0" }} />
-                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {sem.totalOps > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 11, color: textSub }}>Ops</span><span style={{ fontSize: 11, fontWeight: 700, color: text }}>{sem.totalOps}</span></div>}
                   {sem.acertoMedio !== null && <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 11, color: textSub }}>Acerto</span><span style={{ fontSize: 11, fontWeight: 700, color: text }}>{sem.acertoMedio}%</span></div>}
                   {sem.totalErros > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 11, color: textSub }}>Erros</span><span style={{ fontSize: 11, fontWeight: 700, color: isDark ? "#e07d7d" : "#a04040" }}>{sem.totalErros}</span></div>}
                 </div>
               </>
             ) : (
-              <div style={{ fontSize: 11, color: textSub, marginTop: 4, lineHeight: 1.4 }}>Sem dados<br/>na semana</div>
+              <div style={{ fontSize: 11, color: textSub, marginTop: 3, lineHeight: 1.4 }}>Sem dados<br/>na semana</div>
             )}
           </div>
         );
+        slots++;
         continue;
       }
 
-      // dias úteis
+      // dias uteis
       const rev = revisaoPorData[dataStr];
       const dd  = dadosDoDia(dataStr, contaSel);
       const rVal = parseFloat(dd?.resultado ?? "NaN");
@@ -452,7 +464,7 @@ function corResultado(total, limite = 100) {
       } catch {}
 
       cells.push(
-        <div key={d} onClick={() => abrirDia(dataStr)} style={{ background: bgCard, border: `2px solid ${bdCard}`, borderRadius: 10, padding: "11px 12px 10px", cursor: "pointer", height: "100%", transition: "border-color .15s, background .15s", display: "flex", flexDirection: "column", gap: 5, userSelect: "none", boxSizing: "border-box", overflow: "hidden" }}>
+        <div key={d} onClick={() => abrirDia(dataStr)} style={{ background: bgCard, border: `2px solid ${bdCard}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", height: "100%", transition: "border-color .15s, background .15s", display: "flex", flexDirection: "column", gap: 4, userSelect: "none", boxSizing: "border-box", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: 14, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : semTrades ? corApagada : text }}>{d}</span>
             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
@@ -467,7 +479,7 @@ function corResultado(total, limite = 100) {
 
           {semTrades ? (
             <>
-              <div style={{ fontSize: 15, fontWeight: 800, color: corApagada, lineHeight: 1.2, marginTop: 2 }}>—</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: corApagada, lineHeight: 1.2, marginTop: 1 }}>—</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: corApagada, textTransform: "uppercase", letterSpacing: "0.04em" }}>{contaSel}</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: corApagada }}>—</span>
@@ -475,13 +487,13 @@ function corResultado(total, limite = 100) {
             </>
           ) : (
             <>
-              {temDados && <div style={{ fontSize: 15, fontWeight: 800, color: cores ? cores.text : textSub, lineHeight: 1.2, marginTop: 2 }}>{fmtVal(rVal)}</div>}
+              {temDados && <div style={{ fontSize: 15, fontWeight: 800, color: cores ? cores.text : textSub, lineHeight: 1.2, marginTop: 1 }}>{fmtVal(rVal)}</div>}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: textSub, textTransform: "uppercase", letterSpacing: "0.04em" }}>{contaSel}</span>
               </div>
               {dd && (
                 <>
-                  <div style={{ height: 1, background: bordaSuave, margin: "2px 0" }} />
+                  <div style={{ height: 1, background: bordaSuave, margin: "1px 0" }} />
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {dd.trades != null && <span style={{ fontSize: 12, color: textSub }}>{dd.trades} ops</span>}
                     {dd.taxaAcerto != null && <span style={{ fontSize: 12, color: textSub }}>· {dd.taxaAcerto}%</span>}
@@ -493,27 +505,27 @@ function corResultado(total, limite = 100) {
           )}
         </div>
       );
+      slots++;
     }
 
-    const totalCells = colInicial + renderizados;
-    const resto = totalCells % 6;
-    if (resto !== 0) for (let i = 0; i < (6 - resto); i++) cells.push(<div key={`ef${i}`} />);
+    const resto = slots % 7;
+    if (resto !== 0) for (let i = 0; i < (7 - resto); i++) cells.push(<div key={`ef${i}`} />);
 
     const mesR = resumoMensal(contaSel);
     const coresMes = mesR.diasComDados > 0 ? corResultado(mesR.totalRes, limiteConta) : null;
-    
+
     cells.push(
-      <div key="card-mensal" style={{ gridColumn: "1 / -1", background: coresMes ? coresMes.bg : camada1, border: `2px solid ${coresMes ? coresMes.border : bordaSuave}`, borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 150 }}>
+      <div key="card-mensal" style={{ gridColumn: "1 / -1", background: coresMes ? coresMes.bg : camada1, border: `2px solid ${coresMes ? coresMes.border : bordaSuave}`, borderRadius: 10, padding: "13px 20px", display: "flex", alignItems: "center", gap: 30, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 145 }}>
           <span style={{ fontSize: 10.5, fontWeight: 800, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.07em" }}>Resumo do mês · {contaSel}</span>
-          <span style={{ fontSize: 23, fontWeight: 800, color: coresMes ? coresMes.text : textSub, lineHeight: 1.1 }}>{mesR.diasComDados > 0 ? fmtVal(mesR.totalRes) : "—"}</span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: coresMes ? coresMes.text : textSub, lineHeight: 1.15 }}>{mesR.diasComDados > 0 ? fmtVal(mesR.totalRes) : "—"}</span>
           <span style={{ fontSize: 12, color: textSub }}>{mesR.diasComDados} dias com trades</span>
         </div>
-        <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 26, flexWrap: "wrap" }}>
           {[["Ops", mesR.totalOps > 0 ? mesR.totalOps : "—"],["Acerto médio", mesR.acertoMedio !== null ? `${mesR.acertoMedio}%` : "—"],["Erros", mesR.totalErros > 0 ? mesR.totalErros : "—"]].map(([label, val]) => (
-            <div key={label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <div key={label} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: textSub, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
-              <span style={{ fontSize: 19, fontWeight: 800, color: label === "Erros" && mesR.totalErros > 0 ? (isDark ? "#e07d7d" : "#a04040") : text }}>{val}</span>
+              <span style={{ fontSize: 18, fontWeight: 800, color: label === "Erros" && mesR.totalErros > 0 ? (isDark ? "#e07d7d" : "#a04040") : text }}>{val}</span>
             </div>
           ))}
         </div>
@@ -643,42 +655,42 @@ function corResultado(total, limite = 100) {
 
   function renderUpdates() {
     return (
-      <div style={{ marginTop: 40 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
+      <aside style={{ width: 310, flexShrink: 0, display: "flex", flexDirection: "column", gap: 11 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: 0.8, color: text, textTransform: "uppercase", marginBottom: 4 }}>Updates Operacionais</div>
-            <div style={{ fontSize: 14, color: textSub }}>Registro cronológico de ajustes e novas regras no seu operacional</div>
+            <div style={{ fontWeight: 800, fontSize: 12.5, letterSpacing: 0.7, color: text, textTransform: "uppercase" }}>Updates Operacionais</div>
+            <div style={{ fontSize: 12.5, color: textSub, marginTop: 3, lineHeight: 1.4 }}>Ajustes e novas regras do operacional</div>
           </div>
-          <button onClick={() => { setShowUpdateForm(v => !v); setUpdateForm({ titulo: "", descricao: "" }); }} style={{ ...btnPrimary, padding: "9px 15px", fontSize: 13, flexShrink: 0 }}>
-            {showUpdateForm ? "Cancelar" : "+ Novo update"}
+          <button onClick={() => { setShowUpdateForm(v => !v); setUpdateForm({ titulo: "", descricao: "" }); }} style={{ ...btnPrimary, padding: "7px 12px", fontSize: 12, flexShrink: 0 }}>
+            {showUpdateForm ? "×" : "+ Novo"}
           </button>
         </div>
 
         {showUpdateForm && (
-          <div style={{ background: camada1, border: `1px solid ${ACCENT}55`, borderRadius: 12, padding: "18px 20px", marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ background: camada1, border: `1px solid ${ACCENT}55`, borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
             <div>
-              <label style={labelStyle}>Título do update</label>
-              <input type="text" placeholder="ex: Regra de correção rasa pós-dia ruim" value={updateForm.titulo} onChange={e => setUpdateForm(p => ({ ...p, titulo: e.target.value }))} style={inputStyle} autoFocus />
+              <label style={labelStyle}>Título</label>
+              <input type="text" placeholder="ex: Regra de correção rasa" value={updateForm.titulo} onChange={e => setUpdateForm(p => ({ ...p, titulo: e.target.value }))} style={{ ...inputStyle, fontSize: 13.5 }} autoFocus />
             </div>
             <div>
               <label style={labelStyle}>Descrição</label>
-              <textarea placeholder="Descreva a regra, o contexto e como aplicar..." value={updateForm.descricao} onChange={e => setUpdateForm(p => ({ ...p, descricao: e.target.value }))} rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.55 }} />
+              <textarea placeholder="Contexto e como aplicar..." value={updateForm.descricao} onChange={e => setUpdateForm(p => ({ ...p, descricao: e.target.value }))} rows={3} style={{ ...inputStyle, fontSize: 13.5, resize: "vertical", lineHeight: 1.5 }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button onClick={() => setShowUpdateForm(false)} style={btnGhost}>Cancelar</button>
-              <button onClick={salvarUpdate} disabled={saving || !updateForm.titulo.trim()} style={btnPrimary}>{saving ? "Salvando..." : "Salvar update"}</button>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button onClick={() => setShowUpdateForm(false)} style={{ ...btnGhost, padding: "7px 13px", fontSize: 12.5 }}>Cancelar</button>
+              <button onClick={salvarUpdate} disabled={saving || !updateForm.titulo.trim()} style={{ ...btnPrimary, padding: "7px 13px", fontSize: 12.5 }}>{saving ? "..." : "Salvar"}</button>
             </div>
           </div>
         )}
 
         {updates.length === 0 && !showUpdateForm && (
-          <div style={{ textAlign: "center", padding: "40px 20px", color: textSub, fontSize: 14, border: `1px dashed ${bordaSuave}`, borderRadius: 12 }}>
-            Nenhum update registrado ainda.<br />
-            <span style={{ fontSize: 13 }}>Clique em "+ Novo update" para registrar uma mudança no operacional.</span>
+          <div style={{ textAlign: "center", padding: "26px 14px", color: textSub, fontSize: 13, border: `1px dashed ${bordaSuave}`, borderRadius: 12, lineHeight: 1.5 }}>
+            Nenhum update ainda.<br />
+            <span style={{ fontSize: 12 }}>Clique em "+ Novo" para registrar.</span>
           </div>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
           {updates.map(upd => {
             const isExp = expandedUpdate === upd.id;
             const dtStr = (() => {
@@ -686,43 +698,43 @@ function corResultado(total, limite = 100) {
               const raw = upd.data.toString();
               if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
                 const dt = new Date(raw + "T12:00:00");
-                return `${dt.getDate()}/${dt.getMonth()+1}/${dt.getFullYear()}`;
+                return `${dt.getDate()}/${dt.getMonth()+1}`;
               }
               return raw;
             })();
             return (
               <div key={upd.id} style={{ background: camada1, border: `1px solid ${bordaSuave}`, borderLeft: `3px solid ${ACCENT}`, borderRadius: 10, overflow: "hidden" }}>
-                <div onClick={() => setExpandedUpdate(isExp ? null : upd.id)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", cursor: "pointer", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: textSub, background: camada2, borderRadius: 5, padding: "3px 9px", flexShrink: 0 }}>{dtStr}</span>
-                    <span style={{ fontSize: 14.5, fontWeight: 600, color: text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{upd.titulo}</span>
+                <div onClick={() => setExpandedUpdate(isExp ? null : upd.id)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 13px", cursor: "pointer", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: textSub, background: camada2, borderRadius: 5, padding: "2px 7px", flexShrink: 0 }}>{dtStr}</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 600, color: text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{upd.titulo}</span>
                   </div>
-                  <span style={{ color: textSub, fontSize: 14, flexShrink: 0 }}>{isExp ? "▲" : "▼"}</span>
+                  <span style={{ color: textSub, fontSize: 12, flexShrink: 0 }}>{isExp ? "▲" : "▼"}</span>
                 </div>
                 {isExp && (
-                  <div style={{ padding: "12px 16px 14px", borderTop: `1px solid ${bordaSuave}` }}>
-                    {upd.descricao && <p style={{ margin: "0 0 12px", fontSize: 14.5, color: text, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{upd.descricao}</p>}
-                    <button onClick={() => deletarUpdateFn(upd.id)} style={{ ...btnGhost, fontSize: 12, padding: "6px 13px", color: "#f06b6b", border: "1px solid #f06b6b44" }}>Excluir</button>
+                  <div style={{ padding: "10px 13px 12px", borderTop: `1px solid ${bordaSuave}` }}>
+                    {upd.descricao && <p style={{ margin: "0 0 10px", fontSize: 13.5, color: text, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{upd.descricao}</p>}
+                    <button onClick={() => deletarUpdateFn(upd.id)} style={{ ...btnGhost, fontSize: 11.5, padding: "5px 11px", color: "#f06b6b", border: "1px solid #f06b6b44" }}>Excluir</button>
                   </div>
                 )}
               </div>
             );
           })}
         </div>
-      </div>
+      </aside>
     );
   }
 
   return (
-    <div style={{ flex: 1, padding: "36px 40px 56px", overflowY: "auto", minWidth: 0, width: "100%", maxWidth: "calc(75vw - 240px)", boxSizing: "border-box", fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: text, position: "relative" }}>
+    <div style={{ flex: 1, padding: "18px 30px 40px", overflowY: "auto", minWidth: 0, width: "100%", boxSizing: "border-box", fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: text, position: "relative" }}>
       {painelDia && (
         <div onClick={fecharPainel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 199 }} />
       )}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: text, margin: 0 }}>Revisões</h1>
-          <p style={{ fontSize: 14, color: textSub, margin: "4px 0 0" }}>Registro diário e semanal. Clique num dia para ver ou editar.</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: text, margin: 0 }}>Revisões</h1>
+          <p style={{ fontSize: 12.5, color: textSub, margin: "2px 0 0" }}>Clique num dia para registrar, ou no bloco Semana para o resumo semanal.</p>
         </div>
         {/* Seletor de conta */}
         <div style={{ display: "flex", gap: 4, background: camada2, border: `1px solid ${bordaSuave}`, borderRadius: 10, padding: 4 }}>
@@ -730,8 +742,8 @@ function corResultado(total, limite = 100) {
             <button key={c} onClick={() => setContaSel(c)} style={{
               background: contaSel === c ? ACCENT : "transparent",
               color: contaSel === c ? "#fff" : textSub,
-              border: "none", borderRadius: 7, padding: "8px 16px",
-              fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              border: "none", borderRadius: 7, padding: "7px 15px",
+              fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
             }}>{c}</button>
           ))}
         </div>
@@ -740,31 +752,36 @@ function corResultado(total, limite = 100) {
       {loading ? (
         <div style={{ textAlign: "center", padding: 60, color: textSub, fontSize: 14 }}>Carregando…</div>
       ) : (
-        <div style={{ background: cardBg, borderRadius: 14, padding: "22px 26px", boxShadow: cardShadow, border: `1px solid ${border}`, width: "100%", boxSizing: "border-box" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <span style={{ fontWeight: 800, fontSize: 16, color: text }}>{MESES[mes]} {ano}</span>
-            <div style={{ display: "flex", gap: 4 }}>
-              <button onClick={() => { if (mes === 0) { setMes(11); setAno(a => a-1); } else setMes(m => m-1); }} style={{ border: `1px solid ${bordaSuave}`, background: camada2, borderRadius: 7, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", color: text }}>‹</button>
-              <button onClick={() => { if (mes === 11) { setMes(0); setAno(a => a+1); } else setMes(m => m+1); }} style={{ border: `1px solid ${bordaSuave}`, background: camada2, borderRadius: 7, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", color: text }}>›</button>
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", width: "100%", minWidth: 0 }}>
+          {/* Coluna principal — calendário */}
+          <div style={{ flex: 1, minWidth: 0, background: cardBg, borderRadius: 14, padding: "14px 18px 16px", boxShadow: cardShadow, border: `1px solid ${border}`, boxSizing: "border-box" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 12, flexWrap: "wrap" }}>
+              <span style={{ fontWeight: 800, fontSize: 15, color: text }}>{MESES[mes]} {ano}</span>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 11, flexWrap: "wrap", fontSize: 12, color: textSub }}>
+                  {[["#4ecb8d",`≥ +R$ ${contaSel === "ION OTS" ? 50 : 100}`],["#e0c040","Neutro"],["#f06b6b",`≤ −R$ ${contaSel === "ION OTS" ? 50 : 100}`]].map(([c,l]) => (
+                    <span key={l} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 3, background: c, display: "inline-block" }} />{l}
+                    </span>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button onClick={() => { if (mes === 0) { setMes(11); setAno(a => a-1); } else setMes(m => m-1); }} style={{ border: `1px solid ${bordaSuave}`, background: camada2, borderRadius: 7, width: 30, height: 30, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", color: text }}>‹</button>
+                  <button onClick={() => { if (mes === 11) { setMes(0); setAno(a => a+1); } else setMes(m => m+1); }} style={{ border: `1px solid ${bordaSuave}`, background: camada2, borderRadius: 7, width: 30, height: 30, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", color: text }}>›</button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr) 14px 1.05fr", gridAutoRows: "142px", gap: 7, width: "100%" }}>
+              {renderCalendario()}
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16, fontSize: 13, color: textSub }}>
-          {[["#4ecb8d",`Gain (≥ +R$ ${contaSel === "ION OTS" ? 40 : 100})`],["#e0c040","Breakeven"],["#f06b6b",`Loss (≤ −R$ ${contaSel === "ION OTS" ? 40 : 100})`]].map(([c,l]) => (
-  <span key={l} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <span style={{ width: 9, height: 9, borderRadius: 3, background: c, display: "inline-block" }} />{l}
-              </span>
-            ))}
-            <span style={{ opacity: 0.75 }}>Sábado = resumo da semana (clique para preencher)</span>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gridAutoRows: "170px", gap: 8, width: "100%" }}>
-            {renderCalendario()}
-          </div>
+          {/* Coluna lateral — updates operacionais */}
+          {renderUpdates()}
         </div>
       )}
 
-      {!loading && renderUpdates()}
       {renderPainel()}
     </div>
   );
