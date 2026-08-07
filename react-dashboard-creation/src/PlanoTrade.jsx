@@ -1101,7 +1101,7 @@ export default function PlanoTrade({ th }) {
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: theme.text }}>Plano de trade</div>
         <div style={{ fontSize: 14, color: theme.textMuted, marginTop: 4 }}>
-          Trading System Starter · atualizado agosto/2026
+          Meu Trading System v.1.0 · atualizado agosto/2026
         </div>
       </div>
 
