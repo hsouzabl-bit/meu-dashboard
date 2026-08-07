@@ -707,10 +707,14 @@ let disciplineStreakAtual = 0;
     for(let i=0; i<offsetInicio; i++){
       miniCalDias.push({ dia:null, dataStr:null, r:null });
     }
+
+    const hojeChaveCal = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
     for(let d=1; d<=diasNoMesAtual; d++){
       const dataStr = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
       const r = tradesPorData[dataStr]?.["ION 3"] || tradesPorData[dataStr]?.["ion 3"] || null;
-      miniCalDias.push({ dia:d, dataStr, r });
+      const diaSemCal = new Date(anoVis, mesVis, d).getDay();
+      const fimDeSemana = diaSemCal===0 || diaSemCal===6;
+      miniCalDias.push({ dia:d, dataStr, r, futuro: dataStr > hojeChaveCal, fimDeSemana });
     }
 
     return (
@@ -980,16 +984,32 @@ let disciplineStreakAtual = 0;
                   ))}
                 </div>
                 <div style={{flex:1,display:"grid",gridTemplateColumns:"repeat(7,1fr)",gridTemplateRows:`repeat(${Math.ceil(miniCalDias.length/7)},1fr)`,gap:4}}>
-                  {miniCalDias.map(({dia,r},idx)=>{
+                  
+{miniCalDias.map(({dia,r,futuro,fimDeSemana},idx)=>{
                     if(dia===null) return <div key={`vazio-${idx}`}/>;
-                    const cor = !r ? th.resumeBg : (r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb"));
+                    // três estados: futuro (tracejado) · passado sem clique (cinza azulado) · com trades (colorido)
+                    const naoCliqueiBg = dark ? "#1c2430" : "#dde3ec";
+                    const naoCliqueiTxt = dark ? "#8fa2bd" : "#5b6a80";
+                    let fundo, borda, corTexto, peso;
+                    if(r){
+                      fundo = r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb");
+                      borda = "none"; corTexto = th.text; peso = 700;
+                    } else if(futuro || fimDeSemana){
+                      fundo = "transparent";
+                      borda = `1.5px dashed ${th.border2}`;
+                      corTexto = dark ? "rgba(255,255,255,0.22)" : "#c2c2c8";
+                      peso = 400;
+                    } else {
+                      fundo = naoCliqueiBg; borda = "none"; corTexto = naoCliqueiTxt; peso = 600;
+                    }
                     return (
-                      <div key={dia} onClick={()=>setDiaSel(dia===diaSel?null:dia)}
-                        style={{borderRadius:6,background:cor,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:r?th.text:th.textMuted,cursor:"pointer",fontWeight:r?700:400}}>
+                      <div key={dia} onClick={()=>!futuro&&setDiaSel(dia===diaSel?null:dia)} title={!r&&!futuro&&!fimDeSemana?"Não cliquei":undefined}
+                        style={{borderRadius:6,background:fundo,border:borda,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:corTexto,cursor:futuro?"default":"pointer",fontWeight:peso,boxSizing:"border-box"}}>
                         {dia}
                       </div>
                     );
                   })}
+                  
                 </div>
                {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 3"] && (() => {
                   const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
