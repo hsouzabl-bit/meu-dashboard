@@ -1191,10 +1191,12 @@ let disciplineStreakAtual = 0;
                       borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,
                       cursor:habitosAlterado&&!habitosSalvando?"pointer":"default",fontFamily:"inherit",width:"100%",
                     }}>
+
                     {habitosSalvando?"Salvando…":"Salvar"}
                   </button>
                 </div>
               </div>
+            </div>
             </div>
                 
 
