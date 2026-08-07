@@ -28,14 +28,19 @@ const FALLBACK_THEME = {
 };
 
 function useTheme(th) {
+  const bg = th?.bg ?? FALLBACK_THEME.bg;
+  const isDark = th?.dark ?? (bg.startsWith("#0") || bg.startsWith("#1"));
   return {
-    bg: th?.bg ?? FALLBACK_THEME.bg,
+    bg,
+    isDark,
     card: th?.cardBg ?? th?.surface ?? FALLBACK_THEME.card,
-    cardAlt: th?.bg ?? FALLBACK_THEME.cardAlt,
-    border: th?.border ?? FALLBACK_THEME.border,
+    // camada de elevacao: clareia sobre qualquer fundo escuro, adapta a todos os temas
+    cardAlt: isDark ? "rgba(255,255,255,0.05)" : (th?.resumeBg ?? FALLBACK_THEME.cardAlt),
+    border: isDark ? "rgba(255,255,255,0.11)" : (th?.border ?? FALLBACK_THEME.border),
     text: th?.text ?? FALLBACK_THEME.text,
-    textMuted: th?.textMuted ?? th?.textSub ?? FALLBACK_THEME.textMuted,
-    accent: ACCENT,
+    textMuted: th?.textSub ?? th?.textMuted ?? FALLBACK_THEME.textMuted,
+    // segue o accent do tema selecionado
+    accent: th?.accent ?? ACCENT,
   };
 }
 
@@ -113,7 +118,7 @@ function Accordion({ id, title, subtitle, badge, badgeColor, level, defaultOpen,
             {subtitle && (
               <div
                 style={{
-                  fontSize: 12.5,
+                  fontSize: 13.5,
                   color: theme.textMuted,
                   marginTop: 2,
                 }}
@@ -127,7 +132,7 @@ function Accordion({ id, title, subtitle, badge, badgeColor, level, defaultOpen,
           <span
             style={{
               flexShrink: 0,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 700,
               padding: "3px 10px",
               borderRadius: 999,
@@ -161,7 +166,7 @@ function Field({ label, children, theme }) {
     <div style={{ marginBottom: 12 }}>
       <div
         style={{
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: 700,
           letterSpacing: 0.4,
           textTransform: "uppercase",
@@ -171,7 +176,7 @@ function Field({ label, children, theme }) {
       >
         {label}
       </div>
-      <div style={{ fontSize: 13.5, lineHeight: 1.6, color: theme.text }}>
+      <div style={{ fontSize: 14.5, lineHeight: 1.6, color: theme.text }}>
         {children}
       </div>
     </div>
@@ -191,7 +196,7 @@ function Pill({ children, theme, tone = "neutral" }) {
     <span
       style={{
         display: "inline-block",
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 700,
         padding: "3px 10px",
         borderRadius: 999,
@@ -211,7 +216,7 @@ function Quote({ children, theme }) {
         borderLeft: `3px solid ${theme.accent}`,
         paddingLeft: 12,
         margin: "10px 0",
-        fontSize: 13.5,
+        fontSize: 14.5,
         fontStyle: "italic",
         color: theme.text,
         lineHeight: 1.6,
@@ -347,11 +352,11 @@ function StatCard({ theme, label, value, sublabel, accent }) {
         padding: 14,
       }}
     >
-      <div style={{ fontSize: 11, color: accent ? theme.accent : theme.textMuted, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 12, color: accent ? theme.accent : theme.textMuted, marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: accent ? 19 : 15, fontWeight: 800, color: accent ? theme.accent : theme.text, lineHeight: 1.3 }}>
         {value}
       </div>
-      {sublabel && <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>{sublabel}</div>}
+      {sublabel && <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 2 }}>{sublabel}</div>}
     </div>
   );
 }
@@ -368,7 +373,7 @@ function NumberedList({ theme, items }) {
               borderRadius: 999,
               background: theme.cardAlt,
               color: theme.textMuted,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 700,
               display: "flex",
               alignItems: "center",
@@ -378,7 +383,7 @@ function NumberedList({ theme, items }) {
           >
             {i + 1}
           </div>
-          <div style={{ fontSize: 13, color: theme.text, lineHeight: 1.6 }}>{item}</div>
+          <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>{item}</div>
         </div>
       ))}
     </div>
@@ -392,7 +397,7 @@ function LetteredList({ theme, items, danger }) {
         <div key={i} style={{ display: "flex", gap: 11 }}>
           <div
             style={{
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: 700,
               color: danger ? "#e05555" : theme.textMuted,
               flexShrink: 0,
@@ -401,7 +406,7 @@ function LetteredList({ theme, items, danger }) {
           >
             {String.fromCharCode(97 + i)}
           </div>
-          <div style={{ fontSize: 13, color: danger ? theme.text : theme.text, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 14, color: danger ? theme.text : theme.text, lineHeight: 1.6 }}>
             {item.label && <b style={{ fontWeight: 700 }}>{item.label}: </b>}
             {item.text}
           </div>
@@ -415,7 +420,7 @@ function SectionLabel({ theme, children, danger }) {
   return (
     <div
       style={{
-        fontSize: 11.5,
+        fontSize: 12.5,
         fontWeight: 700,
         color: danger ? "#e05555" : theme.accent,
         textTransform: "uppercase",
@@ -442,15 +447,15 @@ function SetupDetail({ s, theme }) {
             marginBottom: 22,
           }}
         >
-          <div style={{ fontSize: 11.5, fontWeight: 700, color: "#7d838d", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#7d838d", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 }}>
             Setup encerrado — 30/07/2026
           </div>
-          <div style={{ fontSize: 13, color: theme.textMuted, lineHeight: 1.6 }}>{s.motivoEncerramento}</div>
+          <div style={{ fontSize: 14, color: theme.textMuted, lineHeight: 1.6 }}>{s.motivoEncerramento}</div>
         </div>
       )}
 
       {/* 1. Descrição do setup */}
-      <div style={{ fontSize: 13.5, color: theme.textMuted, lineHeight: 1.7, marginBottom: 24 }}>
+      <div style={{ fontSize: 14.5, color: theme.textMuted, lineHeight: 1.7, marginBottom: 24 }}>
         {s.descricao}
       </div>
 
@@ -485,7 +490,7 @@ function SetupDetail({ s, theme }) {
       >
         <div
           style={{
-            fontSize: 11.5,
+            fontSize: 12.5,
             fontWeight: 700,
             color: "#e05555",
             textTransform: "uppercase",
@@ -495,7 +500,7 @@ function SetupDetail({ s, theme }) {
         >
           Onde invalida
         </div>
-        <div style={{ fontSize: 13, color: theme.text, lineHeight: 1.6 }}>{s.ondeInvalida}</div>
+        <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>{s.ondeInvalida}</div>
       </div>
 
       {/* 6. Gatilhos aceitos */}
@@ -515,7 +520,7 @@ function SetupDetail({ s, theme }) {
         <SectionLabel theme={theme}>Exemplos âncora</SectionLabel>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {s.exemplosList.map((ex, i) => (
-            <div key={i} style={{ fontSize: 13, color: theme.textMuted, lineHeight: 1.6 }}>
+            <div key={i} style={{ fontSize: 14, color: theme.textMuted, lineHeight: 1.6 }}>
               {ex}
             </div>
           ))}
@@ -597,7 +602,7 @@ function SetupPopover({ s, theme, onClose }) {
               background: theme.cardAlt,
               color: theme.textMuted,
               cursor: "pointer",
-              fontSize: 15,
+              fontSize: 16,
               lineHeight: 1,
               display: "flex",
               alignItems: "center",
@@ -615,8 +620,13 @@ function SetupPopover({ s, theme, onClose }) {
 
 /* ---------------- Tabela comparativa de setups (abre popup ao clicar) ---------------- */
 
-function SetupsTable({ theme, setups }) {
+function SetupsTable({ theme, setups: setupsRaw }) {
   const [openId, setOpenId] = useState(null);
+  // ordem alfabetica; setups encerrados sempre ao final
+  const setups = [...setupsRaw].sort((a, b) => {
+    if (!!a.encerrado !== !!b.encerrado) return a.encerrado ? 1 : -1;
+    return a.nomeCurto.localeCompare(b.nomeCurto, "pt-BR");
+  });
   const openSetup = setups.find((s) => s.id === openId);
 
   return (
@@ -626,7 +636,7 @@ function SetupsTable({ theme, setups }) {
           style={{
             width: "100%",
             borderCollapse: "collapse",
-            fontSize: 13,
+            fontSize: 14.5,
             fontFamily: "'Plus Jakarta Sans', sans-serif",
             minWidth: 700,
           }}
@@ -641,7 +651,7 @@ function SetupsTable({ theme, setups }) {
                     padding: "12px 14px",
                     borderBottom: `1px solid ${theme.border}`,
                     color: theme.textMuted,
-                    fontSize: 11,
+                    fontSize: 13,
                     textTransform: "uppercase",
                     letterSpacing: 0.4,
                     background: theme.cardAlt,
@@ -687,7 +697,7 @@ function SetupsTable({ theme, setups }) {
                       </div>
                       <div>
                         <div style={{ fontWeight: 700, color: corTexto, textDecoration: risco }}>{s.nomeCurto}</div>
-                        <div style={{ fontSize: 11, color: corSub }}>{s.subtitulo}</div>
+                        <div style={{ fontSize: 12, color: corSub }}>{s.subtitulo}</div>
                       </div>
                     </div>
                   </td>
@@ -699,7 +709,7 @@ function SetupsTable({ theme, setups }) {
                   </td>
                   <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}` }}>
                     <div style={{ fontWeight: 700, color: corTexto, textDecoration: risco }}>{s.split}</div>
-                    <div style={{ fontSize: 11, color: corSub }}>{s.rxr}</div>
+                    <div style={{ fontSize: 12, color: corSub }}>{s.rxr}</div>
                   </td>
                   <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}` }}>
                     <Pill theme={theme} tone={s.fluencia.tone}>{s.fluencia.label}</Pill>
@@ -778,7 +788,7 @@ const SETUPS = [
     rxr: "1,5x1+",
     gestaoGanhos: "2 ctts: 100% no 1x1 (regra de agosto) · 3+ ctts: parcial 1x1 + carrega",
     badge: "Funcional",
-    badgeColor: { bg: "#4ecb8d22", text: "#4ecb8d" },
+    badgeColor: null,
     fluencia: { label: "Funcional", tone: "good", detalhe: "Setup de continuidade — apoia-se no que o mercado já demonstrou" },
     descricao: "Dentro de uma tendência já estabelecida, o pullback até a média de referência oferece entrada de continuidade — o viés a favor já está validado pelo alinhamento completo das médias.",
     regrasList: [
@@ -902,7 +912,7 @@ const SETUPS = [
     rxr: "2x1+",
     gestaoGanhos: "Parcial no 1x1 com 50% ou 2/3 · alvo final 2x1 em diante",
     badge: "Ativo",
-    badgeColor: { bg: "#4ecb8d22", text: "#4ecb8d" },
+    badgeColor: null,
     fluencia: { label: "Ativo", tone: "good", detalhe: "Setup do repertório TSS — gestão validada estatisticamente pelo Mateus" },
     descricao: "Capturar a volatilidade inicial do mercado, levando em conta como estão os mercados externos correlacionados ao nosso antes da nossa abertura. Entrada sempre a mercado — não espera barra de sinal.",
     regrasList: [
@@ -985,7 +995,7 @@ const SETUPS = [
     rxr: "1x1",
     gestaoGanhos: "Alvo = 50% do range · saída 100% no alvo, sem parcial",
     badge: "Novo no TSS",
-    badgeColor: { bg: "#4ecb8d22", text: "#4ecb8d" },
+    badgeColor: null,
     fluencia: { label: "Maduro", tone: "good", detalhe: "Configuração já executada com sucesso no OTS (EQL) — nova apenas no operacional TSS" },
     descricao: "Em lateralidade, os extremos do range são onde a probabilidade de reversão é maior e o risco é mais barato. Opera o que o mercado já demonstrou — range validado — e não o que ele pode vir a fazer. Ocupa o vácuo que antes era preenchido pelo FQ: operar extremos em dias travados.",
     regrasList: [
@@ -1090,7 +1100,7 @@ export default function PlanoTrade({ th }) {
 
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: theme.text }}>Plano de trade</div>
-        <div style={{ fontSize: 13, color: theme.textMuted, marginTop: 4 }}>
+        <div style={{ fontSize: 14, color: theme.textMuted, marginTop: 4 }}>
           Trading System Starter · atualizado agosto/2026
         </div>
       </div>
@@ -1110,7 +1120,7 @@ export default function PlanoTrade({ th }) {
           </div>
 
           <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
               O que procuro no mercado
             </div>
             <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
@@ -1120,7 +1130,7 @@ export default function PlanoTrade({ th }) {
           </div>
 
           <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18, marginBottom: 18 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
               Objetivo do mês
             </div>
             <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
@@ -1132,7 +1142,7 @@ export default function PlanoTrade({ th }) {
           </div>
 
           <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.textMuted, marginBottom: 4 }}>
               Critério de seletividade
             </div>
             <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.6 }}>
@@ -1186,7 +1196,7 @@ export default function PlanoTrade({ th }) {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <IcoRisk color={theme.accent} />
-            <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>Risco · agosto/2026</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>Risco · agosto/2026</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 14 }}>
             {[
@@ -1201,7 +1211,7 @@ export default function PlanoTrade({ th }) {
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 11.5, color: theme.textMuted, marginBottom: 8 }}>
+          <div style={{ fontSize: 12.5, color: theme.textMuted, marginBottom: 8 }}>
             Contratos são <b style={{ color: theme.text }}>consequência</b> do stop, não escolha:
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1217,8 +1227,8 @@ export default function PlanoTrade({ th }) {
                   flexShrink: 0,
                 }}
               >
-                <div style={{ fontSize: 11, color: theme.textMuted }}>{c.stop}</div>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.text, marginTop: 2 }}>{c.ctts}</div>
+                <div style={{ fontSize: 12, color: theme.textMuted }}>{c.stop}</div>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.text, marginTop: 2 }}>{c.ctts}</div>
               </div>
             ))}
           </div>
@@ -1234,29 +1244,29 @@ export default function PlanoTrade({ th }) {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <IconDoorExit color={theme.accent} />
-            <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>
               Gestão de saída · o alvo decide
             </div>
           </div>
-          <div style={{ fontSize: 13, color: theme.textMuted, lineHeight: 1.6, marginBottom: 14 }}>
+          <div style={{ fontSize: 14, color: theme.textMuted, lineHeight: 1.6, marginBottom: 14 }}>
             Quem decide a saída é o <b style={{ color: theme.text }}>alvo</b>, não a quantidade de
             contratos.
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ background: theme.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
                 Alvo fixo e curto
               </div>
-              <div style={{ fontSize: 12.5, color: theme.text, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
                 Abertura 1x1 · TRM de correção simples · TL nos 50% do range → sai 100% no alvo,
                 sem parcial.
               </div>
             </div>
             <div style={{ background: theme.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
                 Alvo aberto
               </div>
-              <div style={{ fontSize: 12.5, color: theme.text, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
                 TC em tendência · TRM em confluência de reversão → parcial no 1x1 + carrega. Só
                 faz sentido com 3+ contratos.
               </div>
@@ -1269,10 +1279,10 @@ export default function PlanoTrade({ th }) {
                 padding: "10px 12px",
               }}
             >
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: "#e0a63a", marginBottom: 3 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: "#e0a63a", marginBottom: 3 }}>
                 Decisão de agosto · revisar em setembro
               </div>
-              <div style={{ fontSize: 12.5, color: theme.text, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
                 TC de 2 contratos sai 100% no 1x1, sem exceção. Contrapartida obrigatória: anotar
                 no diário quanto teria pago se carregasse (MEP máximo).
               </div>
@@ -1290,7 +1300,7 @@ export default function PlanoTrade({ th }) {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
             <IcoShield color={theme.accent} />
-            <div style={{ fontSize: 15, fontWeight: 800, color: theme.text }}>Regras universais</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>Regras universais</div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
             {[
@@ -1308,7 +1318,7 @@ export default function PlanoTrade({ th }) {
                 }}
               >
                 <r.Icon color={theme.textMuted} />
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.text, marginTop: 10, lineHeight: 1.4 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.text, marginTop: 10, lineHeight: 1.4 }}>
                   {r.text}
                 </div>
               </div>
@@ -1327,10 +1337,10 @@ export default function PlanoTrade({ th }) {
           marginBottom: 28,
         }}
       >
-        <div style={{ fontSize: 15, fontWeight: 800, color: theme.text, marginBottom: 4 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: theme.text, marginBottom: 4 }}>
           Que setup para que mercado
         </div>
-        <div style={{ fontSize: 12.5, color: theme.textMuted, marginBottom: 16 }}>
+        <div style={{ fontSize: 13.5, color: theme.textMuted, marginBottom: 16 }}>
           TC para tendência · TRM para reversões · TL para lateralidades
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 10 }}>
@@ -1351,8 +1361,8 @@ export default function PlanoTrade({ th }) {
                 padding: "12px 14px",
               }}
             >
-              <div style={{ fontSize: 11.5, color: theme.textMuted, marginBottom: 4 }}>{t.m}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text, lineHeight: 1.4 }}>{t.s}</div>
+              <div style={{ fontSize: 12.5, color: theme.textMuted, marginBottom: 4 }}>{t.m}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, lineHeight: 1.4 }}>{t.s}</div>
             </div>
           ))}
         </div>
@@ -1361,7 +1371,7 @@ export default function PlanoTrade({ th }) {
       {/* SETUPS */}
       <div style={{ margin: "24px 0 12px" }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>Setups — Trading System Starter</div>
-        <div style={{ fontSize: 12.5, color: theme.textMuted, marginTop: 2 }}>
+        <div style={{ fontSize: 13.5, color: theme.textMuted, marginTop: 2 }}>
           TC Pré BO pausado · FQ encerrado em 30/07/2026
         </div>
       </div>
