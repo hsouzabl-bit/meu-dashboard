@@ -679,7 +679,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
   function renderUpdates() {
     return (
-      <aside style={{ width: 370, flexShrink: 0, display: "flex", flexDirection: "column", gap: 11 }}>
+      <aside style={{ width: 470, flexShrink: 0, display: "flex", flexDirection: "column", gap: 11 }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
           <div>
             <div style={{ fontWeight: 800, fontSize: 12.5, letterSpacing: 0.7, color: text, textTransform: "uppercase" }}>Updates Operacionais</div>
