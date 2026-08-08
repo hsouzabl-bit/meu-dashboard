@@ -188,7 +188,6 @@ export default function Habitos({ th }){
   const semanas = [];
   {
     const ultimoDia = new Date(anoVis, mesVis+1, 0).getDate();
-
     let semana = [];
     for(let dia=1; dia<=ultimoDia; dia++){
       const ds = new Date(anoVis, mesVis, dia).getDay();
@@ -199,14 +198,11 @@ export default function Habitos({ th }){
       semana.push(dia);
       if(col === 6){ semanas.push(semana); semana = []; }
     }
-
     if(semana.length){
       while(semana.length < 7) semana.push(null);
       semanas.push(semana);
     }
   }
-
-  const verdeBg  = dark ? "#16291f" : "#eaf7f0";
 
   const verdeBg  = dark ? "#16291f" : "#eaf7f0";
   const verdeBd  = dark ? "#2d6b4f" : "#5cb583";
