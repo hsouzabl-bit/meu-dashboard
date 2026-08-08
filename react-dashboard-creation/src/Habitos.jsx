@@ -199,10 +199,14 @@ export default function Habitos({ th }){
       semana.push(dia);
       if(col === 6){ semanas.push(semana); semana = []; }
     }
+
     if(semana.length){
       while(semana.length < 7) semana.push(null);
       semanas.push(semana);
     }
+  }
+
+  const verdeBg  = dark ? "#16291f" : "#eaf7f0";
 
   const verdeBg  = dark ? "#16291f" : "#eaf7f0";
   const verdeBd  = dark ? "#2d6b4f" : "#5cb583";
