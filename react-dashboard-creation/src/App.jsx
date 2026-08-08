@@ -4,6 +4,7 @@ import Estudos from "./Estudos";
 import Revisoes from "./Revisoes";
 import Objetivos from "./Objetivos";
 import PlanoTrade from './PlanoTrade';
+import Habitos from './Habitos';
 
 const API_URL    = "https://script.google.com/macros/s/AKfycbwHp4j2xXWBeQF9OcLghTy8tvcNN6tvKNX8hyE_3Dq_Z9x5Sz5fp9UGIPVFkJ9LN4v-/exec";
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
@@ -626,6 +627,13 @@ const navItems = [
         <Revisoes th={th} dark={dark} setDark={setDark} revisoesProp={revisoes} updatesProp={updates} tradesPorDataProp={tradesPorData} loadingProp={loadingRevisoes} onCarregar={carregarRevisoes}/>
       </div>
     );
+
+    if (activeNav === "Hábitos") return (
+      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
+        <Habitos th={th}/>
+      </div>
+    );
+    
     if(activeNav === "Plano de Trade") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
         <PlanoTrade th={th}/>
