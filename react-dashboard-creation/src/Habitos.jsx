@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 
 const MESES_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const DIAS_UTEIS = ["SEG","TER","QUA","QUI","SEX"];
+const DIAS_UTEIS = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
 
 const HABITOS = [
   { campo:"horas",   nota:"notaHoras",   label:"Horas",   labelLongo:"Horas de estudo", step:"0.5", cor:"#1D9E75", metaPadrao:240 },
@@ -188,22 +188,21 @@ export default function Habitos({ th }){
   const semanas = [];
   {
     const ultimoDia = new Date(anoVis, mesVis+1, 0).getDate();
+
     let semana = [];
     for(let dia=1; dia<=ultimoDia; dia++){
-      const dt = new Date(anoVis, mesVis, dia);
-      const ds = dt.getDay();
-      if(ds === 0 || ds === 6) continue;
+      const ds = new Date(anoVis, mesVis, dia).getDay();
+      const col = ds === 0 ? 6 : ds - 1;
       if(semana.length === 0){
-        for(let i=1; i<ds; i++) semana.push(null);
+        for(let i=0; i<col; i++) semana.push(null);
       }
       semana.push(dia);
-      if(ds === 5){ semanas.push(semana); semana = []; }
+      if(col === 6){ semanas.push(semana); semana = []; }
     }
     if(semana.length){
-      while(semana.length < 5) semana.push(null);
+      while(semana.length < 7) semana.push(null);
       semanas.push(semana);
     }
-  }
 
   const verdeBg  = dark ? "#16291f" : "#eaf7f0";
   const verdeBd  = dark ? "#2d6b4f" : "#5cb583";
@@ -274,7 +273,7 @@ export default function Habitos({ th }){
               </span>
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr) 1.05fr",gap:6,marginBottom:6}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr) 1.15fr",gap:5,marginBottom:6}}>
               {DIAS_UTEIS.map(d=>(
                 <div key={d} style={{textAlign:"center",fontSize:9.5,fontWeight:700,color:th.textMuted,letterSpacing:0.6}}>{d}</div>
               ))}
@@ -292,7 +291,7 @@ export default function Habitos({ th }){
                   if(temAlgo(d)) tot.dias++;
                 });
                 return (
-                  <div key={si} style={{display:"grid",gridTemplateColumns:"repeat(5,1fr) 1.05fr",gap:6}}>
+                  <div key={si} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr) 1.15fr",gap:5}}>
                     {semana.map((dia,di)=>{
                       if(dia === null) return <div key={`v-${di}`}/>;
                       const chave = chaveData(anoVis,mesVis,dia);
