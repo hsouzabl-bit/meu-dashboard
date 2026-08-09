@@ -30,6 +30,20 @@ function fmtVal(n) {
   return (n >= 0 ? "+" : "−") + "R$ " + Math.abs(n).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 }
 
+function AutoTextarea({ value, placeholder, onChange, rows, style }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = "auto";
+      ref.current.style.height = ref.current.scrollHeight + "px";
+    }
+  }, [value]);
+  return (
+    <textarea ref={ref} value={value} placeholder={placeholder} onChange={onChange} rows={rows}
+      style={{ ...style, resize: "none", overflow: "hidden", lineHeight: 1.55 }} />
+  );
+}
+
 export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp, tradesPorDataProp, loadingProp, onCarregar }) {
   const bg         = th?.bg        || "#f4f5f7";
   const surface    = th?.surface   || "#ffffff";
@@ -316,8 +330,12 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       revisaoDetalhada: formDados.revisaoDetalhada ?? "",
     };
     try {
-      await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURIComponent(JSON.stringify(revisao))}`);
+      
+const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURIComponent(JSON.stringify(revisao))}`);
+      const jr = await resp.json();
+      if (jr.erro) throw new Error(jr.erro);
       await carregar();
+      
       setFormDirty(false);
       setPainelDia(null);
     } catch(e) { alert("Erro ao salvar."); }
@@ -557,20 +575,6 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     );
 
     return cells;
-  }
-
-  function AutoTextarea({ value, placeholder, onChange, rows, style }) {
-    const ref = React.useRef(null);
-    React.useEffect(() => {
-      if (ref.current) {
-        ref.current.style.height = "auto";
-        ref.current.style.height = ref.current.scrollHeight + "px";
-      }
-    }, [value]);
-    return (
-      <textarea ref={ref} value={value} placeholder={placeholder} onChange={onChange} rows={rows}
-        style={{ ...style, resize: "none", overflow: "hidden", lineHeight: 1.55 }} />
-    );
   }
 
   function renderPainel() {
