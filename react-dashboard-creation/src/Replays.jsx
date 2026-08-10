@@ -397,9 +397,10 @@ export default function Replays({ th }) {
     <div style={{ width: "100%", minWidth: 0, paddingBottom: 48 }}>
 
       {/* ═══ HERO ═══ */}
-      <div style={{
+        <div style={{
         display: "flex", alignItems: "flex-end", justifyContent: "space-between",
         gap: 20, flexWrap: "wrap", paddingBottom: 18, borderBottom: `1px solid ${linha}`, marginBottom: 16,
+        width: "75%", minWidth: 520,
       }}>
         <div>
           <div style={{ fontSize: 12.5, color: th.textMuted, marginBottom: 3 }}>Replays · resultado acumulado</div>
