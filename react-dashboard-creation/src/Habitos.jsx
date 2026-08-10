@@ -364,7 +364,7 @@ export default function Habitos({ th }){
       {/* ═══ CALENDÁRIO + GRÁFICO DIÁRIO ═══ */}
       <div style={{ display:"flex", gap:18, alignItems:"flex-start", marginBottom:26 }}>
 
-        <div style={{ width:"46%", minWidth:360, flexShrink:0 }}>
+        <div style={{ flex:1, minWidth:420 }}>
           <div style={{ display:"flex", alignItems:"baseline", gap:10, marginBottom:11, flexWrap:"wrap" }}>
             <span style={secao}>{MESES_PT[mesVis]} {anoVis}</span>
             <div style={{ display:"flex", gap:5 }}>
@@ -398,15 +398,15 @@ export default function Habitos({ th }){
 
                   return (
                     <div key={dia} onClick={()=>!futuro && !antes && abrirDia(chave)}
-                      style={{ background:bg, border:bd, borderRadius:8, minHeight:56, padding:"5px 6px",
-                        boxSizing:"border-box", cursor:(futuro||antes)?"default":"pointer",
+                    style={{ background:bg, border:bd, borderRadius:9, minHeight:86, padding:"8px 9px",
+        boxSizing:"border-box", cursor:(futuro||antes)?"default":"pointer",
                         outline: diaSel===chave ? `2px solid ${accent}` : "none", display:"flex", flexDirection:"column" }}>
-                      <span style={{ fontSize:10, color:txt, fontVariantNumeric:"tabular-nums" }}>{dia}</span>
+                      <span style={{ fontSize:11.5, color:txt, fontVariantNumeric:"tabular-nums" }}>{dia}</span>
                       {temAlgo(d) && (
                         <div style={{ marginTop:"auto", display:"flex", flexDirection:"column", gap:0 }}>
                           {HABITOS.map(h=>(
                             <span key={h.campo} style={{
-                              fontSize:10, lineHeight:1.35, fontVariantNumeric:"tabular-nums",
+                              fontSize:12, lineHeight:1.4, fontVariantNumeric:"tabular-nums",
                               color: d[h.campo] >= 1 ? th.text : verm,
                             }}>{fmtNum(d[h.campo])}<span style={{ color:th.textMuted, fontSize:8.5 }}>{h.label[0].toLowerCase()}</span></span>
                           ))}
@@ -420,10 +420,59 @@ export default function Habitos({ th }){
           </div>
         </div>
 
-        <div style={{ flex:1, minWidth:0 }}>
+{diaSel && rascunho && (
+          <div style={{ ...cardBase, width:330, flexShrink:0, borderLeft:`3px solid ${accent}` }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <span style={{ fontSize:13, fontWeight:700, color:th.text }}>
+                {diaSel.split("-").reverse().join("/")}
+              </span>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                {alterado && !salvando && (
+                  <span style={{ fontSize:10, fontWeight:700, color:"#d97706", background:dark?"#2a2210":"#fef3c7", padding:"2px 8px", borderRadius:20, border:`1px solid ${dark?"#5c4a10":"#fcd34d"}` }}>Não salvo</span>
+                )}
+                <span onClick={()=>setDiaSel(null)} style={{ cursor:"pointer", color:th.textMuted, fontSize:19, lineHeight:1 }}>×</span>
+              </div>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
+              {HABITOS.map(h=>(
+                <div key={h.campo}>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, marginBottom:5 }}>
+                    <span style={{ fontSize:12.5, color:th.textSub }}>{h.labelLongo}</span>
+                    <input type="number" step={h.step} min="0" placeholder="0"
+                      value={rascunho[h.campo]} onChange={e=>alterarRascunho(h.campo, e.target.value)}
+                      style={{ width:62, fontSize:15, fontWeight:800, color:accent, background:th.resumeBg,
+                        border:`1px solid ${th.border2}`, borderRadius:7, outline:"none", padding:"4px 7px",
+                        textAlign:"center", fontFamily:"inherit" }}/>
+                  </div>
+                  <textarea rows={2} placeholder="anotação..."
+                    value={rascunho[h.nota]} onChange={e=>alterarRascunho(h.nota, e.target.value)}
+                    style={{ width:"100%", fontSize:12, padding:"7px 9px", border:`1px solid ${th.border2}`,
+                      borderRadius:8, outline:"none", fontFamily:"inherit", resize:"vertical",
+                      boxSizing:"border-box", background:th.resumeBg, color:th.text }}/>
+                </div>
+              ))}
+            </div>
+            <button onClick={salvarDia} disabled={!alterado||salvando}
+              style={{ marginTop:14, background: alterado&&!salvando ? accent : "transparent",
+                color: alterado&&!salvando ? "#fff" : th.textMuted,
+                border:`1px solid ${alterado&&!salvando ? accent : th.border2}`,
+                borderRadius:8, padding:"8px 0", fontSize:12, fontWeight:700,
+                cursor: alterado&&!salvando ? "pointer" : "default", fontFamily:"inherit", width:"100%" }}>
+              {salvando ? "Salvando…" : "Salvar"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ GRÁFICOS ═══ */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:24, marginBottom:26, alignItems:"start" }}>
+
+        <div style={{ minWidth:0 }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, marginBottom:11, flexWrap:"wrap" }}>
             <div>
               <div style={secao}>Acumulado no mês</div>
+
+        
               <div style={{ ...legenda, marginTop:2 }}>
                 {MESES_PT[mesVis]}: {fmtNum(totalMes[serieSel])} {habSel.label.toLowerCase()}
               </div>
@@ -460,13 +509,13 @@ export default function Habitos({ th }){
                 <Line type="monotone" dataKey="valor" stroke={th.textMuted} strokeWidth={1.4} strokeDasharray="4 3" dot={false}/>
               </LineChart>
             </ResponsiveContainer>
+
           )}
         </div>
-      </div>
 
-      {/* ═══ RITMO vs META ═══ */}
-      <div style={{ marginBottom:26, width:"80%", minWidth:520 }}>
-        <div style={secao}>Ritmo do quarter</div>
+        <div style={{ minWidth:0 }}>
+          <div style={secao}>Ritmo do quarter</div>
+      
         <div style={{ ...legenda, marginTop:3, marginBottom:12 }}>
           % da meta efetiva por hábito · a linha cinza é o ritmo necessário para fechar 30/09 em dia
         </div>
@@ -506,53 +555,14 @@ export default function Habitos({ th }){
                 <span style={{ color:th.textMuted }}>▬</span> ritmo esperado
               </span>
             </div>
-          </>
+</>
         )}
+        </div>
       </div>
 
-      {/* ═══ PAINEL DO DIA ═══ */}
-      {diaSel && rascunho && (
-        <div style={{ ...cardBase, maxWidth:520, borderLeft:`3px solid ${accent}` }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-            <span style={{ fontSize:13, fontWeight:700, color:th.text }}>
-              {diaSel.split("-").reverse().join("/")}
-            </span>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              {alterado && !salvando && (
-                <span style={{ fontSize:10, fontWeight:700, color:"#d97706", background:dark?"#2a2210":"#fef3c7", padding:"2px 8px", borderRadius:20, border:`1px solid ${dark?"#5c4a10":"#fcd34d"}` }}>Não salvo</span>
-              )}
-              <span onClick={()=>setDiaSel(null)} style={{ cursor:"pointer", color:th.textMuted, fontSize:19, lineHeight:1 }}>×</span>
-            </div>
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
-            {HABITOS.map(h=>(
-              <div key={h.campo}>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, marginBottom:5 }}>
-                  <span style={{ fontSize:12.5, color:th.textSub }}>{h.labelLongo}</span>
-                  <input type="number" step={h.step} min="0" placeholder="0"
-                    value={rascunho[h.campo]} onChange={e=>alterarRascunho(h.campo, e.target.value)}
-                    style={{ width:62, fontSize:15, fontWeight:800, color:accent, background:th.resumeBg,
-                      border:`1px solid ${th.border2}`, borderRadius:7, outline:"none", padding:"4px 7px",
-                      textAlign:"center", fontFamily:"inherit" }}/>
-                </div>
-                <textarea rows={2} placeholder="anotação..."
-                  value={rascunho[h.nota]} onChange={e=>alterarRascunho(h.nota, e.target.value)}
-                  style={{ width:"100%", fontSize:12, padding:"7px 9px", border:`1px solid ${th.border2}`,
-                    borderRadius:8, outline:"none", fontFamily:"inherit", resize:"vertical",
-                    boxSizing:"border-box", background:th.resumeBg, color:th.text }}/>
-              </div>
-            ))}
-          </div>
-          <button onClick={salvarDia} disabled={!alterado||salvando}
-            style={{ marginTop:14, background: alterado&&!salvando ? accent : "transparent",
-              color: alterado&&!salvando ? "#fff" : th.textMuted,
-              border:`1px solid ${alterado&&!salvando ? accent : th.border2}`,
-              borderRadius:8, padding:"8px 0", fontSize:12, fontWeight:700,
-              cursor: alterado&&!salvando ? "pointer" : "default", fontFamily:"inherit", width:"100%" }}>
-            {salvando ? "Salvando…" : "Salvar"}
-          </button>
+ 
         </div>
-      )}
+      </div>
 
     </div>
   );
