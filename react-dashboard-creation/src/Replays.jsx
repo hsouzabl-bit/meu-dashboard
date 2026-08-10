@@ -541,7 +541,7 @@ export default function Replays({ th }) {
       </div>
 
       {/* ═══ GRÁFICO ═══ */}
-      <div style={{ marginBottom: 30 }}>
+      <div style={{ marginBottom: 30, width: "75%", minWidth: 520 }}>
         {serie.length < 2 ? (
           <div style={{ padding: "70px 0", textAlign: "center", color: th.textMuted, fontSize: 12.5, background: sutil, borderRadius: 12 }}>
             Dados insuficientes no recorte atual
@@ -564,8 +564,9 @@ export default function Replays({ th }) {
         )}
       </div>
 
+
       {/* ═══ CALENDÁRIO ═══ */}
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 32, width: "75%", minWidth: 520 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
           <span style={secao}>{MESES_PT[mesAtivo]} {anoAtivo}</span>
           <div style={{ display: "flex", gap: 5 }}>
@@ -737,53 +738,64 @@ export default function Replays({ th }) {
           <div style={{ padding: "34px 0", textAlign: "center", color: th.textMuted, fontSize: 12.5, background: sutil, borderRadius: 12 }}>
             Sem trades decididos no recorte atual
           </div>
-        ) : (
-          <table style={{ width: "100%", maxWidth: 620, borderCollapse: "collapse", tableLayout: "fixed" }}>
-            <colgroup>
-              <col style={{ width: 268 }} /><col style={{ width: 52 }} />
-              <col style={{ width: 100 }} /><col style={{ width: 100 }} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th style={{ ...thS, textAlign: "left", paddingLeft: 0 }}>Setup</th>
-                <th style={thS}>n</th>
-                <th style={thS}>MEP médio</th>
-                <th style={{ ...thS, paddingRight: 0 }}>MEN médio</th>
-              </tr>
-            </thead>
-            <tbody>
+) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${blocosMep.length}, minmax(0,1fr))`, gap: 30 }}>
               {blocosMep.map(b => (
-                <Fragment key={b.grupo.id}>
-                  <tr><td colSpan={4} style={{ ...grupoLabel, padding: "20px 0 8px" }}>{b.grupo.id}</td></tr>
-                  {b.linhas.map(l => (
-                    <tr key={l.nome} style={{ borderTop: `1px solid ${linha}`, opacity: ehFQ(l.nome) ? 0.42 : 1 }}>
-                      <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, whiteSpace: "normal", lineHeight: 1.3, paddingRight: 18 }}>{l.nome}</td>
-                      <td style={{ ...tdS, color: th.textMuted }}>{l.n}</td>
-                      <td style={{ ...tdS, fontWeight: 600 }}>{l.mep}</td>
-                      <td style={{ ...tdS, fontWeight: 600, paddingRight: 0 }}>{l.men}</td>
-                    </tr>
-                  ))}
-                  <tr style={{ borderTop: `1px solid ${th.border2}`, background: sutil }}>
-                    <td style={{ ...tdTot, textAlign: "left", paddingLeft: 0 }}>Total {b.grupo.curto}</td>
-                    <td style={tdTot}>{b.total.n}</td>
-                    <td style={tdTot}>{b.total.mep === null ? "—" : b.total.mep}</td>
-                    <td style={{ ...tdTot, paddingRight: 0 }}>{b.total.men === null ? "—" : b.total.men}</td>
-                  </tr>
-                </Fragment>
+                <div key={b.grupo.id}>
+                  <div style={{ ...grupoLabel, marginBottom: 8 }}>{b.grupo.curto}</div>
+                  <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+                    <colgroup>
+                      <col /><col style={{ width: 34 }} /><col style={{ width: 52 }} /><col style={{ width: 52 }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th style={{ ...thS, textAlign: "left", paddingLeft: 0 }}>Setup</th>
+                        <th style={{ ...thS, padding: "0 5px 8px" }}>n</th>
+                        <th style={{ ...thS, padding: "0 5px 8px" }}>MEP</th>
+                        <th style={{ ...thS, padding: "0 0 8px 5px" }}>MEN</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {b.linhas.map(l => (
+                        <tr key={l.nome} style={{ borderTop: `1px solid ${linha}`, opacity: ehFQ(l.nome) ? 0.42 : 1 }}>
+                          <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, whiteSpace: "normal", lineHeight: 1.3, paddingRight: 10, fontSize: 12.5 }}>{l.nome}</td>
+                          <td style={{ ...tdS, color: th.textMuted, padding: "9px 5px" }}>{l.n}</td>
+                          <td style={{ ...tdS, fontWeight: 600, padding: "9px 5px" }}>{l.mep}</td>
+                          <td style={{ ...tdS, fontWeight: 600, padding: "9px 0 9px 5px" }}>{l.men}</td>
+                        </tr>
+                      ))}
+                      <tr style={{ borderTop: `1px solid ${th.border2}`, background: sutil }}>
+                        <td style={{ ...tdTot, textAlign: "left", paddingLeft: 0, fontSize: 12.5 }}>Total</td>
+                        <td style={{ ...tdTot, padding: "9px 5px" }}>{b.total.n}</td>
+                        <td style={{ ...tdTot, padding: "9px 5px" }}>{b.total.mep === null ? "—" : b.total.mep}</td>
+                        <td style={{ ...tdTot, padding: "9px 0 9px 5px" }}>{b.total.men === null ? "—" : b.total.men}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               ))}
-              <tr style={{ borderTop: `2px solid ${accent}55` }}>
-                <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, paddingTop: 13, fontWeight: 800, color: accent }}>Total geral</td>
-                <td style={{ ...tdS, paddingTop: 13, fontWeight: 800, color: accent }}>{mepFiltrado.length}</td>
-                <td style={{ ...tdS, paddingTop: 13, fontWeight: 800, color: accent }}>{mepGeral === null ? "—" : mepGeral}</td>
-                <td style={{ ...tdS, paddingTop: 13, paddingRight: 0, fontWeight: 800, color: accent }}>{menGeral === null ? "—" : menGeral}</td>
-              </tr>
-            </tbody>
-          </table>
+            </div>
+            <div style={{
+              display: "flex", gap: 30, alignItems: "baseline", marginTop: 18,
+              paddingTop: 13, borderTop: `2px solid ${accent}55`, maxWidth: 460,
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: accent, flex: 1 }}>Total geral</span>
+              {[["n", mepFiltrado.length], ["MEP", mepGeral === null ? "—" : mepGeral], ["MEN", menGeral === null ? "—" : menGeral]].map(([lb, v]) => (
+                <span key={lb} style={{ fontSize: 13, color: th.textMuted }}>
+                  {lb} <span style={{ fontWeight: 800, color: accent, fontVariantNumeric: "tabular-nums" }}>{v}</span>
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+
+      
         )}
       </div>
 
-      {/* ═══ ERROS ═══ */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 34, marginBottom: 32 }}>
+      {/* ═══ ERROS + 10/10 ═══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr)", gap: 30, alignItems: "start", marginBottom: 32 }}>
         {[["Erros técnicos", top5Tec], ["Erros emocionais", top5Emo]].map(([titulo, lista]) => (
           <div key={titulo}>
             <div style={secao}>{titulo}</div>
@@ -801,10 +813,8 @@ export default function Replays({ th }) {
               </div>
             ))}
           </div>
-        ))}
-      </div>
+      ))}
 
-      {/* ═══ TRADES 10/10 ═══ */}
       <div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 3 }}>
           <span style={secao}>Trades 10/10</span>
@@ -853,6 +863,7 @@ export default function Replays({ th }) {
             </tbody>
           </table>
         )}
+      </div>
       </div>
 
     </div>
