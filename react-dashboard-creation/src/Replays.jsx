@@ -4,13 +4,17 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 
 const MESES_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const DIAS_SEM = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
+const MES_CURTO = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const DIAS_SEM = ["seg","ter","qua","qui","sex","sáb","dom"];
 
 const CHAVE_FILTROS = "filtros_replays";
 const CHAVE_CACHE   = "cache_replays";
 
-// ── agrupamento por operacional ────────────────────────────────────────────
-const GRUPOS = ["Operacional TSS", "Operacional OTS", "Operacional Al Brooks Técnico"];
+const GRUPOS = [
+  { id: "Operacional TSS", curto: "TSS" },
+  { id: "Operacional OTS", curto: "OTS" },
+  { id: "Operacional Al Brooks Técnico", curto: "Al Brooks" },
+];
 
 function grupoDoSetup(nome) {
   const n = (nome || "").toLowerCase().trim();
@@ -28,15 +32,21 @@ function fetchComRetry(url, tentativas = 3, delayMs = 1200) {
     });
 }
 
-function fmtR$(n) {
+function fmtR$(n, comSinal = true) {
   if (n === null || n === undefined || isNaN(n)) return "—";
-  return (n >= 0 ? "+" : "−") + "R$ " + Math.abs(n).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  const s = "R$ " + Math.abs(n).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  if (!comSinal) return s;
+  return (n >= 0 ? "+" : "−") + s;
 }
 function media(arr) {
   if (!arr.length) return null;
   return Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10;
 }
 function r2(v) { return Math.round(v * 100) / 100; }
+function rotuloData(iso) {
+  if (!iso) return "";
+  return `${MES_CURTO[parseInt(iso.slice(5, 7), 10) - 1]} ${iso.slice(0, 4)}`;
+}
 
 export default function Replays({ th }) {
   const dark   = th.dark;
@@ -51,11 +61,12 @@ export default function Replays({ th }) {
   const [dataFim, setDataFim]     = useState("");
   const [filtroMep, setFiltroMep] = useState("todos");
 
-  // null até saber qual é o último mês com dados
+  const [painelSetups, setPainelSetups] = useState(false);
+  const [painelDatas, setPainelDatas]   = useState(false);
+
   const [mesVis, setMesVis] = useState(null);
   const [anoVis, setAnoVis] = useState(null);
 
-  // ---- carga ----
   useEffect(() => {
     try {
       const c = localStorage.getItem(CHAVE_CACHE);
@@ -74,7 +85,6 @@ export default function Replays({ th }) {
     return () => clearTimeout(t);
   }, []);
 
-  // ---- filtros persistidos ----
   useEffect(() => {
     if (!dados || setupsSel !== null) return;
     let salvo = null;
@@ -111,10 +121,13 @@ export default function Replays({ th }) {
   }
   function toggleGrupo(g) {
     const doGrupo = listaSetups.filter(s => grupoDoSetup(s) === g);
-    const todosOn = doGrupo.every(s => sel.indexOf(s) >= 0);
+    const todosOn = doGrupo.length > 0 && doGrupo.every(s => sel.indexOf(s) >= 0);
     setSetupsSel(prev => todosOn
       ? prev.filter(s => doGrupo.indexOf(s) < 0)
       : [...prev, ...doGrupo.filter(s => prev.indexOf(s) < 0)]);
+  }
+  function soGrupo(g) {
+    setSetupsSel(listaSetups.filter(s => grupoDoSetup(s) === g));
   }
   function marcarTodos()    { setSetupsSel(listaSetups); }
   function desmarcarTodos() { setSetupsSel([]); }
@@ -125,10 +138,10 @@ export default function Replays({ th }) {
     try { localStorage.removeItem(CHAVE_FILTROS); } catch (e) {}
   }
 
-  const filtroAtivo =
-    (listaSetups.length > 0 && sel.length !== listaSetups.length) || !!dataIni || !!dataFim;
+  const filtroSetupsAtivo = listaSetups.length > 0 && sel.length !== listaSetups.length;
+  const filtroDatasAtivo  = !!dataIni || !!dataFim;
+  const filtroAtivo = filtroSetupsAtivo || filtroDatasAtivo;
 
-  // ---- recorte ----
   const trades = (dados?.trades || []).filter(t => {
     if (sel.indexOf(t.setup) < 0) return false;
     if (dataIni && t.data < dataIni) return false;
@@ -136,7 +149,6 @@ export default function Replays({ th }) {
     return true;
   });
 
-  // calendário abre no último mês COM dados, não no mês corrente
   useEffect(() => {
     if (mesVis !== null || !dados?.trades?.length) return;
     const ultima = dados.trades.map(t => t.data).sort().pop();
@@ -179,7 +191,6 @@ export default function Replays({ th }) {
 
   const geral = calcular(trades);
 
-  // ---- por setup, agrupado por operacional ----
   const porSetup = {};
   trades.forEach(t => {
     if (!porSetup[t.setup]) porSetup[t.setup] = [];
@@ -187,7 +198,7 @@ export default function Replays({ th }) {
   });
 
   const blocosDesempenho = GRUPOS.map(g => {
-    const nomes = Object.keys(porSetup).filter(s => grupoDoSetup(s) === g);
+    const nomes = Object.keys(porSetup).filter(s => grupoDoSetup(s) === g.id);
     if (!nomes.length) return null;
     const linhas = nomes.map(nome => ({ nome, ...calcular(porSetup[nome]) }))
       .sort((a, b) => b.financTotal - a.financTotal);
@@ -195,7 +206,9 @@ export default function Replays({ th }) {
     return { grupo: g, linhas, total: calcular(todosDoGrupo) };
   }).filter(Boolean);
 
-  // ---- MEP / MEN ----
+  const maxAbsSetup = Math.max(1, ...blocosDesempenho
+    .reduce((acc, b) => acc.concat(b.linhas.map(l => Math.abs(l.financTotal))), []));
+
   const baseMep = trades.filter(t => t.resultado === "gain" || t.resultado === "loss");
   const mepFiltrado = filtroMep === "todos" ? baseMep
     : baseMep.filter(t => t.resultado === (filtroMep === "vencedores" ? "gain" : "loss"));
@@ -208,7 +221,7 @@ export default function Replays({ th }) {
   });
 
   const blocosMep = GRUPOS.map(g => {
-    const nomes = Object.keys(mepPorSetup).filter(s => grupoDoSetup(s) === g).sort();
+    const nomes = Object.keys(mepPorSetup).filter(s => grupoDoSetup(s) === g.id).sort();
     if (!nomes.length) return null;
     const linhas = nomes.map(nome => ({
       nome,
@@ -216,7 +229,7 @@ export default function Replays({ th }) {
       men: media(mepPorSetup[nome].men),
       n: mepPorSetup[nome].mep.length,
     }));
-    const doGrupo = mepFiltrado.filter(t => grupoDoSetup(t.setup) === g);
+    const doGrupo = mepFiltrado.filter(t => grupoDoSetup(t.setup) === g.id);
     return {
       grupo: g, linhas,
       total: { n: doGrupo.length, mep: media(doGrupo.map(t => t.mep)), men: media(doGrupo.map(t => t.men)) },
@@ -226,7 +239,6 @@ export default function Replays({ th }) {
   const mepGeral = media(mepFiltrado.map(t => t.mep));
   const menGeral = media(mepFiltrado.map(t => t.men));
 
-  // ---- erros ----
   function topErros(tipo) {
     const acc = {};
     trades.filter(t => t.erro && t.tipoErro === tipo).forEach(t => {
@@ -242,7 +254,6 @@ export default function Replays({ th }) {
   const top5Tec = topErros("tecnico");
   const top5Emo = topErros("emocional");
 
-  // ---- trades 10/10 agrupados por setup ----
   const lista10 = trades.filter(t => t.nota10);
   const agr10 = {};
   lista10.forEach(t => {
@@ -265,16 +276,20 @@ export default function Replays({ th }) {
     men: media(lista10.map(t => t.men)),
   } : null;
 
-  // ---- série do gráfico ----
   const porDataAcum = {};
   trades.forEach(t => { porDataAcum[t.data] = (porDataAcum[t.data] || 0) + t.financ; });
-  const serie = Object.keys(porDataAcum).sort().reduce((acc, d) => {
+  const datasOrd = Object.keys(porDataAcum).sort();
+  const serie = datasOrd.reduce((acc, d) => {
     const ant = acc.length ? acc[acc.length - 1].valor : 0;
     acc.push({ data: d, valor: r2(ant + porDataAcum[d]) });
     return acc;
   }, []);
+  const periodoTxt = datasOrd.length
+    ? (rotuloData(datasOrd[0]) === rotuloData(datasOrd[datasOrd.length - 1])
+        ? rotuloData(datasOrd[0])
+        : `${rotuloData(datasOrd[0])} – ${rotuloData(datasOrd[datasOrd.length - 1])}`)
+    : "sem dados";
 
-  // ---- calendário ----
   const mesAtivo = mesVis === null ? new Date().getMonth() : mesVis;
   const anoAtivo = anoVis === null ? new Date().getFullYear() : anoVis;
   const prefixo = `${anoAtivo}-${String(mesAtivo + 1).padStart(2, "0")}`;
@@ -285,6 +300,8 @@ export default function Replays({ th }) {
     porDiaMes[dia].financ += t.financ;
     porDiaMes[dia].n++;
   });
+  const totalMesCal = Object.values(porDiaMes).reduce((a, d) => a + d.financ, 0);
+  const nMesCal = Object.values(porDiaMes).reduce((a, d) => a + d.n, 0);
 
   function navegarMes(delta) {
     let m = mesAtivo + delta, a = anoAtivo;
@@ -307,392 +324,494 @@ export default function Replays({ th }) {
     if (sem.length) { while (sem.length < 7) sem.push(null); semanas.push(sem); }
   }
 
-  // ---- estilos ----
+  // ── tokens visuais ────────────────────────────────────────────────────────
   const verde   = dark ? "#7fb89a" : "#2f7d52";
   const verm    = dark ? "#c68888" : "#a83f31";
-  const verdeBg = dark ? "#16291f" : "#eaf7f0";
-  const vermBg  = dark ? "#231a1c" : "#fbeceb";
+  const verdeBg = dark ? "rgba(127,184,154,0.13)" : "#eaf7f0";
+  const vermBg  = dark ? "rgba(198,136,136,0.13)" : "#fbeceb";
+  const linha   = th.border;
+  const sutil   = dark ? "rgba(255,255,255,0.035)" : "rgba(0,0,0,0.022)";
 
-  const card = {
-    background: th.cardBg, borderRadius: 12, border: `1px solid ${th.border}`,
-    boxShadow: th.cardShadow, padding: "14px 16px",
-  };
-  const btnMini = {
-    background: "none", border: `1px solid ${th.border2}`, color: th.textMuted,
-    borderRadius: 7, padding: "4px 10px", fontSize: 11, fontWeight: 600,
-    cursor: "pointer", fontFamily: "inherit",
-  };
-  const tituloCard = {
-    fontSize: 11, fontWeight: 700, color: th.textSub,
-    textTransform: "uppercase", letterSpacing: "0.06em",
+  const secao = { fontSize: 16, fontWeight: 700, color: th.text, letterSpacing: "-0.01em" };
+  const legenda = { fontSize: 12, color: th.textMuted };
+  const grupoLabel = {
+    fontSize: 10.5, fontWeight: 700, color: accent, letterSpacing: "0.08em",
+    textTransform: "uppercase",
   };
   const thS = {
-    fontSize: 10, fontWeight: 700, color: th.textMuted, textTransform: "uppercase",
-    letterSpacing: "0.05em", textAlign: "right", padding: "6px 8px", whiteSpace: "nowrap",
+    fontSize: 10.5, fontWeight: 600, color: th.textMuted, letterSpacing: "0.04em",
+    textAlign: "right", padding: "0 10px 8px", whiteSpace: "nowrap",
   };
-  const tdS = { fontSize: 12, color: th.text, textAlign: "right", padding: "7px 8px", whiteSpace: "nowrap" };
-  const tdTot = { ...tdS, fontWeight: 800 };
+  const tdS = {
+    fontSize: 13, color: th.text, textAlign: "right", padding: "9px 10px",
+    whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums",
+  };
+  const tdTot = { ...tdS, fontWeight: 700, color: th.textSub };
+  const controle = {
+    display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+    background: th.cardBg, border: `1px solid ${th.border2}`, borderRadius: 9,
+    padding: "8px 13px", fontSize: 13, color: th.text, fontFamily: "inherit",
+    whiteSpace: "nowrap",
+  };
   const inputData = {
-    fontSize: 12.5, color: th.text, background: th.resumeBg,
-    border: `1px solid ${th.border2}`, borderRadius: 8, padding: "7px 11px",
+    fontSize: 13, color: th.text, background: th.resumeBg,
+    border: `1px solid ${th.border2}`, borderRadius: 8, padding: "7px 10px",
     outline: "none", fontFamily: "inherit", colorScheme: dark ? "dark" : "light",
   };
+  const btnTexto = {
+    background: "none", border: "none", color: th.textMuted, fontSize: 12,
+    cursor: "pointer", fontFamily: "inherit", padding: "6px 4px",
+  };
+
+  function Barra({ valor, max, cor }) {
+    const w = Math.max(2, Math.round((Math.abs(valor) / max) * 46));
+    return (
+      <span style={{ display: "inline-block", width: 46, textAlign: "left", verticalAlign: "middle" }}>
+        <span style={{ display: "inline-block", width: w, height: 4, borderRadius: 3, background: cor, opacity: 0.75 }} />
+      </span>
+    );
+  }
 
   if (carregando && !dados) {
-    return <div style={{ width: "100%", padding: "40px 0", textAlign: "center", color: th.textMuted, fontSize: 13 }}>Carregando replays…</div>;
+    return <div style={{ padding: "60px 0", textAlign: "center", color: th.textMuted, fontSize: 13 }}>Carregando replays…</div>;
   }
   if (erroCarga && !dados) {
-    return <div style={{ width: "100%", padding: 30 }}><div style={{ ...card, color: verm, fontSize: 13 }}>Erro ao carregar: {erroCarga}</div></div>;
+    return <div style={{ padding: "40px 0", color: verm, fontSize: 13 }}>Erro ao carregar: {erroCarga}</div>;
   }
 
   return (
-    <div style={{ width: "100%", minWidth: 0, paddingBottom: 40 }}>
+    <div style={{ width: "100%", minWidth: 0, paddingBottom: 48 }}>
 
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: th.text, margin: 0, letterSpacing: "-0.02em" }}>Replays</h1>
-        <p style={{ fontSize: 13, color: th.textMuted, margin: "4px 0 0" }}>
-          {geral.trades} trades no recorte atual{filtroAtivo ? " · filtros ativos" : ""}
-        </p>
+      {/* ═══ HERO ═══ */}
+      <div style={{
+        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+        gap: 20, flexWrap: "wrap", paddingBottom: 18, borderBottom: `1px solid ${linha}`, marginBottom: 16,
+      }}>
+        <div>
+          <div style={{ fontSize: 12.5, color: th.textMuted, marginBottom: 3 }}>Replays · resultado acumulado</div>
+          <div style={{
+            fontSize: 40, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.03em",
+            color: geral.trades === 0 ? th.textMuted : (geral.financTotal >= 0 ? verde : verm),
+            fontVariantNumeric: "tabular-nums",
+          }}>
+            {geral.trades === 0 ? "—" : fmtR$(geral.financTotal)}
+          </div>
+          <div style={{ ...legenda, marginTop: 5 }}>
+            {geral.trades} trades · {periodoTxt}{filtroAtivo ? " · filtrado" : ""}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 28, paddingBottom: 3, flexWrap: "wrap" }}>
+          {[
+            ["Acerto", geral.taxaAcerto === null ? "—" : `${geral.taxaAcerto}%`],
+            ["RxR", geral.rxr === null ? "—" : geral.rxr.toFixed(2).replace(".", ",")],
+            ["Técnica ok", geral.tecPct === null ? "—" : `${geral.tecPct}%`],
+            ["Stop médio", geral.stopMedio === null ? "—" : fmtR$(geral.stopMedio, false)],
+            ["Trades 10/10", lista10.length || "—"],
+          ].map(([lb, val]) => (
+            <div key={lb}>
+              <div style={{ fontSize: 11.5, color: th.textMuted, marginBottom: 2 }}>{lb}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: th.text, fontVariantNumeric: "tabular-nums" }}>{val}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* ---- RESUMO ---- */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 10, marginBottom: 14 }}>
-        {[
-          ["Resultado", fmtR$(geral.financTotal), geral.financTotal >= 0 ? verde : verm],
-          ["Trades", geral.trades, th.text],
-          ["Acerto", geral.taxaAcerto === null ? "—" : `${geral.taxaAcerto}%`, th.text],
-          ["RxR", geral.rxr === null ? "—" : geral.rxr, th.text],
-          ["Técnica OK", geral.tecPct === null ? "—" : `${geral.tecPct}%`, th.text],
-          ["Stop médio", geral.stopMedio === null ? "—" : `R$ ${geral.stopMedio.toFixed(0)}`, th.text],
-        ].map(([lb, val, cor]) => (
-          <div key={lb} style={{ ...card, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 3 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: th.textMuted, textTransform: "uppercase", letterSpacing: 0.6 }}>{lb}</span>
-            <span style={{ fontSize: 20, fontWeight: 800, color: cor, lineHeight: 1.15 }}>{val}</span>
-          </div>
-        ))}
-      </div>
+      {/* ═══ FILTROS ═══ */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 22, position: "relative" }}>
 
-      {/* ---- FILTRO DE PERÍODO (faixa horizontal) ---- */}
-      <div style={{ ...card, marginBottom: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <span style={{ ...tituloCard, marginRight: 4 }}>Período</span>
-        <input type="date" value={dataIni} onChange={e => setDataIni(e.target.value)} style={inputData} />
-        <span style={{ color: th.textMuted, fontSize: 12.5 }}>até</span>
-        <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} style={inputData} />
-        {(dataIni || dataFim) && <button onClick={limparDatas} style={btnMini}>Limpar período</button>}
-        <div style={{ flex: 1 }} />
-        {filtroAtivo && (
-          <button onClick={limparTudo} style={{ ...btnMini, borderColor: accent, color: accent, padding: "6px 14px", fontSize: 12 }}>
-            Limpar todos os filtros
-          </button>
-        )}
-      </div>
-
-      {/* ---- SETUPS | GRÁFICO | CALENDÁRIO ---- */}
-      <div style={{ display: "flex", gap: 14, alignItems: "stretch", marginBottom: 14 }}>
-
-        <div style={{ ...card, width: 250, flexShrink: 0, display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <span style={tituloCard}>Setups</span>
-            <span style={{ fontSize: 10.5, color: th.textMuted, fontWeight: 600 }}>{sel.length}/{listaSetups.length}</span>
+        <div style={{ position: "relative" }}>
+          <div onClick={() => { setPainelSetups(v => !v); setPainelDatas(false); }}
+            style={{ ...controle, borderColor: filtroSetupsAtivo ? accent : th.border2, color: filtroSetupsAtivo ? accent : th.text }}>
+            <span>{sel.length === listaSetups.length ? "Todos os setups" : `${sel.length} de ${listaSetups.length} setups`}</span>
+            <span style={{ fontSize: 10, color: th.textMuted }}>▾</span>
           </div>
-          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-            <button onClick={marcarTodos} style={{ ...btnMini, flex: 1 }}>Limpar</button>
-            <button onClick={desmarcarTodos} style={{ ...btnMini, flex: 1 }}>Desmarcar</button>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", maxHeight: 330, display: "flex", flexDirection: "column", gap: 10 }}>
-            {GRUPOS.map(g => {
-              const doGrupo = listaSetups.filter(s => grupoDoSetup(s) === g);
-              if (!doGrupo.length) return null;
-              return (
-                <div key={g}>
-                  <div onClick={() => toggleGrupo(g)}
-                    style={{ fontSize: 9.5, fontWeight: 800, color: accent, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5, cursor: "pointer" }}>
-                    {g.replace("Operacional ", "")}
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                    {doGrupo.map(s => {
-                      const on = sel.indexOf(s) >= 0;
-                      return (
-                        <div key={s} onClick={() => toggleSetup(s)}
-                          style={{ display: "flex", alignItems: "flex-start", gap: 7, cursor: "pointer" }}>
-                          <div style={{
-                            width: 13, height: 13, borderRadius: 4, flexShrink: 0, marginTop: 1,
-                            border: `2px solid ${on ? accent : th.border2}`,
-                            background: on ? accent : "transparent",
-                          }} />
-                          <span style={{ fontSize: 11.5, color: on ? th.text : th.textMuted, lineHeight: 1.3 }}>{s}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+
+          {painelSetups && (
+            <>
+              <div onClick={() => setPainelSetups(false)} style={{ position: "fixed", inset: 0, zIndex: 39 }} />
+              <div style={{
+                position: "absolute", top: 44, left: 0, zIndex: 40, width: 320,
+                background: th.cardBg, border: `1px solid ${th.border2}`, borderRadius: 12,
+                boxShadow: "0 12px 36px rgba(0,0,0,0.28)", padding: "12px 14px",
+                maxHeight: 420, overflowY: "auto",
+              }}>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                  <button onClick={marcarTodos} style={{ ...btnTexto, color: accent, fontWeight: 700 }}>Marcar todos</button>
+                  <button onClick={desmarcarTodos} style={btnTexto}>Desmarcar todos</button>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div style={{ ...card, flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <span style={tituloCard}>Resultado acumulado</span>
-            <span style={{ fontSize: 15, fontWeight: 800, color: geral.financTotal >= 0 ? verde : verm }}>{fmtR$(geral.financTotal)}</span>
-          </div>
-          {serie.length < 2 ? (
-            <div style={{ padding: "60px 0", textAlign: "center", color: th.textMuted, fontSize: 12 }}>Dados insuficientes no recorte</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={185}>
-              <LineChart data={serie} margin={{ top: 5, right: 16, left: 6, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={th.border} />
-                <XAxis dataKey="data" tick={{ fontSize: 10.5, fill: th.textMuted }} tickFormatter={d => d.slice(5)} minTickGap={22} />
-                <YAxis tick={{ fontSize: 10.5, fill: th.textMuted }} tickFormatter={v => `${v}`} width={44} />
-                <Tooltip
-                  contentStyle={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 8, fontSize: 12, color: th.text }}
-                  itemStyle={{ color: th.text }} labelStyle={{ color: th.text }}
-                  formatter={v => [fmtR$(v), "Acumulado"]} labelFormatter={l => `Data: ${l}`} />
-                <ReferenceLine y={0} stroke={th.textMuted} strokeDasharray="4 4" />
-                <Line type="monotone" dataKey="valor" stroke={accent} strokeWidth={2} dot={false} name="Acumulado" connectNulls />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        <div style={{ ...card, width: 420, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: th.text }}>{MESES_PT[mesAtivo]} {anoAtivo}</span>
-            <button onClick={() => navegarMes(-1)} style={{ ...btnMini, padding: "2px 9px" }}>‹</button>
-            <button onClick={() => navegarMes(1)} style={{ ...btnMini, padding: "2px 9px" }}>›</button>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 4 }}>
-            {DIAS_SEM.map(d => (
-              <div key={d} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, color: th.textMuted }}>{d}</div>
-            ))}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {semanas.map((sem, si) => (
-              <div key={si} style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
-                {sem.map((dia, di) => {
-                  if (dia === null) return <div key={`v${di}`} />;
-                  const d = porDiaMes[dia];
-                  let bg = "transparent", bd = `1px dashed ${th.border2}`, cor = dark ? "rgba(255,255,255,0.25)" : "#c2c2c8";
-                  if (d) {
-                    bg = d.financ >= 0 ? verdeBg : vermBg;
-                    bd = `1px solid ${d.financ >= 0 ? verde + "66" : verm + "66"}`;
-                    cor = th.textMuted;
-                  }
+                {GRUPOS.map(g => {
+                  const doGrupo = listaSetups.filter(s => grupoDoSetup(s) === g.id);
+                  if (!doGrupo.length) return null;
+                  const todosOn = doGrupo.every(s => sel.indexOf(s) >= 0);
                   return (
-                    <div key={dia} title={d ? `${d.n} trade(s)` : undefined}
-                      style={{
-                        background: bg, border: bd, borderRadius: 8, minHeight: 54,
-                        padding: "4px 5px", boxSizing: "border-box", display: "flex",
-                        flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
-                      }}>
-                      <span style={{ fontSize: 10.5, fontWeight: 700, color: cor }}>{dia}</span>
-                      {d && (
-                        <>
-                          <span style={{ fontSize: 11, fontWeight: 800, color: d.financ >= 0 ? verde : verm }}>
-                            {d.financ >= 0 ? "+" : "−"}{Math.abs(d.financ).toFixed(0)}
-                          </span>
-                          <span style={{ fontSize: 8.5, color: th.textMuted }}>{d.n} op</span>
-                        </>
-                      )}
+                    <div key={g.id} style={{ marginBottom: 14 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+                        <span onClick={() => toggleGrupo(g.id)} style={{ ...grupoLabel, cursor: "pointer" }}>
+                          {todosOn ? "▪ " : "▫ "}{g.curto}
+                        </span>
+                        <span onClick={() => soGrupo(g.id)} style={{ fontSize: 10.5, color: th.textMuted, cursor: "pointer" }}>só este</span>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {doGrupo.map(s => {
+                          const on = sel.indexOf(s) >= 0;
+                          return (
+                            <div key={s} onClick={() => toggleSetup(s)}
+                              style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
+                              <div style={{
+                                width: 14, height: 14, borderRadius: 4, flexShrink: 0, marginTop: 1,
+                                border: `2px solid ${on ? accent : th.border2}`,
+                                background: on ? accent : "transparent",
+                              }} />
+                              <span style={{ fontSize: 12.5, color: on ? th.text : th.textMuted, lineHeight: 1.3 }}>{s}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })}
               </div>
-            ))}
+            </>
+          )}
+        </div>
+
+        <div style={{ position: "relative" }}>
+          <div onClick={() => { setPainelDatas(v => !v); setPainelSetups(false); }}
+            style={{ ...controle, borderColor: filtroDatasAtivo ? accent : th.border2, color: filtroDatasAtivo ? accent : th.text }}>
+            <span>{filtroDatasAtivo ? `${dataIni || "início"} → ${dataFim || "hoje"}` : "Todo o período"}</span>
+            <span style={{ fontSize: 10, color: th.textMuted }}>▾</span>
           </div>
+
+          {painelDatas && (
+            <>
+              <div onClick={() => setPainelDatas(false)} style={{ position: "fixed", inset: 0, zIndex: 39 }} />
+              <div style={{
+                position: "absolute", top: 44, left: 0, zIndex: 40,
+                background: th.cardBg, border: `1px solid ${th.border2}`, borderRadius: 12,
+                boxShadow: "0 12px 36px rgba(0,0,0,0.28)", padding: "14px 16px",
+                display: "flex", flexDirection: "column", gap: 10,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <span style={{ fontSize: 12, color: th.textSub, width: 26 }}>De</span>
+                  <input type="date" value={dataIni} onChange={e => setDataIni(e.target.value)} style={inputData} />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <span style={{ fontSize: 12, color: th.textSub, width: 26 }}>Até</span>
+                  <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} style={inputData} />
+                </div>
+                <button onClick={limparDatas} style={{ ...btnTexto, textAlign: "left" }}>Limpar período</button>
+              </div>
+            </>
+          )}
         </div>
+
+        {filtroSetupsAtivo && GRUPOS.map(g => {
+          const doGrupo = listaSetups.filter(s => grupoDoSetup(s) === g.id);
+          const ativos = doGrupo.filter(s => sel.indexOf(s) >= 0).length;
+          if (!ativos || ativos === 0) return null;
+          return (
+            <span key={g.id} onClick={() => toggleGrupo(g.id)}
+              style={{
+                fontSize: 11.5, fontWeight: 600, color: accent, background: th.navActiveBg,
+                border: `1px solid ${accent}44`, borderRadius: 20, padding: "5px 12px",
+                cursor: "pointer", whiteSpace: "nowrap",
+              }}>
+              {g.curto} {ativos}/{doGrupo.length} ×
+            </span>
+          );
+        })}
+
+        <div style={{ flex: 1 }} />
+        {filtroAtivo && <button onClick={limparTudo} style={{ ...btnTexto, color: accent, fontWeight: 700 }}>Limpar todos os filtros</button>}
       </div>
 
-      {/* ---- DESEMPENHO POR SETUP ---- */}
-      <div style={{ ...card, marginBottom: 14, overflowX: "auto" }}>
-        <div style={{ ...tituloCard, marginBottom: 10 }}>Desempenho por setup</div>
-        {blocosDesempenho.length === 0 ? (
-          <div style={{ padding: "24px 0", textAlign: "center", color: th.textMuted, fontSize: 12 }}>Nenhum trade no recorte.</div>
+      {/* ═══ GRÁFICO ═══ */}
+      <div style={{ marginBottom: 30 }}>
+        {serie.length < 2 ? (
+          <div style={{ padding: "70px 0", textAlign: "center", color: th.textMuted, fontSize: 12.5, background: sutil, borderRadius: 12 }}>
+            Dados insuficientes no recorte atual
+          </div>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${th.border}` }}>
-                <th style={{ ...thS, textAlign: "left" }}>Setup</th>
-                {["n", "Gain", "Loss", "BE", "Acerto", "Resultado", "Méd. gain", "Méd. loss", "RxR", "Téc. OK", "Desist."].map(h => (
-                  <th key={h} style={thS}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {blocosDesempenho.map(b => (
-                <Fragment key={b.grupo}>
-                  <tr>
-                    <td colSpan={12} style={{
-                      fontSize: 9.5, fontWeight: 800, color: accent, textTransform: "uppercase",
-                      letterSpacing: "0.07em", padding: "14px 8px 5px",
-                    }}>{b.grupo}</td>
-                  </tr>
-                  {b.linhas.map(s => (
-                    <tr key={s.nome} style={{ borderBottom: `1px solid ${th.border}` }}>
-                      <td style={{ ...tdS, textAlign: "left", fontWeight: 600 }}>{s.nome}</td>
-                      <td style={{ ...tdS, color: th.textMuted }}>{s.trades}</td>
-                      <td style={{ ...tdS, color: verde }}>{s.gains}</td>
-                      <td style={{ ...tdS, color: verm }}>{s.losses}</td>
-                      <td style={{ ...tdS, color: th.textMuted }}>{s.breakevens}</td>
-                      <td style={tdS}>{s.taxaAcerto === null ? "—" : `${s.taxaAcerto}%`}</td>
-                      <td style={{ ...tdS, fontWeight: 700, color: s.financTotal >= 0 ? verde : verm }}>{fmtR$(s.financTotal)}</td>
-                      <td style={tdS}>{s.mediaGain === null ? "—" : s.mediaGain.toFixed(0)}</td>
-                      <td style={tdS}>{s.mediaLoss === null ? "—" : s.mediaLoss.toFixed(0)}</td>
-                      <td style={tdS}>{s.rxr === null ? "—" : s.rxr}</td>
-                      <td style={tdS}>
-                        {s.tecPct === null ? "—" : `${s.tecPct}%`}
-                        {(s.tecSimD > 0 || s.tecNao > 0) && (
-                          <span style={{ fontSize: 9.5, color: th.textMuted }}> ({s.tecSimD}★ {s.tecNao}✕)</span>
-                        )}
-                      </td>
-                      <td style={tdS}>{s.desist || "—"}</td>
-                    </tr>
-                  ))}
-                  <tr style={{ borderBottom: `2px solid ${th.border2}`, background: dark ? "rgba(255,255,255,0.03)" : th.resumeBg }}>
-                    <td style={{ ...tdTot, textAlign: "left" }}>Total do grupo</td>
-                    <td style={tdTot}>{b.total.trades}</td>
-                    <td style={{ ...tdTot, color: verde }}>{b.total.gains}</td>
-                    <td style={{ ...tdTot, color: verm }}>{b.total.losses}</td>
-                    <td style={tdTot}>{b.total.breakevens}</td>
-                    <td style={tdTot}>{b.total.taxaAcerto === null ? "—" : `${b.total.taxaAcerto}%`}</td>
-                    <td style={{ ...tdTot, color: b.total.financTotal >= 0 ? verde : verm }}>{fmtR$(b.total.financTotal)}</td>
-                    <td style={tdTot}>{b.total.mediaGain === null ? "—" : b.total.mediaGain.toFixed(0)}</td>
-                    <td style={tdTot}>{b.total.mediaLoss === null ? "—" : b.total.mediaLoss.toFixed(0)}</td>
-                    <td style={tdTot}>{b.total.rxr === null ? "—" : b.total.rxr}</td>
-                    <td style={tdTot}>{b.total.tecPct === null ? "—" : `${b.total.tecPct}%`}</td>
-                    <td style={tdTot}>{b.total.desist || "—"}</td>
-                  </tr>
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
+          <ResponsiveContainer width="100%" height={210}>
+            <LineChart data={serie} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={linha} vertical={false} />
+              <XAxis dataKey="data" tick={{ fontSize: 10.5, fill: th.textMuted }} tickFormatter={d => d.slice(8, 10) + "/" + d.slice(5, 7)}
+                minTickGap={30} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10.5, fill: th.textMuted }} width={46} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ background: th.surface, border: `1px solid ${th.border2}`, borderRadius: 9, fontSize: 12.5, color: th.text }}
+                itemStyle={{ color: th.text }} labelStyle={{ color: th.textMuted, marginBottom: 4 }}
+                formatter={v => [fmtR$(v), "Acumulado"]} labelFormatter={l => l.split("-").reverse().join("/")} />
+              <ReferenceLine y={0} stroke={th.textMuted} strokeDasharray="4 4" />
+              <Line type="monotone" dataKey="valor" stroke={accent} strokeWidth={2} dot={false} activeDot={{ r: 4 }} connectNulls />
+            </LineChart>
+          </ResponsiveContainer>
         )}
-        <div style={{ fontSize: 10, color: th.textMuted, marginTop: 8 }}>
-          RxR e médias aparecem como "—" quando falta gain ou loss no recorte. ★ = "Sim*" · ✕ = "Não".
+      </div>
+
+      {/* ═══ CALENDÁRIO ═══ */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+          <span style={secao}>{MESES_PT[mesAtivo]} {anoAtivo}</span>
+          <div style={{ display: "flex", gap: 5 }}>
+            <button onClick={() => navegarMes(-1)} style={{ ...btnTexto, border: `1px solid ${th.border2}`, borderRadius: 7, padding: "2px 10px", color: th.textSub }}>‹</button>
+            <button onClick={() => navegarMes(1)} style={{ ...btnTexto, border: `1px solid ${th.border2}`, borderRadius: 7, padding: "2px 10px", color: th.textSub }}>›</button>
+          </div>
+          <span style={legenda}>
+            {nMesCal ? `${nMesCal} trades · ${fmtR$(totalMesCal)}` : "sem replays neste mês"}
+          </span>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 5, marginBottom: 5 }}>
+          {DIAS_SEM.map(d => (
+            <div key={d} style={{ fontSize: 10.5, color: th.textMuted, paddingLeft: 3 }}>{d}</div>
+          ))}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {semanas.map((sem, si) => (
+            <div key={si} style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 5 }}>
+              {sem.map((dia, di) => {
+                if (dia === null) return <div key={`v${di}`} />;
+                const d = porDiaMes[dia];
+                const pos = d && d.financ >= 0;
+                return (
+                  <div key={dia}
+                    style={{
+                      background: d ? (pos ? verdeBg : vermBg) : sutil,
+                      border: d ? `1px solid ${(pos ? verde : verm)}33` : "1px solid transparent",
+                      borderRadius: 9, minHeight: 58, padding: "7px 9px",
+                      boxSizing: "border-box", display: "flex", flexDirection: "column",
+                    }}>
+                    <span style={{ fontSize: 11, color: th.textMuted, fontVariantNumeric: "tabular-nums" }}>{dia}</span>
+                    {d && (
+                      <div style={{ marginTop: "auto" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: pos ? verde : verm, fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>
+                          {pos ? "+" : "−"}{Math.abs(d.financ).toFixed(0)}
+                        </div>
+                        <div style={{ fontSize: 10, color: th.textMuted }}>{d.n} op</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ---- MEP / MEN ---- */}
-      <div style={{ ...card, marginBottom: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
-          <span style={tituloCard}>MEP / MEN <span style={{ fontWeight: 600, color: th.textMuted }}>(pontos)</span></span>
-          <div style={{ display: "flex", gap: 4, background: th.resumeBg, border: `1px solid ${th.border2}`, borderRadius: 8, padding: 3 }}>
+      {/* ═══ DESEMPENHO POR SETUP ═══ */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={secao}>Desempenho por setup</div>
+        <div style={{ ...legenda, marginTop: 3, marginBottom: 14 }}>
+          RxR e médias ficam em "—" quando falta gain ou loss no recorte · ★ técnica "Sim*" · ✕ técnica "Não"
+        </div>
+
+        {blocosDesempenho.length === 0 ? (
+          <div style={{ padding: "34px 0", textAlign: "center", color: th.textMuted, fontSize: 12.5, background: sutil, borderRadius: 12 }}>
+            Nenhum trade no recorte atual
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 860 }}>
+              <thead>
+                <tr>
+                  <th style={{ ...thS, textAlign: "left", paddingLeft: 0 }}>Setup</th>
+                  <th style={thS}>n</th>
+                  <th style={thS}>G</th>
+                  <th style={thS}>L</th>
+                  <th style={thS}>BE</th>
+                  <th style={thS}>Acerto</th>
+                  <th style={thS}>Resultado</th>
+                  <th style={{ ...thS, textAlign: "left", paddingLeft: 4 }}></th>
+                  <th style={thS}>Méd. G</th>
+                  <th style={thS}>Méd. L</th>
+                  <th style={thS}>RxR</th>
+                  <th style={thS}>Téc.</th>
+                  <th style={{ ...thS, paddingRight: 0 }}>Desist.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {blocosDesempenho.map(b => (
+                  <Fragment key={b.grupo.id}>
+                    <tr>
+                      <td colSpan={13} style={{ ...grupoLabel, padding: "20px 0 8px" }}>{b.grupo.id}</td>
+                    </tr>
+                    {b.linhas.map(s => (
+                      <tr key={s.nome} style={{ borderTop: `1px solid ${linha}` }}>
+                        <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, fontWeight: 600 }}>{s.nome}</td>
+                        <td style={{ ...tdS, color: th.textMuted }}>{s.trades}</td>
+                        <td style={{ ...tdS, color: verde }}>{s.gains || "·"}</td>
+                        <td style={{ ...tdS, color: verm }}>{s.losses || "·"}</td>
+                        <td style={{ ...tdS, color: th.textMuted }}>{s.breakevens || "·"}</td>
+                        <td style={tdS}>{s.taxaAcerto === null ? "—" : `${s.taxaAcerto}%`}</td>
+                        <td style={{ ...tdS, fontWeight: 700, color: s.financTotal >= 0 ? verde : verm }}>{fmtR$(s.financTotal)}</td>
+                        <td style={{ ...tdS, textAlign: "left", padding: "9px 4px" }}>
+                          <Barra valor={s.financTotal} max={maxAbsSetup} cor={s.financTotal >= 0 ? verde : verm} />
+                        </td>
+                        <td style={{ ...tdS, color: th.textSub }}>{s.mediaGain === null ? "—" : s.mediaGain.toFixed(0)}</td>
+                        <td style={{ ...tdS, color: th.textSub }}>{s.mediaLoss === null ? "—" : s.mediaLoss.toFixed(0)}</td>
+                        <td style={tdS}>{s.rxr === null ? "—" : s.rxr.toFixed(2).replace(".", ",")}</td>
+                        <td style={tdS}>
+                          {s.tecPct === null ? "—" : `${s.tecPct}%`}
+                          {(s.tecSimD > 0 || s.tecNao > 0) && (
+                            <span style={{ fontSize: 10, color: th.textMuted }}> {s.tecSimD > 0 ? `${s.tecSimD}★` : ""} {s.tecNao > 0 ? `${s.tecNao}✕` : ""}</span>
+                          )}
+                        </td>
+                        <td style={{ ...tdS, paddingRight: 0, color: th.textMuted }}>{s.desist || "·"}</td>
+                      </tr>
+                    ))}
+                    <tr style={{ borderTop: `1px solid ${th.border2}`, background: sutil }}>
+                      <td style={{ ...tdTot, textAlign: "left", paddingLeft: 0 }}>Total {b.grupo.curto}</td>
+                      <td style={tdTot}>{b.total.trades}</td>
+                      <td style={{ ...tdTot, color: verde }}>{b.total.gains || "·"}</td>
+                      <td style={{ ...tdTot, color: verm }}>{b.total.losses || "·"}</td>
+                      <td style={tdTot}>{b.total.breakevens || "·"}</td>
+                      <td style={tdTot}>{b.total.taxaAcerto === null ? "—" : `${b.total.taxaAcerto}%`}</td>
+                      <td style={{ ...tdTot, color: b.total.financTotal >= 0 ? verde : verm }}>{fmtR$(b.total.financTotal)}</td>
+                      <td />
+                      <td style={tdTot}>{b.total.mediaGain === null ? "—" : b.total.mediaGain.toFixed(0)}</td>
+                      <td style={tdTot}>{b.total.mediaLoss === null ? "—" : b.total.mediaLoss.toFixed(0)}</td>
+                      <td style={tdTot}>{b.total.rxr === null ? "—" : b.total.rxr.toFixed(2).replace(".", ",")}</td>
+                      <td style={tdTot}>{b.total.tecPct === null ? "—" : `${b.total.tecPct}%`}</td>
+                      <td style={{ ...tdTot, paddingRight: 0 }}>{b.total.desist || "·"}</td>
+                    </tr>
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ MEP / MEN ═══ */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, flexWrap: "wrap", marginBottom: 14 }}>
+          <div>
+            <div style={secao}>MEP / MEN <span style={{ fontWeight: 400, color: th.textMuted, fontSize: 13 }}>em pontos</span></div>
+            <div style={{ ...legenda, marginTop: 3 }}>
+              Breakevens sempre fora · MEP alto nos perdedores indica alvo mal calibrado, não leitura errada
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 3, background: sutil, border: `1px solid ${th.border2}`, borderRadius: 9, padding: 3 }}>
             {[["todos", "Todos"], ["vencedores", "Vencedores"], ["perdedores", "Perdedores"]].map(([v, lb]) => (
               <button key={v} onClick={() => setFiltroMep(v)} style={{
                 background: filtroMep === v ? accent : "transparent",
                 color: filtroMep === v ? "#fff" : th.textMuted,
-                border: "none", borderRadius: 6, padding: "5px 12px",
-                fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                border: "none", borderRadius: 7, padding: "6px 13px",
+                fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
               }}>{lb}</button>
             ))}
           </div>
         </div>
 
         {blocosMep.length === 0 ? (
-          <div style={{ padding: "16px 0", textAlign: "center", color: th.textMuted, fontSize: 12 }}>Sem trades decididos no recorte.</div>
+          <div style={{ padding: "34px 0", textAlign: "center", color: th.textMuted, fontSize: 12.5, background: sutil, borderRadius: 12 }}>
+            Sem trades decididos no recorte atual
+          </div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ borderBottom: `1px solid ${th.border}` }}>
-                <th style={{ ...thS, textAlign: "left" }}>Setup</th>
+              <tr>
+                <th style={{ ...thS, textAlign: "left", paddingLeft: 0 }}>Setup</th>
                 <th style={thS}>n</th>
                 <th style={thS}>MEP médio</th>
-                <th style={thS}>MEN médio</th>
+                <th style={{ ...thS, paddingRight: 0 }}>MEN médio</th>
               </tr>
             </thead>
             <tbody>
               {blocosMep.map(b => (
-                <Fragment key={b.grupo}>
-                  <tr>
-                    <td colSpan={4} style={{
-                      fontSize: 9.5, fontWeight: 800, color: accent, textTransform: "uppercase",
-                      letterSpacing: "0.07em", padding: "14px 8px 5px",
-                    }}>{b.grupo}</td>
-                  </tr>
+                <Fragment key={b.grupo.id}>
+                  <tr><td colSpan={4} style={{ ...grupoLabel, padding: "20px 0 8px" }}>{b.grupo.id}</td></tr>
                   {b.linhas.map(l => (
-                    <tr key={l.nome} style={{ borderBottom: `1px solid ${th.border}` }}>
-                      <td style={{ ...tdS, textAlign: "left" }}>{l.nome}</td>
+                    <tr key={l.nome} style={{ borderTop: `1px solid ${linha}` }}>
+                      <td style={{ ...tdS, textAlign: "left", paddingLeft: 0 }}>{l.nome}</td>
                       <td style={{ ...tdS, color: th.textMuted }}>{l.n}</td>
-                      <td style={{ ...tdS, fontWeight: 700 }}>{l.mep}</td>
-                      <td style={{ ...tdS, fontWeight: 700 }}>{l.men}</td>
+                      <td style={{ ...tdS, fontWeight: 600 }}>{l.mep}</td>
+                      <td style={{ ...tdS, fontWeight: 600, paddingRight: 0 }}>{l.men}</td>
                     </tr>
                   ))}
-                  <tr style={{ borderBottom: `2px solid ${th.border2}`, background: dark ? "rgba(255,255,255,0.03)" : th.resumeBg }}>
-                    <td style={{ ...tdTot, textAlign: "left" }}>Total do grupo</td>
+                  <tr style={{ borderTop: `1px solid ${th.border2}`, background: sutil }}>
+                    <td style={{ ...tdTot, textAlign: "left", paddingLeft: 0 }}>Total {b.grupo.curto}</td>
                     <td style={tdTot}>{b.total.n}</td>
                     <td style={tdTot}>{b.total.mep === null ? "—" : b.total.mep}</td>
-                    <td style={tdTot}>{b.total.men === null ? "—" : b.total.men}</td>
+                    <td style={{ ...tdTot, paddingRight: 0 }}>{b.total.men === null ? "—" : b.total.men}</td>
                   </tr>
                 </Fragment>
               ))}
               <tr style={{ borderTop: `2px solid ${accent}55` }}>
-                <td style={{ ...tdTot, textAlign: "left", color: accent, paddingTop: 12 }}>Total geral</td>
-                <td style={{ ...tdTot, color: accent, paddingTop: 12 }}>{mepFiltrado.length}</td>
-                <td style={{ ...tdTot, color: accent, paddingTop: 12 }}>{mepGeral === null ? "—" : mepGeral}</td>
-                <td style={{ ...tdTot, color: accent, paddingTop: 12 }}>{menGeral === null ? "—" : menGeral}</td>
+                <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, paddingTop: 13, fontWeight: 800, color: accent }}>Total geral</td>
+                <td style={{ ...tdS, paddingTop: 13, fontWeight: 800, color: accent }}>{mepFiltrado.length}</td>
+                <td style={{ ...tdS, paddingTop: 13, fontWeight: 800, color: accent }}>{mepGeral === null ? "—" : mepGeral}</td>
+                <td style={{ ...tdS, paddingTop: 13, paddingRight: 0, fontWeight: 800, color: accent }}>{menGeral === null ? "—" : menGeral}</td>
               </tr>
             </tbody>
           </table>
         )}
-        <div style={{ fontSize: 10, color: th.textMuted, marginTop: 8 }}>
-          Breakevens ficam sempre fora desta tabela. MEP alto nos perdedores indica saída/alvo mal calibrado, não leitura errada.
-        </div>
       </div>
 
-      {/* ---- ERROS ---- */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
-        {[["Top 5 erros técnicos", top5Tec], ["Top 5 erros emocionais", top5Emo]].map(([titulo, lista]) => (
-          <div key={titulo} style={card}>
-            <div style={{ ...tituloCard, marginBottom: 10 }}>{titulo}</div>
+      {/* ═══ ERROS ═══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 34, marginBottom: 32 }}>
+        {[["Erros técnicos", top5Tec], ["Erros emocionais", top5Emo]].map(([titulo, lista]) => (
+          <div key={titulo}>
+            <div style={secao}>{titulo}</div>
+            <div style={{ ...legenda, marginTop: 3, marginBottom: 12 }}>os 5 mais caros no recorte</div>
             {lista.length === 0 ? (
-              <div style={{ fontSize: 12, color: th.textMuted, padding: "12px 0" }}>Nenhum erro registrado no recorte.</div>
+              <div style={{ fontSize: 12.5, color: th.textMuted, padding: "16px 0" }}>Nenhum registrado.</div>
             ) : lista.map(e => (
-              <div key={e.nome} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: `1px solid ${th.border}` }}>
-                <span style={{ fontSize: 12, color: th.text, flex: 1, minWidth: 0 }}>{e.nome}</span>
-                <span style={{ fontSize: 10.5, color: th.textMuted, flexShrink: 0 }}>{e.count}×</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: verm, flexShrink: 0, minWidth: 62, textAlign: "right" }}>{fmtR$(e.custo)}</span>
+              <div key={e.nome} style={{
+                display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                gap: 12, padding: "10px 0", borderTop: `1px solid ${linha}`,
+              }}>
+                <span style={{ fontSize: 13, color: th.text, flex: 1, minWidth: 0, lineHeight: 1.35 }}>{e.nome}</span>
+                <span style={{ fontSize: 11, color: th.textMuted, flexShrink: 0 }}>{e.count}×</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: verm, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{fmtR$(e.custo)}</span>
               </div>
             ))}
           </div>
         ))}
       </div>
 
-      {/* ---- TRADES 10/10 ---- */}
-      <div style={{ ...card, borderLeft: `3px solid ${accent}` }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={tituloCard}>Trades 10/10</span>
-          <span style={{ fontSize: 13, fontWeight: 800, color: accent }}>{lista10.length}</span>
+      {/* ═══ TRADES 10/10 ═══ */}
+      <div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 3 }}>
+          <span style={secao}>Trades 10/10</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: accent }}>{lista10.length}</span>
         </div>
+        <div style={{ ...legenda, marginBottom: 12 }}>execução que você marcou como impecável, agrupada por setup</div>
+
         {linhas10.length === 0 ? (
-          <div style={{ fontSize: 12, color: th.textMuted, padding: "12px 0" }}>Nenhum trade marcado como 10/10 no recorte.</div>
+          <div style={{ padding: "30px 0", textAlign: "center", color: th.textMuted, fontSize: 12.5, background: sutil, borderRadius: 12 }}>
+            Nenhum trade 10/10 no recorte atual
+          </div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ borderBottom: `1px solid ${th.border}` }}>
-                <th style={{ ...thS, textAlign: "left" }}>Setup</th>
+              <tr>
+                <th style={{ ...thS, textAlign: "left", paddingLeft: 0 }}>Setup</th>
                 <th style={thS}>n</th>
                 <th style={thS}>R$ médio</th>
                 <th style={thS}>MEP médio</th>
-                <th style={thS}>MEN médio</th>
+                <th style={{ ...thS, paddingRight: 0 }}>MEN médio</th>
               </tr>
             </thead>
             <tbody>
               {linhas10.map(l => (
-                <tr key={l.nome} style={{ borderBottom: `1px solid ${th.border}` }}>
-                  <td style={{ ...tdS, textAlign: "left", fontWeight: 600 }}>{l.nome}</td>
+                <tr key={l.nome} style={{ borderTop: `1px solid ${linha}` }}>
+                  <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, fontWeight: 600 }}>{l.nome}</td>
                   <td style={{ ...tdS, color: th.textMuted }}>{l.n}</td>
                   <td style={{ ...tdS, fontWeight: 700, color: l.mediaFinanc >= 0 ? verde : verm }}>{fmtR$(l.mediaFinanc)}</td>
                   <td style={tdS}>{l.mep}</td>
-                  <td style={tdS}>{l.men}</td>
+                  <td style={{ ...tdS, paddingRight: 0 }}>{l.men}</td>
                 </tr>
               ))}
               {total10 && (
                 <tr style={{ borderTop: `2px solid ${accent}55` }}>
-                  <td style={{ ...tdTot, textAlign: "left", color: accent, paddingTop: 12 }}>Total</td>
-                  <td style={{ ...tdTot, color: accent, paddingTop: 12 }}>{total10.n}</td>
-                  <td style={{ ...tdTot, color: accent, paddingTop: 12 }}>{fmtR$(total10.mediaFinanc)}</td>
-                  <td style={{ ...tdTot, color: accent, paddingTop: 12 }}>{total10.mep}</td>
-                  <td style={{ ...tdTot, color: accent, paddingTop: 12 }}>{total10.men}</td>
+                  <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, paddingTop: 13, fontWeight: 800, color: accent }}>Total</td>
+                  <td style={{ ...tdS, paddingTop: 13, fontWeight: 800, color: accent }}>{total10.n}</td>
+                  <td style={{ ...tdS, paddingTop: 13, fontWeight: 800, color: accent }}>{fmtR$(total10.mediaFinanc)}</td>
+                  <td style={{ ...tdS, paddingTop: 13, fontWeight: 800, color: accent }}>{total10.mep}</td>
+                  <td style={{ ...tdS, paddingTop: 13, paddingRight: 0, fontWeight: 800, color: accent }}>{total10.men}</td>
                 </tr>
               )}
             </tbody>
