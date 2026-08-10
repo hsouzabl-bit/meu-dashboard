@@ -430,10 +430,6 @@ const registrado = temAlgo(d);
                       )}
                     </div>
                   );
-
-                
-                    </div>
-                  );
                 })}
               </div>
             ))}
