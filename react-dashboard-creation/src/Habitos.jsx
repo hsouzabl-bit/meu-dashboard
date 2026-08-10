@@ -391,27 +391,47 @@ export default function Habitos({ th }){
                   const ok = completou(d);
                   const parcial = temAlgo(d) && !ok;
 
-                  let bg = sutil, bd = "1px solid transparent", txt = th.textMuted;
-                  if(ok){ bg = verdeBg; bd = `1px solid ${verde}33`; }
-                  else if(parcial){ bg = vermBg; bd = `1px solid ${verm}33`; }
+const registrado = temAlgo(d);
+                  let bg = th.cardBg, bd = `1px solid ${th.border}`, txt = th.textSub;
+                  if(ok){ bg = verdeBg; bd = `2px solid ${verde}55`; txt = verde; }
+                  else if(parcial){ bg = vermBg; bd = `2px solid ${verm}55`; txt = verm; }
                   else if(futuro || antes){ bg = "transparent"; bd = `1px dashed ${th.border2}`; txt = vazioTxt; }
 
                   return (
                     <div key={dia} onClick={()=>!futuro && !antes && abrirDia(chave)}
-                    style={{ background:bg, border:bd, borderRadius:9, minHeight:86, padding:"8px 9px",
-        boxSizing:"border-box", cursor:(futuro||antes)?"default":"pointer",
-                        outline: diaSel===chave ? `2px solid ${accent}` : "none", display:"flex", flexDirection:"column" }}>
-                      <span style={{ fontSize:11.5, color:txt, fontVariantNumeric:"tabular-nums" }}>{dia}</span>
-                      {temAlgo(d) && (
-                        <div style={{ marginTop:"auto", display:"flex", flexDirection:"column", gap:0 }}>
-                          {HABITOS.map(h=>(
-                            <span key={h.campo} style={{
-                              fontSize:12, lineHeight:1.4, fontVariantNumeric:"tabular-nums",
-                              color: d[h.campo] >= 1 ? th.text : verm,
-                            }}>{fmtNum(d[h.campo])}<span style={{ color:th.textMuted, fontSize:8.5 }}>{h.label[0].toLowerCase()}</span></span>
-                          ))}
-                        </div>
+                      style={{ background:bg, border:bd, borderRadius:10, minHeight:96,
+                        boxSizing:"border-box", cursor:(futuro||antes)?"default":"pointer",
+                        outline: diaSel===chave ? `2px solid ${accent}` : "none",
+                        display:"flex", flexDirection:"column", overflow:"hidden",
+                        transition:"background .15s, border-color .15s" }}>
+
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                        padding:"7px 10px 6px", gap:6 }}>
+                        <span style={{ fontSize:13, fontWeight:ok?800:600, color:txt, fontVariantNumeric:"tabular-nums" }}>{dia}</span>
+                        {registrado && (
+                          <span style={{ width:6, height:6, borderRadius:"50%", flexShrink:0,
+                            background: ok ? verde : verm, opacity:0.9 }}/>
+                        )}
+                      </div>
+
+                      {registrado && (
+                        <>
+                          <div style={{ height:1, background: ok ? `${verde}33` : `${verm}33` }}/>
+                          <div style={{ padding:"6px 10px 8px", display:"flex", flexDirection:"column", gap:2 }}>
+                            {HABITOS.map(h=>(
+                              <div key={h.campo} style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:6 }}>
+                                <span style={{ fontSize:10.5, color:th.textMuted }}>{h.labelLongo === "Horas de estudo" ? "Horas" : h.label}</span>
+                                <span style={{ fontSize:12.5, fontWeight:700, fontVariantNumeric:"tabular-nums",
+                                  color: d[h.campo] >= 1 ? th.text : verm }}>{fmtNum(d[h.campo])}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
                       )}
+                    </div>
+                  );
+
+                
                     </div>
                   );
                 })}
