@@ -16,6 +16,10 @@ const GRUPOS = [
   { id: "Operacional Al Brooks Técnico", curto: "Al Brooks" },
 ];
 
+function ehFQ(nome) {
+  return (nome || "").toLowerCase().trim() === "fq";
+}
+
 function grupoDoSetup(nome) {
   const n = (nome || "").toLowerCase().trim();
   if (n.indexOf("ots -") === 0 || n.indexOf("ots-") === 0) return "Operacional OTS";
@@ -201,7 +205,10 @@ export default function Replays({ th }) {
     const nomes = Object.keys(porSetup).filter(s => grupoDoSetup(s) === g.id);
     if (!nomes.length) return null;
     const linhas = nomes.map(nome => ({ nome, ...calcular(porSetup[nome]) }))
-      .sort((a, b) => b.financTotal - a.financTotal);
+      .sort((a, b) => {
+        if (ehFQ(a.nome) !== ehFQ(b.nome)) return ehFQ(a.nome) ? 1 : -1;
+        return b.financTotal - a.financTotal;
+      });
     const todosDoGrupo = [].concat(...nomes.map(n => porSetup[n]));
     return { grupo: g, linhas, total: calcular(todosDoGrupo) };
   }).filter(Boolean);
@@ -221,7 +228,11 @@ export default function Replays({ th }) {
   });
 
   const blocosMep = GRUPOS.map(g => {
-    const nomes = Object.keys(mepPorSetup).filter(s => grupoDoSetup(s) === g.id).sort();
+    const nomes = Object.keys(mepPorSetup).filter(s => grupoDoSetup(s) === g.id)
+      .sort((a, b) => {
+        if (ehFQ(a) !== ehFQ(b)) return ehFQ(a) ? 1 : -1;
+        return a.localeCompare(b);
+      });
     if (!nomes.length) return null;
     const linhas = nomes.map(nome => ({
       nome,
@@ -268,7 +279,10 @@ export default function Replays({ th }) {
       mep: media(l.map(t => t.mep)),
       men: media(l.map(t => t.men)),
     };
-  }).sort((a, b) => b.n - a.n);
+  }).sort((a, b) => {
+    if (ehFQ(a.nome) !== ehFQ(b.nome)) return ehFQ(a.nome) ? 1 : -1;
+    return b.n - a.n;
+  });
   const total10 = lista10.length ? {
     n: lista10.length,
     mediaFinanc: r2(lista10.reduce((a, t) => a + t.financ, 0) / lista10.length),
@@ -613,7 +627,18 @@ export default function Replays({ th }) {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 860 }}>
+            <table style={{ width: "100%", maxWidth: 1124, borderCollapse: "collapse", minWidth: 840, tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: 292 }} />
+                <col style={{ width: 46 }} /><col style={{ width: 46 }} /><col style={{ width: 46 }} /><col style={{ width: 46 }} />
+                <col style={{ width: 66 }} />
+                <col style={{ width: 96 }} />
+                <col style={{ width: 62 }} />
+                <col style={{ width: 68 }} /><col style={{ width: 68 }} />
+                <col style={{ width: 58 }} />
+                <col style={{ width: 84 }} />
+                <col style={{ width: 62 }} />
+              </colgroup>
               <thead>
                 <tr>
                   <th style={{ ...thS, textAlign: "left", paddingLeft: 0 }}>Setup</th>
@@ -638,8 +663,11 @@ export default function Replays({ th }) {
                       <td colSpan={13} style={{ ...grupoLabel, padding: "20px 0 8px" }}>{b.grupo.id}</td>
                     </tr>
                     {b.linhas.map(s => (
-                      <tr key={s.nome} style={{ borderTop: `1px solid ${linha}` }}>
-                        <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, fontWeight: 600 }}>{s.nome}</td>
+                      <tr key={s.nome} style={{ borderTop: `1px solid ${linha}`, opacity: ehFQ(s.nome) ? 0.42 : 1 }}>
+                        <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, fontWeight: 600, whiteSpace: "normal", lineHeight: 1.3, paddingRight: 18 }}>
+                          {s.nome}
+                          {ehFQ(s.nome) && <span style={{ fontSize: 10, color: th.textMuted, fontWeight: 400 }}> · encerrado</span>}
+                        </td>
                         <td style={{ ...tdS, color: th.textMuted }}>{s.trades}</td>
                         <td style={{ ...tdS, color: verde }}>{s.gains || "·"}</td>
                         <td style={{ ...tdS, color: verm }}>{s.losses || "·"}</td>
@@ -710,7 +738,11 @@ export default function Replays({ th }) {
             Sem trades decididos no recorte atual
           </div>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table style={{ width: "100%", maxWidth: 620, borderCollapse: "collapse", tableLayout: "fixed" }}>
+            <colgroup>
+              <col style={{ width: 268 }} /><col style={{ width: 52 }} />
+              <col style={{ width: 100 }} /><col style={{ width: 100 }} />
+            </colgroup>
             <thead>
               <tr>
                 <th style={{ ...thS, textAlign: "left", paddingLeft: 0 }}>Setup</th>
@@ -724,8 +756,8 @@ export default function Replays({ th }) {
                 <Fragment key={b.grupo.id}>
                   <tr><td colSpan={4} style={{ ...grupoLabel, padding: "20px 0 8px" }}>{b.grupo.id}</td></tr>
                   {b.linhas.map(l => (
-                    <tr key={l.nome} style={{ borderTop: `1px solid ${linha}` }}>
-                      <td style={{ ...tdS, textAlign: "left", paddingLeft: 0 }}>{l.nome}</td>
+                    <tr key={l.nome} style={{ borderTop: `1px solid ${linha}`, opacity: ehFQ(l.nome) ? 0.42 : 1 }}>
+                      <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, whiteSpace: "normal", lineHeight: 1.3, paddingRight: 18 }}>{l.nome}</td>
                       <td style={{ ...tdS, color: th.textMuted }}>{l.n}</td>
                       <td style={{ ...tdS, fontWeight: 600 }}>{l.mep}</td>
                       <td style={{ ...tdS, fontWeight: 600, paddingRight: 0 }}>{l.men}</td>
@@ -785,7 +817,11 @@ export default function Replays({ th }) {
             Nenhum trade 10/10 no recorte atual
           </div>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table style={{ width: "100%", maxWidth: 720, borderCollapse: "collapse", tableLayout: "fixed" }}>
+            <colgroup>
+              <col style={{ width: 268 }} /><col style={{ width: 52 }} />
+              <col style={{ width: 108 }} /><col style={{ width: 100 }} /><col style={{ width: 100 }} />
+            </colgroup>
             <thead>
               <tr>
                 <th style={{ ...thS, textAlign: "left", paddingLeft: 0 }}>Setup</th>
@@ -797,8 +833,8 @@ export default function Replays({ th }) {
             </thead>
             <tbody>
               {linhas10.map(l => (
-                <tr key={l.nome} style={{ borderTop: `1px solid ${linha}` }}>
-                  <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, fontWeight: 600 }}>{l.nome}</td>
+                <tr key={l.nome} style={{ borderTop: `1px solid ${linha}`, opacity: ehFQ(l.nome) ? 0.42 : 1 }}>
+                  <td style={{ ...tdS, textAlign: "left", paddingLeft: 0, fontWeight: 600, whiteSpace: "normal", lineHeight: 1.3, paddingRight: 18 }}>{l.nome}</td>
                   <td style={{ ...tdS, color: th.textMuted }}>{l.n}</td>
                   <td style={{ ...tdS, fontWeight: 700, color: l.mediaFinanc >= 0 ? verde : verm }}>{fmtR$(l.mediaFinanc)}</td>
                   <td style={tdS}>{l.mep}</td>
