@@ -747,12 +747,36 @@ const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
       cursor.setDate(cursor.getDate() - 1);
     }
 
-    let streakAtual = 0;
+let streakAtual = 0;
     for (let i = streakDias.length - 1; i >= 0; i--) {
       if (streakDias[i].status === null) continue;
       if (streakDias[i].status === "perfeito") streakAtual++;
       else break;
     }
+
+    // Sequências por hábito — mesma lógica da página de Hábitos
+    const HABITOS_DASH = [
+      { campo:"horas",   label:"Horas de estudo" },
+      { campo:"replays", label:"Replays" },
+      { campo:"paginas", label:"Páginas lidas" },
+    ];
+    function seqHabito(campo){
+      let cont = 0;
+      const cur = new Date(hoje);
+      for(let i=0; i<400; i++){
+        const ch = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,"0")}-${String(cur.getDate()).padStart(2,"0")}`;
+        if(ch < INICIO_HABITOS) break;
+        const h = habitosPorData[ch];
+        const temAlgum = h && (h.horas>0 || h.replays>0 || h.paginas>0);
+        if(ch === hojeChaveStreak && !temAlgum){ /* dia em aberto */ }
+        else if(h && h[campo] >= 1) cont++;
+        else break;
+        cur.setDate(cur.getDate() - 1);
+      }
+      return cont;
+    }
+    const seqPorHabitoDash = {};
+    HABITOS_DASH.forEach(h=>{ seqPorHabitoDash[h.campo] = seqHabito(h.campo); });
 
 const disciplineDias = [];
     let cursorD = new Date(hoje);
@@ -1210,46 +1234,45 @@ let disciplineStreakAtual = 0;
                   </button>
                 </div>
 
-                <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
+<div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje — Hábitos</span>
-                    {habitosAlterado && !habitosSalvando && (
-                      <span style={{fontSize:10,fontWeight:700,color:"#d97706",background:dark?"#2a2210":"#fef3c7",padding:"2px 8px",borderRadius:20,border:`1px solid ${dark?"#5c4a10":"#fcd34d"}`}}>
-                        Não salvo
-                      </span>
-                    )}
+                    <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Sequências Atuais</span>
+                    <span style={{fontSize:10,color:th.textMuted}}>via aba Hábitos</span>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:16,marginTop:14,flex:1}}>
-                    {[
-                      {campo:"horas",   label:"Horas de estudo", step:"0.5"},
-                      {campo:"replays", label:"Replays",         step:"1"},
-                      {campo:"paginas", label:"Páginas lidas",   step:"1"},
-                    ].map(h=>(
-                      <div key={h.campo} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
-                        <span style={{fontSize:14,color:th.textSub}}>{h.label}</span>
-                        <input type="number" step={h.step} min="0" placeholder="0"
-                          value={habitosHoje[h.campo]} onChange={e=>alterarHabito(h.campo,e.target.value)}
-                          style={{width:66,fontSize:17,fontWeight:800,color:ACCENT_ATUAL,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",padding:"5px 8px",textAlign:"center",fontFamily:"inherit"}}/>
+
+                  <div style={{display:"flex",alignItems:"baseline",gap:7,margin:"10px 0 10px"}}>
+                    <span style={{fontSize:28,fontWeight:800,lineHeight:1,color:streakAtual>0?ACCENT_ATUAL:th.textMuted}}>{streakAtual}</span>
+                    <span style={{fontSize:12,color:th.textMuted}}>dias com os 3</span>
+                  </div>
+
+                  <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>
+                    {streakDias.map((d,i)=>{
+                      const cor = d.status===null ? "transparent"
+                        : d.status==="perfeito" ? (dark?"#1a7048":"#5cb583")
+                        : d.status==="quase" ? (dark?"#856404":"#d1a53d")
+                        : (dark?"#8a3a3a":"#d9776b");
+                      return (
+                        <div key={i} title={`${d.dataObj.toLocaleDateString("pt-BR")} — ${d.resumo}`}
+                          style={{width:16,height:16,borderRadius:5,background:cor,
+                            border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{display:"flex",flexDirection:"column",gap:7,marginTop:"auto"}}>
+                    {HABITOS_DASH.map(h=>(
+                      <div key={h.campo} style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:6,borderBottom:`1px solid ${th.border}`}}>
+                        <span style={{fontSize:12.5,color:th.textSub}}>{h.label}</span>
+                        <span style={{fontSize:13,fontWeight:700,color:seqPorHabitoDash[h.campo]>0?th.text:th.textMuted}}>
+                          {seqPorHabitoDash[h.campo]}d
+                        </span>
                       </div>
                     ))}
                   </div>
-                  <button onClick={salvarHabitosHojeApp} disabled={!habitosAlterado||habitosSalvando}
-                    style={{
-                      marginTop:14,
-                      background:habitosAlterado&&!habitosSalvando?ACCENT_ATUAL:"transparent",
-                      color:habitosAlterado&&!habitosSalvando?"#fff":th.textMuted,
-                      border:`1px solid ${habitosAlterado&&!habitosSalvando?ACCENT_ATUAL:th.border2}`,
-                      borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,
-                      cursor:habitosAlterado&&!habitosSalvando?"pointer":"default",fontFamily:"inherit",width:"100%",
-                    }}>
-
-                    {habitosSalvando?"Salvando…":"Salvar"}
-                  </button>
                 </div>
               </div>
             </div>
             </div>
-                
 
             </main>
 
@@ -1330,47 +1353,6 @@ let disciplineStreakAtual = 0;
                 </div>
               </div>
             )}
-
-            <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`}}>
-              <div onClick={()=>setSeqExpandido(v=>!v)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
-                <span style={{fontWeight:700,fontSize:11,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Sequências Atuais</span>
-                <span style={{color:th.textMuted,fontSize:13}}>{seqExpandido?"▲":"▼"}</span>
-              </div>
-              {seqExpandido && (
-                <div style={{marginTop:14}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${th.border}`}}>
-                    <span style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:th.textSub}}><Ico.Clock s={14} c={th.textMuted}/>Estudo 4h</span>
-                    <span style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontSize:13}}>
-                        <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{seq[0]?.dias||0}</span>
-                        <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
-                      </span>
-                      <span style={{fontSize:10,color:th.textMuted,minWidth:40,textAlign:"right"}}>PR: {seq[0]?.pr||0}</span>
-                    </span>
-                  </div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${th.border}`}}>
-                    <span style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:th.textSub}}><Ico.BookOpen s={14} c={th.textMuted}/>3+ Backtests/dia</span>
-                    <span style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontSize:13}}>
-                        <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{seq[1]?.dias||0}</span>
-                        <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
-                      </span>
-                      <span style={{fontSize:10,color:th.textMuted,minWidth:40,textAlign:"right"}}>PR: {seq[1]?.pr||0}</span>
-                    </span>
-                  </div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0"}}>
-                    <span style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:th.textSub}}><Ico.Repeat s={14} c={th.textMuted}/>1 Replay por dia</span>
-                    <span style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontSize:13}}>
-                        <span style={{fontWeight:800,color:ACCENT_ATUAL}}>{rotinas.find(r=>r.nome.toLowerCase().includes("replay"))?.dias||0}</span>
-                        <span style={{color:th.textMuted,fontWeight:400}}> dias</span>
-                      </span>
-                      <span style={{fontSize:10,color:th.textMuted,minWidth:40,textAlign:"right"}}>PR: {rotinas.find(r=>r.nome.toLowerCase().includes("replay"))?.pr||0}</span>
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
 
             <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`}}>
               <div onClick={()=>setMetasExpandido(v=>!v)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
