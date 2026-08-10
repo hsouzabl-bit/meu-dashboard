@@ -348,6 +348,9 @@ const [checklistAlterado, setChecklistAlterado] = useState(false);
   const [checklistSalvando, setChecklistSalvando] = useState(false);
 
   const [habitosHoje, setHabitosHoje] = useState({ horas:"", replays:"", paginas:"" });
+  const [habitosLista, setHabitosLista] = useState([]);
+  const [habitosCarregado, setHabitosCarregado] = useState(false);
+  
   const [habitosAlterado, setHabitosAlterado] = useState(false);
   const [habitosSalvando, setHabitosSalvando] = useState(false);
   
@@ -408,9 +411,21 @@ function salvarChecklistHojeApp(){
       replays: Number(habitosHoje.replays) || 0,
       paginas: Number(habitosHoje.paginas) || 0,
     };
-    fetch(`${API_DIARIO}?action=salvarHabitos&dados=${encodeURIComponent(JSON.stringify(payload))}`)
+    
+fetch(`${API_DIARIO}?action=salvarHabitos&dados=${encodeURIComponent(JSON.stringify(payload))}`)
+      .then(()=>{
+        setHabitosLista(prev=>{
+          const semHoje = (prev||[]).filter(h=>h.data !== hojeStr);
+          const antigo = (prev||[]).find(h=>h.data === hojeStr) || {};
+          const novo = [...semHoje, { ...antigo, ...payload }].sort((a,b)=>a.data.localeCompare(b.data));
+          try { localStorage.setItem("cache_habitos", JSON.stringify(novo)); } catch(e){}
+          return novo;
+        });
+      })
       .catch(()=>{})
       .finally(()=>{ setHabitosSalvando(false); setHabitosAlterado(false); });
+
+    
   }
 
 const tema = THEMES.find(t=>t.id===temaId) || THEMES[0];
@@ -542,8 +557,11 @@ const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
 
   useEffect(()=>{
     const hojeChaveH = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+
     function aplicar(lista){
+      setHabitosLista(lista || []);
       const d = (lista||[]).find(h=>h.data===hojeChaveH);
+    
       if(d) setHabitosHoje({ horas:String(d.horas||""), replays:String(d.replays||""), paginas:String(d.paginas||"") });
     }
     try {
@@ -554,10 +572,13 @@ const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
       fetchComRetry(`${API_DIARIO}?action=lerHabitos`)
         .then(j=>{
           const lista = j.habitos || [];
-          try { localStorage.setItem("cache_habitos", JSON.stringify(lista)); } catch(e){}
+          
+try { localStorage.setItem("cache_habitos", JSON.stringify(lista)); } catch(e){}
           aplicar(lista);
+          setHabitosCarregado(true);
         })
-        .catch(()=>{});
+        .catch(()=>setHabitosCarregado(true));
+          
     }, 3000);
     return ()=>clearTimeout(t);
   },[]);
@@ -699,21 +720,36 @@ const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
     const financMes = dadosMes?.contas?.["ION 3"]?.financTotal ?? null;
     const wrMes = dadosMes?.contas?.["ION 3"]?.taxaAcerto ?? null;
 
+// Studies Streak — mesma fonte e mesmo critério da página de Hábitos:
+    // 3/3 = perfeito · 2/3 = quase · resto = fraco. Registro começa em 07/08/2026.
+    const INICIO_HABITOS = "2026-08-07";
+    const habitosPorData = {};
+    (habitosLista||[]).forEach(h=>{ habitosPorData[h.data] = h; });
+    const hojeChaveStreak = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
+
     const streakDias = [];
     let cursor = new Date(hoje);
     while (streakDias.length < 20) {
-      const diaSemana = cursor.getDay();
-      if (diaSemana !== 0 && diaSemana !== 6) {
-        const chave = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,"0")}-${String(cursor.getDate()).padStart(2,"0")}`;
-        const det = diasDia[chave];
-        const tipo = (det?.tipo || "").toLowerCase();
-        const status = !det ? null : tipo.includes("perfeito") && !tipo.includes("quase") ? "perfeito" : tipo.includes("quase") ? "quase" : "fraco";
-        streakDias.unshift({ chave, status, dataObj: new Date(cursor) });
-      }
+      const chave = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,"0")}-${String(cursor.getDate()).padStart(2,"0")}`;
+      if (chave < INICIO_HABITOS) break;
+      const h = habitosPorData[chave];
+      const feitos = h ? ((h.horas>=1?1:0) + (h.replays>=1?1:0) + (h.paginas>=1?1:0)) : 0;
+      let status;
+      if (!habitosCarregado && !h) status = null;          // ainda carregando
+      else if (feitos === 0 && chave === hojeChaveStreak) status = null; // hoje em aberto
+      else if (feitos === 3) status = "perfeito";
+      else if (feitos === 2) status = "quase";
+      else status = "fraco";
+      streakDias.unshift({
+        chave, status, dataObj: new Date(cursor),
+        resumo: h ? `${h.horas}h · ${h.replays} replay(s) · ${h.paginas} pág.` : "sem registro",
+      });
       cursor.setDate(cursor.getDate() - 1);
     }
+
     let streakAtual = 0;
     for (let i = streakDias.length - 1; i >= 0; i--) {
+      if (streakDias[i].status === null) continue;
       if (streakDias[i].status === "perfeito") streakAtual++;
       else break;
     }
