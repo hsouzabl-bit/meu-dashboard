@@ -544,7 +544,8 @@ export default function Habitos({ th }){
                   <Line key={h.campo} type="monotone" dataKey={h.campo} stroke={h.cor} strokeWidth={2} dot={false} activeDot={{ r:4 }}/>
                 ))}
               </LineChart>
-            </ResponsiveContainer>
+              
+           </ResponsiveContainer>
             <div style={{ display:"flex", gap:18, flexWrap:"wrap", marginTop:8 }}>
               {HABITOS.map(h=>(
                 <span key={h.campo} style={{ fontSize:11.5, color:th.textMuted }}>
@@ -555,12 +556,8 @@ export default function Habitos({ th }){
                 <span style={{ color:th.textMuted }}>▬</span> ritmo esperado
               </span>
             </div>
-</>
+          </>
         )}
-        </div>
-      </div>
-
- 
         </div>
       </div>
 
