@@ -42,7 +42,7 @@ function diasEntre(iniISO, fimISO){
   return Math.round((b - a) / 86400000) + 1;
 }
 
-export default function Habitos({ th }){
+export default function Habitos({ th, habitosProp }){
   const dark = th.dark;
   const accent = th.accent;
   const hoje = new Date();
@@ -74,13 +74,25 @@ export default function Habitos({ th }){
 
   // Cache lido IMEDIATAMENTE; só o fetch é atrasado.
   // (antes a leitura do cache estava dentro do setTimeout e esperava 3s junto)
+// Se o App já carregou a lista, aproveita — evita buscar o mesmo dado duas vezes.
+  useEffect(()=>{
+    if(habitosProp && habitosProp.length){
+      setHabitos(habitosProp);
+      setCarregando(false);
+    }
+  },[habitosProp]);
+
   useEffect(()=>{
     try {
       const c = localStorage.getItem("cache_habitos");
       if(c){ setHabitos(JSON.parse(c) || []); setCarregando(false); }
     } catch(e){}
 
+    if(habitosProp && habitosProp.length) return; // já veio do App, não busca de novo
+
     const t = setTimeout(()=>{
+
+  
       fetchComRetry(`${API_DIARIO}?action=lerHabitos`)
         .then(j=>{
           const lista = j.habitos || [];
