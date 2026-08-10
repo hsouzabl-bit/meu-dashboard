@@ -652,7 +652,7 @@ const navItems = [
 
     if (activeNav === "Hábitos") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
-        <Habitos th={th}/>
+        <Habitos th={th} habitosProp={habitosLista}/>
       </div>
     );
 
