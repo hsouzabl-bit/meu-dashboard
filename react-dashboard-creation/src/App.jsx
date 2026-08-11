@@ -612,13 +612,14 @@ try { localStorage.setItem("cache_habitos", JSON.stringify(lista)); } catch(e){}
 
 const navItems = [
     {label:"Dashboard",      icon:<Ico.Target    s={19} c="currentColor"/>},
-    {label:"Objetivos",      icon:<Ico.Target    s={19} c="currentColor"/>},
     {label:"Revisões",       icon:<Ico.Calendar  s={19} c="currentColor"/>},
-    {label:"Estatísticas",   icon:<Ico.Trend     s={19} c="currentColor"/>},
-    {label:"Plano de Trade", icon:<Ico.Clipboard s={19} c="currentColor"/>},
-    {label:"Estudos",        icon:<Ico.BookOpen  s={19} c="currentColor"/>},
     {label:"Hábitos",        icon:<Ico.Check     s={19} c="currentColor"/>},
+    {label:"Objetivos",      icon:<Ico.Target    s={19} c="currentColor"/>},
     {label:"Replays",        icon:<Ico.Repeat    s={19} c="currentColor"/>},
+    {label:"Estatísticas",   icon:<Ico.Trend     s={19} c="currentColor"/>},
+    {label:"Estudos",        icon:<Ico.BookOpen  s={19} c="currentColor"/>},
+    {label:"Plano de Trade", icon:<Ico.Clipboard s={19} c="currentColor"/>},
+  
   ];
 
   const topNav = [
