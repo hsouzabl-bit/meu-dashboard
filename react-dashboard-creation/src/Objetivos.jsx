@@ -137,6 +137,30 @@ export default function Objetivos({ th, dark, setDark }) {
     setSaving(false);
   }
 
+  async function deletarSemana(chave) {
+    const d = dadosSem[chave];
+    const qtd = d?.objetivos?.length || 0;
+    const msg = qtd > 0
+      ? `Excluir ${chave}? São ${qtd} objetivo(s) registrado(s). Não dá pra desfazer.`
+      : `Excluir ${chave}? Não dá pra desfazer.`;
+    if (!window.confirm(msg)) return;
+
+    setDadosSem(prev => {
+      const novo = { ...prev };
+      delete novo[chave];
+      try { localStorage.setItem("cache_objetivos", JSON.stringify(novo)); } catch(e) {}
+      return novo;
+    });
+
+    try {
+      const r = await fetch(`${GAS_DIARIO}?action=deletarObjetivos&chave=${encodeURIComponent(chave)}`);
+      const j = await r.json();
+      if (j.erro) throw new Error(j.erro);
+    } catch(e) {
+      alert("Erro ao excluir na planilha. Recarregue a página para ver o estado real.");
+    }
+  }
+
   function setCor(cor) { editarLocal({ cor }); }
   function setComentario(comentario) { editarLocal({ comentario }); }
 
@@ -317,7 +341,19 @@ export default function Objetivos({ th, dark, setDark }) {
               <span style={{ fontSize: 12, fontWeight: 600, color: txtC }}>{cor.label}</span>
             )}
           </div>
-          <span style={{ color: textSub, fontSize: 13 }}>{isOpen ? "▲" : "▼"}</span>
+          
+<div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button
+              onClick={e => { e.stopPropagation(); deletarSemana(chave); }}
+              title="Excluir esta semana"
+              style={{ background: "none", border: "none", cursor: "pointer", color: textSub, fontSize: 17, lineHeight: 1, padding: "0 2px", opacity: 0.55 }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = "#f06b6b"; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = 0.55; e.currentTarget.style.color = textSub; }}
+            >×</button>
+            <span style={{ color: textSub, fontSize: 13 }}>{isOpen ? "▲" : "▼"}</span>
+          </div>
+        </div>        
+        
         </div>
 
         {/* Conteúdo expandido — só visualização */}
