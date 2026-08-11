@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 
 const GAS_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 const ACCENT_FALLBACK = "#2563EB";
+const CHAVE_CONTA = "revisoes_conta_sel";
 
 function fetchComRetryRev(url, tentativas = 3, delayMs = 1200) {
   return fetch(url)
@@ -18,7 +19,13 @@ const CABECALHOS = ["Seg", "Ter", "Qua", "Qui", "Sex", "", "Semana"];
 const DIAS_NOME = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
-const CONTAS = ["ION 3", "ION OTS"];
+const CONTA_ION3 = "ION 3";
+const CONTA_OTS  = "ION OTS";
+const CONTA_TODAS = "Todas as contas";
+const CONTAS = [CONTA_ION3, CONTA_OTS, CONTA_TODAS];
+
+// ION OTS opera valores menores: ±50 já é gain/loss, não empate
+const LIMITES = { [CONTA_ION3]: 100, [CONTA_OTS]: 50 };
 
 function gerarId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function hojeISO() {
@@ -97,9 +104,15 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     };
   }
 
-  const [ano, setAno]             = useState(new Date().getFullYear());
-  const [mes, setMes]             = useState(new Date().getMonth());
-  const [contaSel, setContaSel]   = useState("ION 3");
+  const [ano, setAno]           = useState(new Date().getFullYear());
+  const [mes, setMes]           = useState(new Date().getMonth());
+  const [contaSel, setContaSel] = useState(() => {
+    try {
+      const c = localStorage.getItem(CHAVE_CONTA);
+      if (c && CONTAS.indexOf(c) >= 0) return c;
+    } catch(e) {}
+    return CONTA_ION3;
+  });
   const [revisoes, setRevisoes]   = useState(revisoesProp || []);
   const [updates, setUpdates]     = useState(updatesProp  || []);
   const [tradesPorData, setTradesPorData] = useState(tradesPorDataProp || {});
@@ -117,6 +130,13 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [updateForm, setUpdateForm]         = useState({ titulo: "", descricao: "" });
   const [expandedUpdate, setExpandedUpdate] = useState(null);
+
+  const combinado = contaSel === CONTA_TODAS;
+
+  function trocarConta(c) {
+    setContaSel(c);
+    try { localStorage.setItem(CHAVE_CONTA, c); } catch(e) {}
+  }
 
   useEffect(() => { if (revisoesProp?.length)   setRevisoes(revisoesProp);   }, [revisoesProp]);
   useEffect(() => { if (updatesProp?.length)    setUpdates(updatesProp);     }, [updatesProp]);
@@ -165,12 +185,12 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     return `${a}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
   }
 
-  // ---- fonte de dados conforme a conta selecionada ----
+  // ---- fonte de dados conforme a conta ----
   function dadosDoDia(dataStr, conta) {
-    if (conta === "ION OTS") {
+    if (conta === CONTA_OTS) {
       const o = otsPorData[dataStr];
       if (!o) return null;
-      return { resultado: o.resultado, trades: o.trades, taxaAcerto: o.taxaAcerto, erros: null };
+      return { resultado: o.resultado, trades: o.trades, taxaAcerto: o.taxaAcerto, erros: o.qtdErros ?? 0 };
     }
     const t = tradesPorData[dataStr] || {};
     return t["ION 3"] || t["ion 3"] || null;
@@ -219,8 +239,8 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
   function abrirDia(dataStr) {
     const rev  = revisaoPorData[dataStr] || {};
-    const ion3 = dadosDoDia(dataStr, "ION 3") || {};
-    const ots  = dadosDoDia(dataStr, "ION OTS") || {};
+    const ion3 = dadosDoDia(dataStr, CONTA_ION3) || {};
+    const ots  = dadosDoDia(dataStr, CONTA_OTS) || {};
     let saved = {};
     try { saved = JSON.parse(rev.resumoCurto || "{}"); } catch {}
 
@@ -237,7 +257,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       resultadoOts:  saved.resultadoOts  ?? (ots.resultado  ?? ""),
       qtdOpsOts:     saved.qtdOpsOts     ?? (ots.trades     ?? ""),
       acertoOts:     saved.acertoOts     ?? (ots.taxaAcerto ?? ""),
-      errosOts:      saved.errosOts      ?? "",
+      errosOts:      saved.errosOts      ?? (ots.erros      ?? ""),
       resumoOts:     saved.resumoOts     ?? "",
       // geral
       revisaoDetalhada: rev.revisaoDetalhada ?? "",
@@ -277,17 +297,17 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
   function addLink(conta) {
     const novo = { id: gerarId(), descricao: "", url: "" };
-    if (conta === "ION OTS") setLinksOts(p => [...p, novo]); else setLinksIon3(p => [...p, novo]);
+    if (conta === CONTA_OTS) setLinksOts(p => [...p, novo]); else setLinksIon3(p => [...p, novo]);
     setFormDirty(true);
   }
   function updateLink(conta, id, campo, valor) {
     const fn = p => p.map(l => l.id === id ? { ...l, [campo]: valor } : l);
-    if (conta === "ION OTS") setLinksOts(fn); else setLinksIon3(fn);
+    if (conta === CONTA_OTS) setLinksOts(fn); else setLinksIon3(fn);
     setFormDirty(true);
   }
   function removeLink(conta, id) {
     const fn = p => p.filter(l => l.id !== id);
-    if (conta === "ION OTS") setLinksOts(fn); else setLinksIon3(fn);
+    if (conta === CONTA_OTS) setLinksOts(fn); else setLinksIon3(fn);
     setFormDirty(true);
   }
 
@@ -330,12 +350,10 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       revisaoDetalhada: formDados.revisaoDetalhada ?? "",
     };
     try {
-      
-const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURIComponent(JSON.stringify(revisao))}`);
+      const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURIComponent(JSON.stringify(revisao))}`);
       const jr = await resp.json();
       if (jr.erro) throw new Error(jr.erro);
       await carregar();
-      
       setFormDirty(false);
       setPainelDia(null);
     } catch(e) { alert("Erro ao salvar."); }
@@ -396,9 +414,43 @@ const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURICo
     fontFamily: "'Plus Jakarta Sans','Inter',sans-serif",
   };
 
+  // ---- meia-célula de uma conta dentro do card combinado ----
+  function MetadeConta({ rotulo, dados, limite, isFuturo, comBorda }) {
+    const rVal = parseFloat(dados?.resultado ?? "NaN");
+    const temDados = !isNaN(rVal);
+    const cores = temDados ? corResultado(rVal, limite) : null;
+    return (
+      <div style={{
+        flex: 1, minWidth: 0, padding: "6px 9px 7px",
+        borderRight: comBorda ? `1px solid ${bordaSuave}` : "none",
+        display: "flex", flexDirection: "column", gap: 2,
+      }}>
+        <span style={{ fontSize: 9, fontWeight: 800, color: textMuted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{rotulo}</span>
+        {isFuturo && !dados ? (
+          <span style={{ fontSize: 13, color: futuro.text }}>—</span>
+        ) : !dados ? (
+          <>
+            <span style={{ fontSize: 13.5, fontWeight: 800, color: naoCliquei.text, lineHeight: 1.2 }}>—</span>
+            <span style={{ fontSize: 9.5, color: naoCliquei.text, letterSpacing: "0.02em" }}>não cliquei</span>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: 13.5, fontWeight: 800, color: cores ? cores.text : textSub, lineHeight: 1.2 }}>
+              {temDados ? fmtVal(rVal) : "—"}
+            </span>
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+              {dados.trades != null && <span style={{ fontSize: 10.5, color: textSub }}>{dados.trades} ops</span>}
+              {dados.taxaAcerto != null && <span style={{ fontSize: 10.5, color: textSub }}>· {dados.taxaAcerto}%</span>}
+              {dados.erros > 0 && <span style={{ fontSize: 10.5, color: isDark ? "#e07d7d" : "#a04040" }}>· {dados.erros} err</span>}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   function renderCalendario() {
-    // ION OTS opera valores menores: ±50 já é gain/loss, não empate
-    const limiteConta = contaSel === "ION OTS" ? 50 : 100;
+    const limiteConta = combinado ? LIMITES[CONTA_ION3] : LIMITES[contaSel];
     const total = new Date(ano, mes + 1, 0).getDate();
     const hoje = hojeISO();
     const cells = [];
@@ -438,9 +490,58 @@ const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURICo
         cells.push(<div key={`sp${d}`} />);
         slots++;
 
+        const revSem = semanasPorSab[dataStr] || null;
+
+        if (combinado) {
+          const semA = resumoSemana(dataStr, CONTA_ION3);
+          const semB = resumoSemana(dataStr, CONTA_OTS);
+          const temDados = semA.diasComDados > 0 || semB.diasComDados > 0;
+          cells.push(
+            <div key={d} onClick={() => abrirSemana(dataStr)} style={{
+              background: isAberto ? ACCENT + "22" : camada1,
+              border: `2px ${isFuturo && !temDados ? "dashed" : "solid"} ${isAberto ? ACCENT : (isFuturo && !temDados ? futuro.border : ACCENT + "55")}`,
+              borderLeft: `5px solid ${isFuturo && !temDados ? futuro.border : ACCENT}`,
+              borderRadius: 0, cursor: "pointer", height: "100%",
+              display: "flex", flexDirection: "column", boxSizing: "border-box",
+              overflow: "hidden", userSelect: "none",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 9px 4px" }}>
+                <span style={{ fontSize: 9.5, fontWeight: 800, color: isFuturo && !temDados ? futuro.text : ACCENT, letterSpacing: "0.06em", textTransform: "uppercase" }}>Resumo</span>
+                <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                  {revSem && <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />}
+                  <span style={{ fontSize: 12, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : isFuturo ? futuro.text : textSub }}>{d}</span>
+                </div>
+              </div>
+              {temDados ? (
+                <div style={{ display: "flex", flex: 1, borderTop: `1px solid ${bordaSuave}` }}>
+                  {[[CONTA_ION3, semA, "ION 3", true], [CONTA_OTS, semB, "OTS", false]].map(([ct, sm, rot, cb]) => {
+                    const cor = sm.diasComDados > 0 ? corResultado(sm.totalRes, LIMITES[ct]) : null;
+                    return (
+                      <div key={ct} style={{ flex: 1, minWidth: 0, padding: "6px 9px 7px", borderRight: cb ? `1px solid ${bordaSuave}` : "none", display: "flex", flexDirection: "column", gap: 2 }}>
+                        <span style={{ fontSize: 9, fontWeight: 800, color: textMuted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{rot}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 800, color: cor ? cor.text : textSub, lineHeight: 1.15 }}>
+                          {sm.diasComDados > 0 ? fmtVal(sm.totalRes) : "—"}
+                        </span>
+                        <span style={{ fontSize: 10, color: textSub }}>{sm.diasComDados}d · {sm.totalOps} ops</span>
+                        {sm.acertoMedio !== null && <span style={{ fontSize: 10, color: textSub }}>{sm.acertoMedio}% acerto</span>}
+                        {sm.totalErros > 0 && <span style={{ fontSize: 10, color: isDark ? "#e07d7d" : "#a04040" }}>{sm.totalErros} err</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ fontSize: 10.5, color: isFuturo ? futuro.text : textSub, padding: "0 9px 8px", lineHeight: 1.4 }}>
+                  {isFuturo ? "—" : <>Sem dados<br/>na semana</>}
+                </div>
+              )}
+            </div>
+          );
+          slots++;
+          continue;
+        }
+
         const sem = resumoSemana(dataStr, contaSel);
         const temDados = sem.diasComDados > 0;
-        const revSem = semanasPorSab[dataStr] || null;
         const cores = temDados ? corResultado(sem.totalRes, limiteConta) : null;
 
         cells.push(
@@ -481,8 +582,49 @@ const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURICo
         continue;
       }
 
-      // ---- dias úteis: três estados (futuro / não cliquei / com trades) ----
+      // ---- dias úteis ----
       const rev = revisaoPorData[dataStr];
+
+      let temLinks = false;
+      try {
+        const s = JSON.parse(rev?.resumoCurto || "{}");
+        temLinks = (s.linksIon3 || s.linksIon2 || []).length > 0 || (s.linksOts || []).length > 0;
+      } catch {}
+
+      if (combinado) {
+        const dA = dadosDoDia(dataStr, CONTA_ION3);
+        const dB = dadosDoDia(dataStr, CONTA_OTS);
+        const semRegistro = !dA && !dB && !rev;
+
+        cells.push(
+          <div key={d} onClick={() => !isFuturo && abrirDia(dataStr)} style={{
+            background: isAberto ? ACCENT + "22" : (isFuturo && semRegistro ? futuro.bg : camada1),
+            border: `2px ${isFuturo && semRegistro ? "dashed" : "solid"} ${isAberto ? ACCENT : (isFuturo && semRegistro ? futuro.border : (isHoje ? ACCENT + "88" : bordaSuave))}`,
+            borderRadius: 10, cursor: isFuturo ? "default" : "pointer", height: "100%",
+            display: "flex", flexDirection: "column", userSelect: "none",
+            boxSizing: "border-box", overflow: "hidden",
+            transition: "border-color .15s, background .15s",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 9px 4px" }}>
+              <span style={{ fontSize: 13.5, fontWeight: isHoje ? 800 : 600, color: isHoje ? ACCENT : (isFuturo && semRegistro ? futuro.text : text) }}>{d}</span>
+              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                {temLinks && <span title="Tem links" style={{ fontSize: 10, color: ACCENT }}>🔗</span>}
+                {rev && <span style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />}
+              </div>
+            </div>
+            {isFuturo && semRegistro ? null : (
+              <div style={{ display: "flex", flex: 1, borderTop: `1px solid ${bordaSuave}` }}>
+                <MetadeConta rotulo="ION 3" dados={dA} limite={LIMITES[CONTA_ION3]} isFuturo={isFuturo} comBorda />
+                <MetadeConta rotulo="OTS"   dados={dB} limite={LIMITES[CONTA_OTS]}  isFuturo={isFuturo} />
+              </div>
+            )}
+          </div>
+        );
+        slots++;
+        continue;
+      }
+
+      // ---- conta única: três estados (futuro / não cliquei / com trades) ----
       const dd  = dadosDoDia(dataStr, contaSel);
       const rVal = parseFloat(dd?.resultado ?? "NaN");
       const temDados = !isNaN(rVal);
@@ -502,12 +644,6 @@ const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURICo
         estiloBorda = "solid";
         corNum = isHoje ? ACCENT : text;
       }
-
-      let temLinks = false;
-      try {
-        const s = JSON.parse(rev?.resumoCurto || "{}");
-        temLinks = (s.linksIon3 || s.linksIon2 || []).length > 0 || (s.linksOts || []).length > 0;
-      } catch {}
 
       cells.push(
         <div key={d} onClick={() => !isFuturo && abrirDia(dataStr)} style={{
@@ -552,6 +688,45 @@ const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURICo
 
     const resto = slots % 7;
     if (resto !== 0) for (let i = 0; i < (7 - resto); i++) cells.push(<div key={`ef${i}`} />);
+
+    // ---- card de resumo do mês ----
+    if (combinado) {
+      const mA = resumoMensal(CONTA_ION3);
+      const mB = resumoMensal(CONTA_OTS);
+      const somaRes = mA.totalRes + mB.totalRes;
+      const somaOps = mA.totalOps + mB.totalOps;
+      const somaErros = mA.totalErros + mB.totalErros;
+      const somaDias = Math.max(mA.diasComDados, mB.diasComDados);
+      const coresSoma = (mA.diasComDados + mB.diasComDados) > 0 ? corResultado(somaRes, LIMITES[CONTA_ION3]) : null;
+
+      const blocos = [
+        { rot: "ION 3", r: mA, cores: mA.diasComDados > 0 ? corResultado(mA.totalRes, LIMITES[CONTA_ION3]) : null, destaque: false },
+        { rot: "ION OTS", r: mB, cores: mB.diasComDados > 0 ? corResultado(mB.totalRes, LIMITES[CONTA_OTS]) : null, destaque: false },
+        { rot: "Total", r: { totalRes: somaRes, totalOps: somaOps, totalErros: somaErros, diasComDados: somaDias, acertoMedio: null }, cores: coresSoma, destaque: true },
+      ];
+
+      cells.push(
+        <div key="card-mensal" style={{ gridColumn: "1 / -1", background: camada1, border: `2px solid ${bordaSuave}`, borderRadius: 10, padding: "12px 18px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 18 }}>
+          {blocos.map((b, i) => (
+            <div key={b.rot} style={{ display: "flex", flexDirection: "column", gap: 3, paddingLeft: i > 0 ? 18 : 0, borderLeft: i > 0 ? `1px solid ${bordaSuave}` : "none" }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: b.destaque ? ACCENT : textMuted, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                {b.destaque ? "Resumo do mês · total" : b.rot}
+              </span>
+              <span style={{ fontSize: b.destaque ? 22 : 19, fontWeight: 800, color: b.cores ? b.cores.text : textSub, lineHeight: 1.15 }}>
+                {b.r.diasComDados > 0 || b.destaque ? fmtVal(b.r.totalRes) : "—"}
+              </span>
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 2 }}>
+                <span style={{ fontSize: 11.5, color: textSub }}>{b.r.totalOps > 0 ? `${b.r.totalOps} ops` : "— ops"}</span>
+                {b.r.acertoMedio !== null && <span style={{ fontSize: 11.5, color: textSub }}>{b.r.acertoMedio}% acerto</span>}
+                {b.r.totalErros > 0 && <span style={{ fontSize: 11.5, color: isDark ? "#e07d7d" : "#a04040" }}>{b.r.totalErros} err</span>}
+              </div>
+              <span style={{ fontSize: 11, color: textMuted }}>{b.r.diasComDados} dias com trades</span>
+            </div>
+          ))}
+        </div>
+      );
+      return cells;
+    }
 
     const mesR = resumoMensal(contaSel);
     const coresMes = mesR.diasComDados > 0 ? corResultado(mesR.totalRes, limiteConta) : null;
@@ -658,8 +833,8 @@ const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURICo
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
           {painelTipo === "diario" && (
             <>
-              {contaBlock("ION 3", { res:"resultadoIon3", ops:"qtdOpsIon3", ac:"acertoIon3", err:"errosIon3", resumo:"resumoIon3" }, linksIon3)}
-              {contaBlock("ION OTS", { res:"resultadoOts", ops:"qtdOpsOts", ac:"acertoOts", err:"errosOts", resumo:"resumoOts" }, linksOts)}
+              {contaBlock(CONTA_ION3, { res:"resultadoIon3", ops:"qtdOpsIon3", ac:"acertoIon3", err:"errosIon3", resumo:"resumoIon3" }, linksIon3)}
+              {contaBlock(CONTA_OTS, { res:"resultadoOts", ops:"qtdOpsOts", ac:"acertoOts", err:"errosOts", resumo:"resumoOts" }, linksOts)}
               {campo("Revisão geral e pontos para lembrar", "revisaoDetalhada", "textarea", "Análise do dia, lições, pontos a carregar pra amanhã...", 5)}
             </>
           )}
@@ -753,6 +928,20 @@ const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURICo
     );
   }
 
+  // ---- legendas de cor ----
+  function Legenda({ rotulo, limite }) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+        {rotulo && <span style={{ fontSize: 10, fontWeight: 800, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.06em" }}>{rotulo}</span>}
+        {[["#4ecb8d",`≥ +${limite}`],["#e0c040","Neutro"],["#f06b6b",`≤ −${limite}`]].map(([c,l]) => (
+          <span key={l} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5, color: textSub }}>
+            <span style={{ width: 8, height: 8, borderRadius: 3, background: c, display: "inline-block" }} />{l}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div style={{ flex: 1, padding: "18px 30px 40px", overflowY: "auto", minWidth: 0, width: "100%", boxSizing: "border-box", fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", color: text, position: "relative" }}>
       {painelDia && (
@@ -777,30 +966,39 @@ const resp = await fetch(`${GAS_DIARIO}?action=salvarRevisao&dados=${encodeURICo
                   <button onClick={() => { if (mes === 0) { setMes(11); setAno(a => a-1); } else setMes(m => m-1); }} style={{ border: `1px solid ${bordaSuave}`, background: camada2, borderRadius: 7, width: 28, height: 28, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", color: text }}>‹</button>
                   <button onClick={() => { if (mes === 11) { setMes(0); setAno(a => a+1); } else setMes(m => m+1); }} style={{ border: `1px solid ${bordaSuave}`, background: camada2, borderRadius: 7, width: 28, height: 28, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", color: text }}>›</button>
                 </div>
-                <div style={{ display: "flex", gap: 11, flexWrap: "wrap", fontSize: 11.5, color: textSub }}>
-                  {[["#4ecb8d",`≥ +${contaSel === "ION OTS" ? 50 : 100}`],["#e0c040","Neutro"],["#f06b6b",`≤ −${contaSel === "ION OTS" ? 50 : 100}`],[naoCliquei.border,"Não cliquei"]].map(([c,l]) => (
-                    <span key={l} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: 3, background: c, display: "inline-block" }} />{l}
+
+                {combinado ? (
+                  <div style={{ display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
+                    <Legenda rotulo="ION 3" limite={LIMITES[CONTA_ION3]} />
+                    <span style={{ width: 1, height: 16, background: bordaSuave, display: "inline-block" }} />
+                    <Legenda rotulo="OTS" limite={LIMITES[CONTA_OTS]} />
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", gap: 11, flexWrap: "wrap", alignItems: "center" }}>
+                    <Legenda rotulo={null} limite={LIMITES[contaSel]} />
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5, color: textSub }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 3, background: naoCliquei.border, display: "inline-block" }} />Não cliquei
                     </span>
-                  ))}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Seletor de conta — canto superior direito do calendário */}
               <div style={{ display: "flex", gap: 4, background: camada2, border: `1px solid ${bordaSuave}`, borderRadius: 9, padding: 3, flexShrink: 0 }}>
                 {CONTAS.map(c => (
-                  <button key={c} onClick={() => setContaSel(c)} style={{
+                  <button key={c} onClick={() => trocarConta(c)} style={{
                     background: contaSel === c ? ACCENT : "transparent",
                     color: contaSel === c ? "#fff" : textSub,
                     border: "none", borderRadius: 6, padding: "6px 13px",
                     fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                    whiteSpace: "nowrap",
                   }}>{c}</button>
                 ))}
               </div>
             </div>
 
             {/* primeira linha (cabeçalhos) com altura automática; demais linhas com altura fixa */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr) 12px 1.05fr", gridTemplateRows: "auto", gridAutoRows: "136px", columnGap: 6, rowGap: 6, width: "100%" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr) 12px 1.05fr", gridTemplateRows: "auto", gridAutoRows: combinado ? "150px" : "136px", columnGap: 6, rowGap: 6, width: "100%" }}>
               {renderCalendario()}
             </div>
           </div>
