@@ -353,8 +353,6 @@ export default function Objetivos({ th, dark, setDark }) {
             <span style={{ color: textSub, fontSize: 13 }}>{isOpen ? "▲" : "▼"}</span>
           </div>
         </div>        
-        
-        </div>
 
         {/* Conteúdo expandido — só visualização */}
         {isOpen && (
