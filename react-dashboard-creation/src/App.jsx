@@ -4,33 +4,22 @@ import Estudos from "./Estudos";
 import Revisoes from "./Revisoes";
 import Objetivos from "./Objetivos";
 import PlanoTrade from './PlanoTrade';
-import Habitos from './Habitos'; 
+import Habitos from './Habitos';
 import Replays from './Replays';
 
 const API_URL    = "https://script.google.com/macros/s/AKfycbwHp4j2xXWBeQF9OcLghTy8tvcNN6tvKNX8hyE_3Dq_Z9x5Sz5fp9UGIPVFkJ9LN4v-/exec";
 const API_DIARIO = "https://script.google.com/macros/s/AKfycbw8RZBDKmZSLJy14PpP0enu05KR0nbPhavtg_m0ZOTnjvHPgBaFT8hzoByu8nKdiRT5/exec";
 
-const METAS_MENSAIS = { horasEstudo:80, paginasLidas:100, videoAulas:10, replays:20 };
-const METAS_ANUAIS  = { horasEstudo:480, paginasLidas:500, videoAulas:60, replays:120 };
-const DIAS_SEMANA   = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
-const MESES_PT      = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-
-
-const ACCENT_LIGHT  = "#2e2e8c";
-const ACCENT_DARK   = "#A83259";
-const ACCENT        = ACCENT_LIGHT;
+const DIAS_SEMANA = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"];
+const MESES_PT    = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
 const BASE_DARK = {
   text:"#f2f2f5", textSub:"#c4c3cc", textMuted:"#8f8e9c",
   cardShadow:"0 1px 6px rgba(0,0,0,0.6)",
-  calDayBg:{ 1:"#182420", 2:"#211f18", 3:"#211a1a", 0:"#1c1a22" },
-  calDayBorder:{ 1:"#3d6b52", 2:"#6b6142", 3:"#6b4444", 0:"transparent" },
 };
 const BASE_LIGHT = {
   text:"#0f1117", textSub:"#4a5568", textMuted:"#8a96a3",
   cardShadow:"0 1px 4px rgba(0,0,0,0.06)",
-  calDayBg:{ 1:"#e6faf2", 2:"#fff8e1", 3:"#fce4ec", 0:"#f5f5f5" },
-  calDayBorder:{ 1:"#a7e9c9", 2:"#ffe082", 3:"#f48fb1", 0:"transparent" },
 };
 
 const THEMES = [
@@ -39,7 +28,7 @@ const THEMES = [
     cardBg:"#16151a", resumeBg:"#1e1c24", navActiveBg:"#2e1420",
     skeletonA:"#26242d", skeletonB:"#312e3a" },
 
-{ id:"esmeralda", nome:"Esmeralda", dark:true, accent:"#2E9E6B", ...BASE_DARK,
+  { id:"esmeralda", nome:"Esmeralda", dark:true, accent:"#2E9E6B", ...BASE_DARK,
     bg:"#030403", surface:"#141614", border:"#252a27", border2:"#303632",
     cardBg:"#171917", resumeBg:"#1f221f", navActiveBg:"#16291f",
     skeletonA:"#252a27", skeletonB:"#303632" },
@@ -49,7 +38,7 @@ const THEMES = [
     cardBg:"#14181f", resumeBg:"#1b202a", navActiveBg:"#14264a",
     skeletonA:"#1f2531", skeletonB:"#2a313f" },
 
-{ id:"ambar", nome:"Âmbar", dark:true, accent:"#C77A2B", ...BASE_DARK,
+  { id:"ambar", nome:"Âmbar", dark:true, accent:"#C77A2B", ...BASE_DARK,
     bg:"#040403", surface:"#161514", border:"#2a2723", border2:"#35322d",
     cardBg:"#191714", resumeBg:"#221f1b", navActiveBg:"#2e2214",
     skeletonA:"#2a2723", skeletonB:"#35322d" },
@@ -59,14 +48,14 @@ const THEMES = [
     cardBg:"#ffffff", resumeBg:"#f8f9fa", navActiveBg:"#E5E1F9",
     skeletonA:"#efefef", skeletonB:"#e5e5e5" },
 
-{ id:"grafite", nome:"Grafite", dark:false, accent:"#3a3a42", ...BASE_LIGHT,
+  { id:"grafite", nome:"Grafite", dark:false, accent:"#3a3a42", ...BASE_LIGHT,
     text:"#23242a", textSub:"#4d4f57", textMuted:"#7c7e88",
     cardShadow:"0 1px 3px rgba(0,0,0,0.05)",
     bg:"#dedee1", surface:"#ececed", border:"#cfcfd4", border2:"#c2c2c8",
     cardBg:"#e8e8ea", resumeBg:"#dfdfe2", navActiveBg:"#cdcdd3",
     skeletonA:"#d8d8dc", skeletonB:"#cccdd1" },
 
-{ id:"musgo", nome:"Musgo", dark:false, accent:"#2F7D5A", ...BASE_LIGHT,
+  { id:"musgo", nome:"Musgo", dark:false, accent:"#2F7D5A", ...BASE_LIGHT,
     bg:"#f3f6f4", surface:"#ffffff", border:"#e6ebe8", border2:"#dae1dd",
     cardBg:"#ffffff", resumeBg:"#f6f9f7", navActiveBg:"#dcefe5",
     skeletonA:"#eef1ef", skeletonB:"#e3e8e5" },
@@ -104,134 +93,23 @@ const THEMES = [
 ];
 
 function pct(v,total){ return !total?0:Math.min(100,Math.round((v/total)*100)); }
-function minParaHM(min){ const h=Math.floor(min/60),m=min%60; return m>0?`${h}h ${m}m`:`${h}h`; }
-
-function buildCalendario(cal,ano,mes){
-  const primeiro=new Date(ano,mes,1);
-  let inicio=primeiro.getDay(); inicio=inicio===0?6:inicio-1;
-  const ultimo=new Date(ano,mes+1,0).getDate();
-  const cells=[];
-  for(let i=0;i<inicio;i++) cells.push({num:null,tipo:null});
-  for(let d=1;d<=ultimo;d++) cells.push({num:d,tipo:cal[d]!==undefined?cal[d]:null});
-  while(cells.length%7!==0) cells.push({num:null,tipo:null});
-  const semanas=[];
-  for(let i=0;i<cells.length;i+=7) semanas.push(cells.slice(i,i+7));
-  return semanas;
-}
 
 const Ico = {
-  Clock:   ({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  Book:    ({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
-  Camera:  ({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
   Check:   ({s=16,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-  X:       ({s=16,c="#f87171"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   Target:  ({s=20,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
   Trend:   ({s=20,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
   BookOpen:({s=20,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-  Play:    ({s=20,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
   Repeat:  ({s=20,c="#4ecb8d"})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>,
-  Moon:    ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
-  Sun:     ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
   Calendar:({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
   Growth:  ({s=19,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h20"/><rect x="3" y="15" width="3.2" height="5" rx="0.4"/><rect x="8.4" y="11" width="3.2" height="9" rx="0.4"/><rect x="13.8" y="7.5" width="3.2" height="12.5" rx="0.4"/><path d="M3 9.5c3-0.3 6-1.6 8.2-4C13 3.7 15 2.5 17.5 2.2"/><path d="M13.5 2.4l4-0.3 0.3 4"/></svg>,
-  Search:  ({s=16,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-  Bell:    ({s=16,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
   Expand:  ({s=14,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
   Collapse:({s=14,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
-
-  Palette:({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".8"/><circle cx="17.5" cy="10.5" r=".8"/><circle cx="8.5" cy="7.5" r=".8"/><circle cx="6.5" cy="12.5" r=".8"/><path d="M12 2a10 10 0 0 0 0 20 2 2 0 0 0 2-2 2 2 0 0 1 2-2h2a4 4 0 0 0 4-4 10 10 0 0 0-10-10z"/></svg>,
-Clipboard:({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>,
-  };
+  Palette: ({s=15,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".8"/><circle cx="17.5" cy="10.5" r=".8"/><circle cx="8.5" cy="7.5" r=".8"/><circle cx="6.5" cy="12.5" r=".8"/><path d="M12 2a10 10 0 0 0 0 20 2 2 0 0 0 2-2 2 2 0 0 1 2-2h2a4 4 0 0 0 4-4 10 10 0 0 0-10-10z"/></svg>,
+  Clipboard:({s=18,c})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>,
+};
 
 function Skeleton({w="100%",h=20,r=6,th}){
   return <div style={{width:w,height:h,borderRadius:r,background:`linear-gradient(90deg,${th.skeletonA} 25%,${th.skeletonB} 50%,${th.skeletonA} 75%)`,backgroundSize:"200% 100%",animation:"shimmer 1.4s infinite"}}/>;
-}
-
-function MetricCard({icon,color,label,value,unit,sub,pctVal,barColor,th}){
-  return(
-    <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5,transition:"background 0.3s,border 0.3s"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>{label}</span>
-        {icon}
-      </div>
-      <div style={{fontSize:26,fontWeight:800,color,lineHeight:1.1}}>
-        {value}<span style={{fontSize:14,fontWeight:600}}>{unit}</span>
-      </div>
-      {sub&&<div style={{fontSize:11,color:th.textMuted}}>{sub}</div>}
-      {pctVal!==undefined&&(
-        <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
-          <div style={{flex:1,background:th.resumeBg,borderRadius:4,height:5}}>
-            <div style={{width:`${pctVal}%`,background:barColor,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
-          </div>
-          <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pctVal}%</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ProgressBar({label,icon,value,meta,pctVal,color,th}){
-  return(
-    <div style={{display:"flex",alignItems:"center",gap:16,padding:"13px 0",borderBottom:`1px solid ${th.border}`}}>
-      <span style={{flexShrink:0}}>{icon}</span>
-      <span style={{width:150,fontSize:13,color:th.text,fontWeight:500,flexShrink:0}}>{label}</span>
-      <div style={{flex:1,background:th.resumeBg,borderRadius:6,height:6}}>
-        <div style={{width:`${pctVal}%`,background:color,borderRadius:6,height:6,transition:"width 0.8s ease"}}/>
-      </div>
-      <span style={{fontSize:12,color:th.textMuted,width:130,textAlign:"right",flexShrink:0}}>{value} / {meta}</span>
-      <span style={{fontSize:12,fontWeight:700,color:th.text,width:36,textAlign:"right",flexShrink:0}}>{pctVal}%</span>
-    </div>
-  );
-}
-
-function OntemCard({ontem,ontemData,th,accent}){
-  if(!ontem) return(
-    <div style={{background:th.cardBg,borderRadius:14,padding:"16px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18}}>
-      <div style={{display:"flex",alignItems:"center",gap:8}}>
-        <Ico.Calendar s={14} c={th.textMuted}/>
-        <span style={{fontSize:11,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Meu Dia Ontem</span>
-        <span style={{fontSize:11,color:th.textMuted,marginLeft:4}}>— sem registro</span>
-      </div>
-    </div>
-  );
-  const metricas=[
-    {label:"Estudo",  value:`${ontem.horas}h`,        icon:<Ico.Clock    s={14} c={th.textMuted}/>},
-    {label:"Páginas", value:`${ontem.paginas}`,        icon:<Ico.BookOpen s={14} c={th.textMuted}/>},
-    {label:"Vídeo",   value:minParaHM(ontem.videoMin), icon:<Ico.Play     s={14} c={th.textMuted}/>},
-    {label:"Replays", value:`${ontem.replays}`,        icon:<Ico.Repeat   s={14} c={th.textMuted}/>},
-  ];
-  return(
-    <div style={{background:th.cardBg,borderRadius:14,padding:"16px 24px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,marginBottom:18,transition:"background 0.3s,border 0.3s"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-        <Ico.Calendar s={14} c={accent}/>
-        <span style={{fontSize:11,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Meu Dia Ontem</span>
-        <span style={{fontSize:11,color:th.textMuted,marginLeft:2}}>— {ontemData}</span>
-        <span style={{marginLeft:8,fontSize:11,fontWeight:600,color:accent,background:th.navActiveBg,padding:"2px 10px",borderRadius:20,border:`1px solid ${accent}33`}}>{ontem.tipo}</span>
-      </div>
-      <div style={{display:"flex",gap:0,alignItems:"stretch"}}>
-        <div style={{display:"flex",gap:8,flex:1}}>
-          {metricas.map(m=>(
-            <div key={m.label} style={{background:th.resumeBg,borderRadius:10,padding:"10px 16px",display:"flex",flexDirection:"column",gap:4,flex:1,border:`1px solid ${th.border}`}}>
-              <div style={{display:"flex",alignItems:"center",gap:5}}>
-                {m.icon}
-                <span style={{fontSize:10,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:0.6}}>{m.label}</span>
-              </div>
-              <span style={{fontSize:20,fontWeight:800,color:th.text}}>{m.value}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{width:1,background:th.border,margin:"0 18px"}}/>
-        <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",alignContent:"center",flex:1.2}}>
-          {ontem.habitos.map(h=>(
-            <div key={h.nome} style={{display:"flex",alignItems:"center",gap:6,minWidth:"45%"}}>
-              {h.feito?<Ico.Check s={13} c={accent}/>:<Ico.X s={13} c="#f87171"/>}
-              <span style={{fontSize:12,color:h.feito?th.text:th.textMuted,fontWeight:h.feito?500:400}}>{h.nome}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function App(){
@@ -246,7 +124,7 @@ export default function App(){
   const [tradesPorData, setTradesPorData]     = useState({});
   const [loadingRevisoes, setLoadingRevisoes] = useState(true);
 
-  const [activeNav,setActiveNav]     = useState("Dashboard");
+  const [activeNav,setActiveNav] = useState("Dashboard");
 
   const [temaId,setTemaId] = useState(()=>{
     try { return localStorage.getItem("tema_app") || "framboesa"; } catch(e){ return "framboesa"; }
@@ -256,19 +134,17 @@ export default function App(){
     setTemaId(id);
     try { localStorage.setItem("tema_app", id); } catch(e){}
   };
-  
+
   const [sidebarExpandido,setSidebarExpandido] = useState(true);
   const [metasExpandido, setMetasExpandido] = useState(true);
-    const [seqExpandido, setSeqExpandido] = useState(false);
 
-
-  const [diaSel,setDiaSel]           = useState(null);
+  const [diaSel,setDiaSel] = useState(null);
   const [diaDisciplinaSel, setDiaDisciplinaSel] = useState(null);
   const hoje = new Date();
-  const [mesVis,setMesVis]       = useState(hoje.getMonth());
-  const [anoVis,setAnoVis]       = useState(hoje.getFullYear());
+  const [mesVis,setMesVis] = useState(hoje.getMonth());
+  const [anoVis,setAnoVis] = useState(hoje.getFullYear());
   const [dadosMes, setDadosMes] = useState(null);
-    const [dadosOts, setDadosOts] = useState(null);
+  const [dadosOts, setDadosOts] = useState(null);
   const [objetivosSemanaAtual, setObjetivosSemanaAtual] = useState(null);
 
   function semanaISOApp(date){
@@ -284,9 +160,8 @@ export default function App(){
   const [novoPonto, setNovoPonto] = useState("");
   const [showFormPlano, setShowFormPlano] = useState(false);
   const [showFormPonto, setShowFormPonto] = useState(false);
-  const [chaveSemanaAtual, setChaveSemanaAtual] = useState("");
 
-const planoSemanaRef = useRef([]);
+  const planoSemanaRef = useRef([]);
   const pontosAtencaoRef = useRef([]);
   const salvarTimeoutRef = useRef(null);
   useEffect(()=>{ planoSemanaRef.current = planoSemana; },[planoSemana]);
@@ -343,17 +218,13 @@ const planoSemanaRef = useRef([]);
     { id:5, label:"Diário de trades", done:false },
     { id:6, label:"Pós MKT com Coach", done:false },
   ]);
-  
-const [checklistAlterado, setChecklistAlterado] = useState(false);
+  const [checklistAlterado, setChecklistAlterado] = useState(false);
   const [checklistSalvando, setChecklistSalvando] = useState(false);
 
-  const [habitosHoje, setHabitosHoje] = useState({ horas:"", replays:"", paginas:"" });
+  // Hábitos: só leitura no Dashboard. A escrita acontece na página de Hábitos.
   const [habitosLista, setHabitosLista] = useState([]);
   const [habitosCarregado, setHabitosCarregado] = useState(false);
-  
-  const [habitosAlterado, setHabitosAlterado] = useState(false);
-  const [habitosSalvando, setHabitosSalvando] = useState(false);
-  
+
   const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
 
   const [dsiValor, setDsiValor] = useState("0");
@@ -385,7 +256,7 @@ const [checklistAlterado, setChecklistAlterado] = useState(false);
     fetch(`${API_DIARIO}?action=salvarDSI&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(()=>{});
   }
 
-function salvarChecklistHojeApp(){
+  function salvarChecklistHojeApp(){
     setChecklistSalvando(true);
     const payload = { data: hojeStr, checklist: checklistHoje, naoDevo: "", intencao: "" };
     fetch(`${API_DIARIO}?action=salvarChecklistDiario&dados=${encodeURIComponent(JSON.stringify(payload))}`)
@@ -398,37 +269,7 @@ function salvarChecklistHojeApp(){
     setChecklistAlterado(true);
   }
 
-  function alterarHabito(campo, valor){
-    setHabitosHoje(prev=>({ ...prev, [campo]: valor }));
-    setHabitosAlterado(true);
-  }
-
-  function salvarHabitosHojeApp(){
-    setHabitosSalvando(true);
-    const payload = {
-      data: hojeStr,
-      horas:   Number(habitosHoje.horas)   || 0,
-      replays: Number(habitosHoje.replays) || 0,
-      paginas: Number(habitosHoje.paginas) || 0,
-    };
-    
-fetch(`${API_DIARIO}?action=salvarHabitos&dados=${encodeURIComponent(JSON.stringify(payload))}`)
-      .then(()=>{
-        setHabitosLista(prev=>{
-          const semHoje = (prev||[]).filter(h=>h.data !== hojeStr);
-          const antigo = (prev||[]).find(h=>h.data === hojeStr) || {};
-          const novo = [...semHoje, { ...antigo, ...payload }].sort((a,b)=>a.data.localeCompare(b.data));
-          try { localStorage.setItem("cache_habitos", JSON.stringify(novo)); } catch(e){}
-          return novo;
-        });
-      })
-      .catch(()=>{})
-      .finally(()=>{ setHabitosSalvando(false); setHabitosAlterado(false); });
-
-    
-  }
-
-const tema = THEMES.find(t=>t.id===temaId) || THEMES[0];
+  const tema = THEMES.find(t=>t.id===temaId) || THEMES[0];
   const th = tema;
   const dark = tema.dark;
   const ACCENT_ATUAL = tema.accent;
@@ -448,7 +289,7 @@ const tema = THEMES.find(t=>t.id===temaId) || THEMES[0];
       });
   }
 
-const carregar=()=>{
+  const carregar=()=>{
     const cacheEstudos = localStorage.getItem("cache_estudos");
     if(cacheEstudos){
       try { setDados(JSON.parse(cacheEstudos)); setLoading(false); } catch(e){}
@@ -465,7 +306,7 @@ const carregar=()=>{
       .catch(e=>{ if(!cacheEstudos){ setErro(e.message); } setLoading(false); });
   };
 
-const carregarDiario=(ini="",fi="")=>{
+  const carregarDiario=(ini="",fi="")=>{
     setLoadingDiario(true);
     let url = API_DIARIO;
     const params=[];
@@ -490,13 +331,13 @@ const carregarDiario=(ini="",fi="")=>{
     setLoadingRevisoes(false);
   };
 
-useEffect(()=>{
+  useEffect(()=>{
     carregar(); // script separado (Estudos), não compete pela mesma cota
 
     function aplicarDashboardInit(j){
       if(j.diario && !j.diario.erro) setDadosDiario(j.diario);
       if(j.mes && !j.mes.erro) setDadosMes(j.mes);
-            if(j.ots && !j.ots.erro) setDadosOts(j.ots);
+      if(j.ots && !j.ots.erro) setDadosOts(j.ots);
       setRevisoes(j.revisoes || []);
       setUpdates(j.updates || []);
       setTradesPorData(j.tradesPorData || {});
@@ -507,7 +348,6 @@ useEffect(()=>{
       const foundObjetivo = (j.objetivos||[]).find(o=>o.chave===chave);
       setObjetivosSemanaAtual(foundObjetivo||null);
 
-      setChaveSemanaAtual(chave);
       const foundSemana = (j.semanas||[]).find(s=>s.chave===chave);
       setPlanoSemana(foundSemana?.planoSemana || []);
       setPontosAtencao(foundSemana?.pontosAtencao || []);
@@ -524,7 +364,7 @@ useEffect(()=>{
       }
 
       const hojeChave = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
-const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
+      const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
       if(foundDia && foundDia.checklist?.length) setChecklistHoje(foundDia.checklist);
     }
 
@@ -555,14 +395,10 @@ const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
     carregarDashboardInit();
   },[]);
 
+  // Hábitos: uma única chamada alimenta o card do Dashboard e a página de Hábitos.
   useEffect(()=>{
-    const hojeChaveH = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
-
     function aplicar(lista){
       setHabitosLista(lista || []);
-      const d = (lista||[]).find(h=>h.data===hojeChaveH);
-    
-      if(d) setHabitosHoje({ horas:String(d.horas||""), replays:String(d.replays||""), paginas:String(d.paginas||"") });
     }
     try {
       const c = localStorage.getItem("cache_habitos");
@@ -572,45 +408,24 @@ const foundDia = (j.dias||[]).find(d=>d.data===hojeChave);
       fetchComRetry(`${API_DIARIO}?action=lerHabitos`)
         .then(j=>{
           const lista = j.habitos || [];
-          
-try { localStorage.setItem("cache_habitos", JSON.stringify(lista)); } catch(e){}
+          try { localStorage.setItem("cache_habitos", JSON.stringify(lista)); } catch(e){}
           aplicar(lista);
           setHabitosCarregado(true);
         })
         .catch(()=>setHabitosCarregado(true));
-          
     }, 3000);
     return ()=>clearTimeout(t);
   },[]);
 
-  const m         = dados?.metricas    || {};
-  const seq       = dados?.sequencias  || [];
-  const rotinas   = dados?.rotinas     || [];
-  const resumo    = dados?.resumoMes   || {};
-  const calObj    = dados?.calendario  || {};
-  const diasDia   = dados?.diasDetalhes|| {};
-  const ontem     = dados?.ontem       || null;
-  const ontemData = dados?.ontemData   || "";
+  const diasDia = dados?.diasDetalhes || {};
 
-  const totalDiasMes  = resumo.totalDias||1;
-  const semanas       = buildCalendario(calObj,anoVis,mesVis);
   const dataFormatada = hoje.toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"});
 
   const diaKey  = diaSel?`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`:null;
   const detalhe = diaKey&&diasDia[diaKey];
   const modoDia = !!detalhe;
 
-  const cardHoras   = modoDia?(detalhe.horas||0):(m.horasEstudoMes||0);
-  const cardPaginas = modoDia?(detalhe.paginas||0):(m.paginasLidasMes||0);
-  const cardVideo   = modoDia?(detalhe.videoMin||0):((m.videoAulasHMes||0)*60+(m.videoAulasMMin||0));
-  const cardReplays = modoDia?(detalhe.replays||0):(m.replaysMes||0);
-  const cardTipo    = modoDia?(detalhe.tipo||""):null;
-  const metaH=modoDia?4:METAS_MENSAIS.horasEstudo;
-  const metaP=modoDia?3:METAS_MENSAIS.paginasLidas;
-  const metaV=modoDia?30:METAS_MENSAIS.videoAulas*60;
-  const metaR=modoDia?1:METAS_MENSAIS.replays;
-
-const navItems = [
+  const navItems = [
     {label:"Dashboard",      icon:<Ico.Target    s={19} c="currentColor"/>},
     {label:"Revisões",       icon:<Ico.Calendar  s={19} c="currentColor"/>},
     {label:"Hábitos",        icon:<Ico.Check     s={19} c="currentColor"/>},
@@ -619,7 +434,6 @@ const navItems = [
     {label:"Estatísticas",   icon:<Ico.Trend     s={19} c="currentColor"/>},
     {label:"Estudos",        icon:<Ico.BookOpen  s={19} c="currentColor"/>},
     {label:"Plano de Trade", icon:<Ico.Clipboard s={19} c="currentColor"/>},
-  
   ];
 
   const topNav = [
@@ -650,33 +464,30 @@ const navItems = [
         <Revisoes th={th} dark={dark} setDark={setDark} revisoesProp={revisoes} updatesProp={updates} tradesPorDataProp={tradesPorData} loadingProp={loadingRevisoes} onCarregar={carregarRevisoes}/>
       </div>
     );
-
-    if (activeNav === "Hábitos") return (
+    if(activeNav === "Hábitos") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
         <Habitos th={th} habitosProp={habitosLista}/>
       </div>
     );
-
-    if (activeNav === "Replays") return (
+    if(activeNav === "Replays") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
         <Replays th={th}/>
       </div>
     );
-                                    
     if(activeNav === "Plano de Trade") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
         <PlanoTrade th={th}/>
       </div>
     );
 
-const GRUPO_SETUP = { TRM:"#6B8CC4", FQ:"#B98FC2", TC:"#5FA8AE", TL:"#C2A15F", AB:"#9B7FC2" };
+    const GRUPO_SETUP = { TRM:"#6B8CC4", FQ:"#B98FC2", TC:"#5FA8AE", TL:"#C2A15F", AB:"#9B7FC2" };
     function corWRDash(wr){
       if(wr>=60) return dark?{bg:"#182420",border:"#3d6b52",text:"#7fb89a"}:{bg:"#eaf7f0",border:"#5cb583",text:"#2f7d52"};
       if(wr>=45) return dark?{bg:"#211f18",border:"#6b6142",text:"#c2b184"}:{bg:"#fbf6e6",border:"#d1a53d",text:"#8a6f1a"};
       return dark?{bg:"#211a1a",border:"#6b4444",text:"#c68888"}:{bg:"#fbeceb",border:"#d9776b",text:"#a83f31"};
     }
 
-function classificarSetup(nome){
+    function classificarSetup(nome){
       const n = (nome||"").toLowerCase();
       if(n === "trm") return {grupo:"TRM", label:"TRM"};
       if(n === "fq") return {grupo:"FQ", label:"FQ"};
@@ -689,8 +500,8 @@ function classificarSetup(nome){
       if(n.includes("pré bo")||n.includes("pre bo")) return {grupo:"TC", label:"TC Pré BO"};
       return null;
     }
-    
-const setupsClassificados = {};
+
+    const setupsClassificados = {};
     (dadosDiario?.setups||[]).forEach(s=>{
       const c = classificarSetup(s.nome);
       if(c) setupsClassificados[c.label] = { ...s, ...c };
@@ -707,21 +518,21 @@ const setupsClassificados = {};
     Object.keys(setupsClassificados).forEach(label=>{
       setupsClassificados[label].financTotal = financPorSetup[label] || 0;
     });
-    
-const setupsLinhasDash = [
+
+    const setupsLinhasDash = [
       [setupsClassificados["Trade de Abertura"], setupsClassificados["Abertura – Barra de Força"]],
       [setupsClassificados["TC Meio de Mov."], setupsClassificados["TC Pós BO"], setupsClassificados["TC Supertrend"]],
       [setupsClassificados["TRM"], setupsClassificados["TL"]],
     ];
-    
-const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
+
+    const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
       const c = classificarSetup(s.nome);
       return c ? { nome:c.label, wr:s.taxaAcerto, financ:s.financTotal } : null;
     }).filter(Boolean);
     const financMes = dadosMes?.contas?.["ION 3"]?.financTotal ?? null;
     const wrMes = dadosMes?.contas?.["ION 3"]?.taxaAcerto ?? null;
 
-// Studies Streak — mesma fonte e mesmo critério da página de Hábitos:
+    // Studies Streak — mesma fonte e mesmo critério da página de Hábitos:
     // 3/3 = perfeito · 2/3 = quase · resto = fraco. Registro começa em 07/08/2026.
     const INICIO_HABITOS = "2026-08-07";
     const habitosPorData = {};
@@ -736,7 +547,7 @@ const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
       const h = habitosPorData[chave];
       const feitos = h ? ((h.horas>=1?1:0) + (h.replays>=1?1:0) + (h.paginas>=1?1:0)) : 0;
       let status;
-      if (!habitosCarregado && !h) status = null;          // ainda carregando
+      if (!habitosCarregado && !h) status = null;                        // ainda carregando
       else if (feitos === 0 && chave === hojeChaveStreak) status = null; // hoje em aberto
       else if (feitos === 3) status = "perfeito";
       else if (feitos === 2) status = "quase";
@@ -748,7 +559,7 @@ const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
       cursor.setDate(cursor.getDate() - 1);
     }
 
-let streakAtual = 0;
+    let streakAtual = 0;
     for (let i = streakDias.length - 1; i >= 0; i--) {
       if (streakDias[i].status === null) continue;
       if (streakDias[i].status === "perfeito") streakAtual++;
@@ -776,7 +587,7 @@ let streakAtual = 0;
       }
       return cont;
     }
-const seqPorHabitoDash = {};
+    const seqPorHabitoDash = {};
     HABITOS_DASH.forEach(h=>{ seqPorHabitoDash[h.campo] = seqHabito(h.campo); });
 
     // ── Metas de estudo do quarter — mesma base da página de Hábitos ──────────
@@ -823,9 +634,7 @@ const seqPorHabitoDash = {};
       };
     });
 
-    
-
-const disciplineDias = [];
+    const disciplineDias = [];
     let cursorD = new Date(hoje);
     while (disciplineDias.length < 20) {
       const diaSemanaD = cursorD.getDay();
@@ -846,7 +655,7 @@ const disciplineDias = [];
       }
       cursorD.setDate(cursorD.getDate() - 1);
     }
-let disciplineStreakAtual = 0;
+    let disciplineStreakAtual = 0;
     for (let i = disciplineDias.length - 1; i >= 0; i--) {
       const d = disciplineDias[i];
       if (d.statusEmocional === null && d.statusTecnico === null) continue;
@@ -865,7 +674,7 @@ let disciplineStreakAtual = 0;
       if (disciplineDias[i].statusTecnico === "ok") streakTecnico++;
       else break;
     }
-    
+
     const diasNoMesAtual = new Date(anoVis, mesVis+1, 0).getDate();
     const primeiroDiaSemana = new Date(anoVis, mesVis, 1).getDay();
     const offsetInicio = primeiroDiaSemana===0 ? 6 : primeiroDiaSemana-1;
@@ -894,7 +703,7 @@ let disciplineStreakAtual = 0;
 
         {erro&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"13px 18px",marginBottom:20,color:"#dc2626",fontSize:13}}>⚠️ {erro}</div>}
 
-        {/* Split de colunas — main + sidebar direita, alinhados a partir daqui */}
+        {/* Split de colunas — main + sidebar direita */}
         <div style={{display:"flex",gap:16,width:"100%",minWidth:0,alignItems:"flex-start"}}>
           <main style={{flex:1,minWidth:0}}>
 
@@ -940,7 +749,7 @@ let disciplineStreakAtual = 0;
                   </div>
                 </div>
 
-<div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
+                <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
                   <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>DSI</span>
                   <input
                     type="number"
@@ -977,7 +786,7 @@ let disciplineStreakAtual = 0;
               </div>
             </div>
 
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:18}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:18}}>
               <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                   <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Studies Streak</span>
@@ -989,14 +798,14 @@ let disciplineStreakAtual = 0;
                   {streakDias.map((d,i)=>{
                     const cor = d.status===null ? "transparent" : d.status==="perfeito" ? (dark?"#1a7048":"#5cb583") : d.status==="quase" ? (dark?"#856404":"#d1a53d") : (dark?"#8a3a3a":"#d9776b");
                     return (
-                      <div key={i} title={d.dataObj.toLocaleDateString("pt-BR")} style={{width:18,height:18,borderRadius:5,background:cor,border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
+                      <div key={i} title={`${d.dataObj.toLocaleDateString("pt-BR")} — ${d.resumo}`} style={{width:18,height:18,borderRadius:5,background:cor,border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
                     );
                   })}
                 </div>
               </div>
 
-<div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,position:"relative"}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,position:"relative"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                   <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Discipline Streak</span>
                   <span style={{display:"flex",alignItems:"center",gap:6,fontSize:15,fontWeight:800,color:disciplineStreakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>
                     <Ico.Growth s={16} c={disciplineStreakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}/> {disciplineStreakAtual}d
@@ -1017,7 +826,7 @@ let disciplineStreakAtual = 0;
                     <span style={{fontSize:10,fontWeight:700,color:streakEmocional>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted,flexShrink:0,minWidth:26,textAlign:"right"}}>{streakEmocional}d</span>
                   </div>
 
-                 <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{fontSize:9.5,color:th.textMuted,width:58,flexShrink:0}}>Técnico</span>
                     <div style={{display:"flex",gap:5,flex:1}}>
                       {disciplineDias.map((d,i)=>{
@@ -1066,6 +875,7 @@ let disciplineStreakAtual = 0;
                 })()}
               </div>
             </div>
+
             {modoDia&&(
               <div style={{background:dark?"#1a3028":"#f0fdf8",border:`1px solid ${dark?"#2d6b4f":"#a7e9c9"}`,borderRadius:10,padding:"10px 18px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <span style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:600}}>📅 Exibindo dados de {String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}/{anoVis}</span>
@@ -1073,7 +883,7 @@ let disciplineStreakAtual = 0;
               </div>
             )}
 
-{/* Resultados do Mês + Status dos Setups | Calendário + (Hoje / Não devo+Intenção) */}
+            {/* Resultados do Mês + Status dos Setups | Calendário + Hoje */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gridAutoRows:"auto",gap:16,marginBottom:18}}>
 
               {/* Linha 1, Coluna A: Resultados do Mês */}
@@ -1141,7 +951,7 @@ let disciplineStreakAtual = 0;
                 )}
               </div>
 
-              {/* Linha 1, Coluna B: Calendário — mesma linha do grid, estica pra mesma altura automaticamente */}
+              {/* Linha 1, Coluna B: Calendário */}
               <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative",display:"flex",flexDirection:"column",height:"100%"}}>
                 <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:10,display:"block"}}>{MESES_PT[mesVis]}</span>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
@@ -1150,8 +960,7 @@ let disciplineStreakAtual = 0;
                   ))}
                 </div>
                 <div style={{flex:1,display:"grid",gridTemplateColumns:"repeat(7,1fr)",gridTemplateRows:`repeat(${Math.ceil(miniCalDias.length/7)},1fr)`,gap:4}}>
-                  
-{miniCalDias.map(({dia,r,futuro,fimDeSemana},idx)=>{
+                  {miniCalDias.map(({dia,r,futuro,fimDeSemana},idx)=>{
                     if(dia===null) return <div key={`vazio-${idx}`}/>;
                     // três estados: futuro (tracejado) · passado sem clique (cinza azulado) · com trades (colorido)
                     const naoCliqueiBg = dark ? "#1c2430" : "#dde3ec";
@@ -1175,9 +984,8 @@ let disciplineStreakAtual = 0;
                       </div>
                     );
                   })}
-                  
                 </div>
-               {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 3"] && (() => {
+                {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 3"] && (() => {
                   const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
                   const r = tradesPorData[key]["ION 3"];
                   return (
@@ -1188,7 +996,7 @@ let disciplineStreakAtual = 0;
                           <span style={{fontSize:14,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
                         </div>
                         <div style={{display:"flex",gap:16,marginBottom:14}}>
-<div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
+                          <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
                           <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
                           <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
                         </div>
@@ -1220,7 +1028,7 @@ let disciplineStreakAtual = 0;
                 })()}
               </div>
 
-{/* Linha 2, Coluna A: Status dos Setups */}
+              {/* Linha 2, Coluna A: Status dos Setups */}
               <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
                 <div style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Status dos Setups</div>
                 <div style={{display:"flex",flexDirection:"column",gap:6,flex:1}}>
@@ -1229,14 +1037,13 @@ let disciplineStreakAtual = 0;
                       {linha.map((s,ci)=> s ? (
                         <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`,height:"100%",boxSizing:"border-box"}}>
                           <span style={{fontSize:11.5,fontWeight:700,color:th.text}}>{s.label}</span>
-<div style={{display:"flex",flexDirection:"column",gap:2,alignItems:"flex-end"}}>
+                          <div style={{display:"flex",flexDirection:"column",gap:2,alignItems:"flex-end"}}>
                             <div style={{display:"flex",gap:5,alignItems:"center"}}>
                               <span style={{fontSize:10,fontWeight:700,color:corWRDash(s.taxaAcerto).text,background:corWRDash(s.taxaAcerto).bg,border:`1px solid ${corWRDash(s.taxaAcerto).border}`,borderRadius:20,padding:"1px 6px"}}>{s.taxaAcerto}%</span>
                               <span style={{fontSize:9,color:th.textMuted}}>n={s.trades}</span>
                             </div>
                             <span style={{fontSize:10,fontWeight:700,color:s.financTotal>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{s.financTotal>=0?"+":"−"}R$ {Math.abs(s.financTotal).toFixed(0)}</span>
                           </div>
-                          
                         </div>
                       ) : <div key={ci} style={{padding:"8px 12px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:10,color:th.textMuted,display:"flex",alignItems:"center",height:"100%",boxSizing:"border-box"}}>Sem dados</div>)}
                     </div>
@@ -1244,86 +1051,84 @@ let disciplineStreakAtual = 0;
                 </div>
               </div>
 
-{/* Linha 2, Coluna B: Hoje | Não devo + Intenção */}
+              {/* Linha 2, Coluna B: Hoje — Rotinas | Sequências Atuais */}
               <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
                 <div style={{fontWeight:700,fontSize:11.5,color:"transparent",marginBottom:10,userSelect:"none"}}>.</div>
-                
-<div style={{display:"flex",gap:14,flex:1,alignItems:"stretch"}}>
-                <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje — Rotinas</span>
-                
-                    {checklistAlterado && !checklistSalvando && (
-                      <span style={{fontSize:10,fontWeight:700,color:"#d97706",background:dark?"#2a2210":"#fef3c7",padding:"2px 8px",borderRadius:20,border:`1px solid ${dark?"#5c4a10":"#fcd34d"}`}}>
-                        Não salvo
-                      </span>
-                    )}
-                  </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12,flex:1}}>
-                    {checklistHoje.map(item=>(
-                      <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-                        <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
-                        <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <button onClick={salvarChecklistHojeApp} disabled={!checklistAlterado||checklistSalvando}
-                    style={{
-                      marginTop:14,
-                      background:checklistAlterado&&!checklistSalvando?ACCENT_ATUAL:"transparent",
-                      color:checklistAlterado&&!checklistSalvando?"#fff":th.textMuted,
-                      border:`1px solid ${checklistAlterado&&!checklistSalvando?ACCENT_ATUAL:th.border2}`,
-                      borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,
-                      cursor:checklistAlterado&&!checklistSalvando?"pointer":"default",fontFamily:"inherit",width:"100%",
-                    }}>
 
-                    {checklistSalvando?"Salvando…":"Salvar"}
-                  </button>
-                </div>
-
-<div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Sequências Atuais</span>
-                    <span style={{fontSize:10,color:th.textMuted}}>via aba Hábitos</span>
-                  </div>
-
-                  <div style={{display:"flex",alignItems:"baseline",gap:7,margin:"10px 0 10px"}}>
-                    <span style={{fontSize:28,fontWeight:800,lineHeight:1,color:streakAtual>0?ACCENT_ATUAL:th.textMuted}}>{streakAtual}</span>
-                    <span style={{fontSize:12,color:th.textMuted}}>dias com os 3</span>
-                  </div>
-
-                  <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>
-                    {streakDias.map((d,i)=>{
-                      const cor = d.status===null ? "transparent"
-                        : d.status==="perfeito" ? (dark?"#1a7048":"#5cb583")
-                        : d.status==="quase" ? (dark?"#856404":"#d1a53d")
-                        : (dark?"#8a3a3a":"#d9776b");
-                      return (
-                        <div key={i} title={`${d.dataObj.toLocaleDateString("pt-BR")} — ${d.resumo}`}
-                          style={{width:16,height:16,borderRadius:5,background:cor,
-                            border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
-                      );
-                    })}
-                  </div>
-
-                  <div style={{display:"flex",flexDirection:"column",gap:7,marginTop:"auto"}}>
-                    {HABITOS_DASH.map(h=>(
-                      <div key={h.campo} style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:6,borderBottom:`1px solid ${th.border}`}}>
-                        <span style={{fontSize:12.5,color:th.textSub}}>{h.label}</span>
-                        <span style={{fontSize:13,fontWeight:700,color:seqPorHabitoDash[h.campo]>0?th.text:th.textMuted}}>
-                          {seqPorHabitoDash[h.campo]}d
+                <div style={{display:"flex",gap:14,flex:1,alignItems:"stretch"}}>
+                  <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje — Rotinas</span>
+                      {checklistAlterado && !checklistSalvando && (
+                        <span style={{fontSize:10,fontWeight:700,color:"#d97706",background:dark?"#2a2210":"#fef3c7",padding:"2px 8px",borderRadius:20,border:`1px solid ${dark?"#5c4a10":"#fcd34d"}`}}>
+                          Não salvo
                         </span>
-                      </div>
-                    ))}
+                      )}
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12,flex:1}}>
+                      {checklistHoje.map(item=>(
+                        <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                          <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
+                          <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={salvarChecklistHojeApp} disabled={!checklistAlterado||checklistSalvando}
+                      style={{
+                        marginTop:14,
+                        background:checklistAlterado&&!checklistSalvando?ACCENT_ATUAL:"transparent",
+                        color:checklistAlterado&&!checklistSalvando?"#fff":th.textMuted,
+                        border:`1px solid ${checklistAlterado&&!checklistSalvando?ACCENT_ATUAL:th.border2}`,
+                        borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,
+                        cursor:checklistAlterado&&!checklistSalvando?"pointer":"default",fontFamily:"inherit",width:"100%",
+                      }}>
+                      {checklistSalvando?"Salvando…":"Salvar"}
+                    </button>
+                  </div>
+
+                  <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Sequências Atuais</span>
+                      <span style={{fontSize:10,color:th.textMuted}}>via aba Hábitos</span>
+                    </div>
+
+                    <div style={{display:"flex",alignItems:"baseline",gap:7,margin:"10px 0 10px"}}>
+                      <span style={{fontSize:28,fontWeight:800,lineHeight:1,color:streakAtual>0?ACCENT_ATUAL:th.textMuted}}>{streakAtual}</span>
+                      <span style={{fontSize:12,color:th.textMuted}}>dias com os 3</span>
+                    </div>
+
+                    <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>
+                      {streakDias.map((d,i)=>{
+                        const cor = d.status===null ? "transparent"
+                          : d.status==="perfeito" ? (dark?"#1a7048":"#5cb583")
+                          : d.status==="quase" ? (dark?"#856404":"#d1a53d")
+                          : (dark?"#8a3a3a":"#d9776b");
+                        return (
+                          <div key={i} title={`${d.dataObj.toLocaleDateString("pt-BR")} — ${d.resumo}`}
+                            style={{width:16,height:16,borderRadius:5,background:cor,
+                              border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{display:"flex",flexDirection:"column",gap:7,marginTop:"auto"}}>
+                      {HABITOS_DASH.map(h=>(
+                        <div key={h.campo} style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:6,borderBottom:`1px solid ${th.border}`}}>
+                          <span style={{fontSize:12.5,color:th.textSub}}>{h.label}</span>
+                          <span style={{fontSize:13,fontWeight:700,color:seqPorHabitoDash[h.campo]>0?th.text:th.textMuted}}>
+                            {seqPorHabitoDash[h.campo]}d
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            </div>
 
-            </main>
+          </main>
 
-          {/* Sidebar direita — não estica até o fim, só até a altura do próprio conteúdo */}
+          {/* Sidebar direita */}
           <aside style={{width:340,flexShrink:0,display:"flex",flexDirection:"column",gap:14}}>
             <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
@@ -1406,7 +1211,7 @@ let disciplineStreakAtual = 0;
                 <span style={{fontWeight:700,fontSize:11,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Progresso das Metas</span>
                 <span style={{color:th.textMuted,fontSize:13}}>{metasExpandido?"▲":"▼"}</span>
               </div>
-{metasExpandido && (
+              {metasExpandido && (
                 <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:13}}>
                   <div style={{fontSize:10,color:th.textMuted,marginTop:-4}}>
                     Quarter 07/08 – 30/09 · {decorridosDash} de {diasQuarterDash} dias
@@ -1436,9 +1241,7 @@ let disciplineStreakAtual = 0;
                   ))}
                 </div>
               )}
-
-              
-</div>
+            </div>
           </aside>
         </div>
       </div>
@@ -1481,7 +1284,7 @@ let disciplineStreakAtual = 0;
           })}
         </nav>
 
-<div style={{position:"relative"}}>
+        <div style={{position:"relative"}}>
           <div onClick={()=>setMenuTemaAberto(v=>!v)} style={{
             padding:"9px 20px",borderRadius:24,fontSize:12.5,fontWeight:600,whiteSpace:"nowrap",cursor:"pointer",
             background:th.surface,border:`1px solid ${th.border}`,color:th.textMuted,
@@ -1519,7 +1322,7 @@ let disciplineStreakAtual = 0;
 
       <div style={{display:"flex",gap:28,alignItems:"flex-start"}}>
 
-        {/* SIDEBAR FLUTUANTE — não estica até o fim, altura pelo próprio conteúdo */}
+        {/* SIDEBAR FLUTUANTE */}
         <aside style={{
           width:sidebarExpandido?230:74, background:th.surface, borderRadius:30, border:`1px solid ${th.border}`,
           padding:sidebarExpandido?"18px 12px":"18px 0", display:"flex", flexDirection:"column",
