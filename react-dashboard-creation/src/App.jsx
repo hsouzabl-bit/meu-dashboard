@@ -258,7 +258,7 @@ export default function App(){
   };
   
   const [sidebarExpandido,setSidebarExpandido] = useState(true);
-  const [metasExpandido, setMetasExpandido] = useState(false);
+  const [metasExpandido, setMetasExpandido] = useState(true);
     const [seqExpandido, setSeqExpandido] = useState(false);
 
 
@@ -775,8 +775,54 @@ let streakAtual = 0;
       }
       return cont;
     }
-    const seqPorHabitoDash = {};
+const seqPorHabitoDash = {};
     HABITOS_DASH.forEach(h=>{ seqPorHabitoDash[h.campo] = seqHabito(h.campo); });
+
+    // ── Metas de estudo do quarter — mesma base da página de Hábitos ──────────
+    const QUARTER_INI_DASH = "2026-08-07";
+    const QUARTER_FIM_DASH = "2026-09-30";
+    const DIAS_QUARTER_CHEIO_DASH = 92;
+    const METAS_PADRAO_DASH = { horas:240, replays:60, paginas:300 };
+
+    function diasEntreDash(a, b){
+      return Math.round((new Date(b+"T12:00:00") - new Date(a+"T12:00:00")) / 86400000) + 1;
+    }
+    let metasQuarter = METAS_PADRAO_DASH;
+    try {
+      const cm = localStorage.getItem("metas_quarterly");
+      if(cm) metasQuarter = { ...METAS_PADRAO_DASH, ...JSON.parse(cm) };
+    } catch(e){}
+
+    const diasQuarterDash = diasEntreDash(QUARTER_INI_DASH, QUARTER_FIM_DASH);
+    const fatorDash = diasQuarterDash / DIAS_QUARTER_CHEIO_DASH;
+    const fimEfetivoDash = hojeChaveStreak < QUARTER_FIM_DASH ? hojeChaveStreak : QUARTER_FIM_DASH;
+    const decorridosDash = hojeChaveStreak < QUARTER_INI_DASH ? 0
+      : Math.min(diasEntreDash(QUARTER_INI_DASH, fimEfetivoDash), diasQuarterDash);
+    const pctEsperadoDash = diasQuarterDash > 0 ? decorridosDash / diasQuarterDash : 0;
+
+    const totalQuarterDash = { horas:0, replays:0, paginas:0 };
+    (habitosLista||[]).forEach(h=>{
+      if(h.data >= QUARTER_INI_DASH && h.data <= QUARTER_FIM_DASH){
+        totalQuarterDash.horas   += h.horas   || 0;
+        totalQuarterDash.replays += h.replays || 0;
+        totalQuarterDash.paginas += h.paginas || 0;
+      }
+    });
+
+    const metasEstudoDash = HABITOS_DASH.map(h=>{
+      const val = totalQuarterDash[h.campo];
+      const metaEf = (Number(metasQuarter[h.campo]) || 0) * fatorDash;
+      const alvoHoje = metaEf * pctEsperadoDash;
+      return {
+        campo: h.campo, label: h.label, valor: val,
+        meta: Math.round(metaEf),
+        pctVal: metaEf > 0 ? Math.min(100, Math.round((val/metaEf)*100)) : 0,
+        noRitmo: val >= alvoHoje,
+        falta: Math.max(0, Math.round((alvoHoje - val)*10)/10),
+      };
+    });
+
+    
 
 const disciplineDias = [];
     let cursorD = new Date(hoje);
@@ -1360,27 +1406,37 @@ let disciplineStreakAtual = 0;
                 <span style={{color:th.textMuted,fontSize:13}}>{metasExpandido?"▲":"▼"}</span>
               </div>
 {metasExpandido && (
-                <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:12}}>
-                  {[
-                    {label:"Horas de estudo", icon:<Ico.Trend  s={14} c={ACCENT_ATUAL}/>, value:`${m.horasEstudo??0}h`, meta:`${METAS_ANUAIS.horasEstudo}h`, pctVal:pct(m.horasEstudo,METAS_ANUAIS.horasEstudo)},
-                    {label:"Backtests",       icon:<Ico.BookOpen s={14} c={ACCENT_ATUAL}/>, value:m.paginasLidas??0, meta:METAS_ANUAIS.paginasLidas, pctVal:pct(m.paginasLidas,METAS_ANUAIS.paginasLidas)},
-                    {label:"Replays",         icon:<Ico.Repeat s={14} c={ACCENT_ATUAL}/>, value:m.replays??0, meta:METAS_ANUAIS.replays, pctVal:pct(m.replays,METAS_ANUAIS.replays)},
-                  ].map(item=>(
-                    <div key={item.label}>
+                <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:13}}>
+                  <div style={{fontSize:10,color:th.textMuted,marginTop:-4}}>
+                    Quarter 07/08 – 30/09 · {decorridosDash} de {diasQuarterDash} dias
+                  </div>
+                  {metasEstudoDash.map(item=>(
+                    <div key={item.campo}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-                        <span style={{display:"flex",alignItems:"center",gap:7,fontSize:12,color:th.textSub}}>{item.icon}{item.label}</span>
-                        <span style={{fontSize:11,color:th.textMuted}}>{item.value} / {item.meta}</span>
+                        <span style={{fontSize:12,color:th.textSub}}>{item.label}</span>
+                        <span style={{fontSize:11,color:th.textMuted}}>
+                          {item.valor} / {item.meta}
+                        </span>
                       </div>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <div style={{flex:1,background:th.resumeBg,borderRadius:6,height:6}}>
-                          <div style={{width:`${item.pctVal}%`,background:ACCENT_ATUAL,borderRadius:6,height:6,transition:"width 0.8s ease"}}/>
-                        </div>
-                        <span style={{fontSize:11,fontWeight:700,color:th.text,minWidth:30,textAlign:"right"}}>{item.pctVal}%</span>
+                      <div style={{position:"relative",background:th.resumeBg,borderRadius:6,height:7,marginBottom:4}}>
+                        <div style={{width:`${item.pctVal}%`,background:ACCENT_ATUAL,borderRadius:6,height:7,transition:"width 0.8s ease"}}/>
+                        <div title="ritmo esperado hoje" style={{
+                          position:"absolute",top:-2,left:`${Math.min(100,pctEsperadoDash*100)}%`,
+                          width:2,height:11,background:th.text,opacity:0.45,borderRadius:2,
+                        }}/>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:10}}>
+                        <span style={{color:th.textMuted}}>{item.pctVal}%</span>
+                        <span style={{fontWeight:600,color:item.noRitmo?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>
+                          {item.noRitmo ? "no ritmo" : `faltam ${item.falta}`}
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
+
+              
 </div>
           </aside>
         </div>
