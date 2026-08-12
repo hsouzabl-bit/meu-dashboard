@@ -224,6 +224,8 @@ export default function App(){
   // Hábitos: só leitura no Dashboard. A escrita acontece na página de Hábitos.
   const [habitosLista, setHabitosLista] = useState([]);
   const [habitosCarregado, setHabitosCarregado] = useState(false);
+  // OTS vem do cache que Revisões/Estatísticas já gravam — sem requisição nova aqui.
+  const [otsPorDataApp, setOtsPorDataApp] = useState({});
 
   const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
 
@@ -405,6 +407,12 @@ export default function App(){
       if(c) aplicar(JSON.parse(c));
     } catch(e){}
     const t = setTimeout(()=>{
+
+      try {
+      const co = localStorage.getItem("cache_ots");
+      if(co) setOtsPorDataApp(JSON.parse(co).porData || {});
+    } catch(e){}
+      
       fetchComRetry(`${API_DIARIO}?action=lerHabitos`)
         .then(j=>{
           const lista = j.habitos || [];
@@ -436,11 +444,11 @@ export default function App(){
     {label:"Plano de Trade", icon:<Ico.Clipboard s={19} c="currentColor"/>},
   ];
 
-  const topNav = [
-    { label:"Overview", target:"Dashboard", href:null },
-    { label:"Diário",   target:null, href:"https://docs.google.com/spreadsheets/d/1tUS99Um-CjNX7mBpa4pXGzBsnb9jLPGes1UL7qJSUDI/edit" },
-    { label:"Studies",  target:null, href:"https://app.notion.com/p/Studies-292c21dc2bf88080a4f3d4610f8f7944" },
-    { label:"Reviews",  target:"Revisões", href:null },
+const topNav = [
+    { label:"Diário",      target:null, href:"https://docs.google.com/spreadsheets/d/1tUS99Um-CjNX7mBpa4pXGzBsnb9jLPGes1UL7qJSUDI/edit" },
+    { label:"Notion",      target:null, href:"https://app.notion.com/p/Studies-292c21dc2bf88080a4f3d4610f8f7944" },
+    { label:"Abertura",    target:null, href:"https://br.tradingview.com/watchlists/166766889/" },
+    { label:"Matilha App", target:null, href:"https://matilhaapp.mateustarterpack.com.br/diary/evolucao" },
   ];
 
   const renderMain = () => {
@@ -1021,7 +1029,51 @@ export default function App(){
                             </div>
                           );
                         })()}
+
+                        {(() => {
+                          const o = otsPorDataApp[key];
+                          if(!o) return null;
+                          return (
+                            <div style={{marginBottom:12,paddingTop:10,borderTop:`1px solid ${th.border}`}}>
+                              <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>ION OTS</div>
+                              <div style={{display:"flex",gap:16}}>
+                                <div><div style={{fontSize:17,fontWeight:800,color:o.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{o.resultado>=0?"+":"−"}R$ {Math.abs(o.resultado).toFixed(0)}</div><div style={{fontSize:11,color:th.textMuted}}>Resultado</div></div>
+                                <div><div style={{fontSize:17,fontWeight:800,color:th.text}}>{o.trades}</div><div style={{fontSize:11,color:th.textMuted}}>Operações</div></div>
+                                <div><div style={{fontSize:17,fontWeight:800,color:th.text}}>{o.taxaAcerto}%</div><div style={{fontSize:11,color:th.textMuted}}>Acerto</div></div>
+                              </div>
+                              {o.qtdErros > 0 && (
+                                <div style={{marginTop:6,fontSize:11,color:"#c68888"}}>{o.qtdErros} erro(s) registrado(s)</div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {(() => {
+                          const h = (habitosLista||[]).find(x=>x.data===key);
+                          if(!h) return null;
+                          const linhas = [
+                            ["Horas de estudo", h.horas],
+                            ["Replays", h.replays],
+                            ["Páginas lidas", h.paginas],
+                          ];
+                          return (
+                            <div style={{marginBottom:12,paddingTop:10,borderTop:`1px solid ${th.border}`}}>
+                              <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Hábitos</div>
+                              <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                                {linhas.map(([lb,v])=>(
+                                  <div key={lb} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                                    <span style={{fontSize:12,color:th.textSub}}>{lb}</span>
+                                    <span style={{fontSize:12.5,fontWeight:700,color:v>=1?th.text:th.textMuted}}>{v||0}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div onClick={()=>setActiveNav("Hábitos")} style={{fontSize:12,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer",marginTop:8}}>Mais detalhes →</div>
+                            </div>
+                          );
+                        })()}
+
                         <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer"}}>Mais detalhes →</div>
+                        
                       </div>
                     </>
                   );
