@@ -1026,8 +1026,24 @@ const topNav = [
                                     <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{o.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
                                     <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{o.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
                                   </div>
-                                  {o.qtdErros > 0 && (
-                                    <div style={{fontSize:11,color:"#c68888",marginBottom:8}}>{o.qtdErros} erro(s) registrado(s)</div>
+
+                                  {((o.errosEmocional||[]).length>0 || (o.errosTecnico||[]).length>0) && (
+                                    <div style={{marginBottom:10,display:"flex",flexDirection:"column",gap:6}}>
+                                      {(o.errosEmocional||[]).length>0 && (
+                                        <div>
+                                          <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Emocionais</div>
+                                          {o.errosEmocional.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
+                                        </div>
+                                      )}
+                                      {(o.errosTecnico||[]).length>0 && (
+                                        <div>
+                                          <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Técnicos</div>
+                                          {o.errosTecnico.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  
                                   )}
                                 </>
                               );
