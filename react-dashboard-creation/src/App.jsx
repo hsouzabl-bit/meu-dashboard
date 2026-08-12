@@ -1003,76 +1003,89 @@ const topNav = [
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
                           <span style={{fontSize:14,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
                         </div>
-                        <div style={{display:"flex",gap:16,marginBottom:14}}>
-                          <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
-                          <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
-                          <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
-                        </div>
-                        {(() => {
-                          const keyErros = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-                          const erros = dadosDiario?.errosPorDia?.[keyErros];
-                          if (!erros || (erros.emocional.length===0 && erros.tecnico.length===0)) return null;
-                          return (
-                            <div style={{marginBottom:12,display:"flex",flexDirection:"column",gap:6}}>
-                              {erros.emocional.length>0 && (
-                                <div>
-                                  <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Emocionais</div>
-                                  {erros.emocional.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
-                                </div>
-                              )}
-                              {erros.tecnico.length>0 && (
-                                <div>
-                                  <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Técnicos</div>
-                                  {erros.tecnico.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
 
-                        {(() => {
-                          const o = otsPorDataApp[key];
-                          if(!o) return null;
-                          return (
-                            <div style={{marginBottom:12,paddingTop:10,borderTop:`1px solid ${th.border}`}}>
-                              <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>ION OTS</div>
-                              <div style={{display:"flex",gap:16}}>
-                                <div><div style={{fontSize:17,fontWeight:800,color:o.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{o.resultado>=0?"+":"−"}R$ {Math.abs(o.resultado).toFixed(0)}</div><div style={{fontSize:11,color:th.textMuted}}>Resultado</div></div>
-                                <div><div style={{fontSize:17,fontWeight:800,color:th.text}}>{o.trades}</div><div style={{fontSize:11,color:th.textMuted}}>Operações</div></div>
-                                <div><div style={{fontSize:17,fontWeight:800,color:th.text}}>{o.taxaAcerto}%</div><div style={{fontSize:11,color:th.textMuted}}>Acerto</div></div>
-                              </div>
-                              {o.qtdErros > 0 && (
-                                <div style={{marginTop:6,fontSize:11,color:"#c68888"}}>{o.qtdErros} erro(s) registrado(s)</div>
-                              )}
-                            </div>
-                          );
-                        })()}
+                        <div style={{display:"flex",gap:20,alignItems:"stretch"}}>
 
-                        {(() => {
-                          const h = (habitosLista||[]).find(x=>x.data===key);
-                          if(!h) return null;
-                          const linhas = [
-                            ["Horas de estudo", h.horas],
-                            ["Replays", h.replays],
-                            ["Páginas lidas", h.paginas],
-                          ];
-                          return (
-                            <div style={{marginBottom:12,paddingTop:10,borderTop:`1px solid ${th.border}`}}>
-                              <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Hábitos</div>
-                              <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                                {linhas.map(([lb,v])=>(
-                                  <div key={lb} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                                    <span style={{fontSize:12,color:th.textSub}}>{lb}</span>
-                                    <span style={{fontSize:12.5,fontWeight:700,color:v>=1?th.text:th.textMuted}}>{v||0}</span>
+                          {/* Coluna esquerda — contas */}
+                          <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column"}}>
+                            <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>ION 3</div>
+                            <div style={{display:"flex",gap:16,marginBottom:12}}>
+                              <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
+                              <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
+                              <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
+                            </div>
+
+                            {(() => {
+                              const o = otsPorDataApp[key];
+                              if(!o) return null;
+                              return (
+                                <>
+                                  <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>ION OTS</div>
+                                  <div style={{display:"flex",gap:16,marginBottom:12}}>
+                                    <div><div style={{fontSize:19,fontWeight:800,color:o.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{o.resultado>=0?"+":"−"}R$ {Math.abs(o.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
+                                    <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{o.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
+                                    <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{o.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
                                   </div>
-                                ))}
-                              </div>
-                              <div onClick={()=>setActiveNav("Hábitos")} style={{fontSize:12,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer",marginTop:8}}>Mais detalhes →</div>
-                            </div>
-                          );
-                        })()}
+                                  {o.qtdErros > 0 && (
+                                    <div style={{fontSize:11,color:"#c68888",marginBottom:8}}>{o.qtdErros} erro(s) registrado(s)</div>
+                                  )}
+                                </>
+                              );
+                            })()}
 
-                        <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer"}}>Mais detalhes →</div>
+                            {(() => {
+                              const keyErros = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
+                              const erros = dadosDiario?.errosPorDia?.[keyErros];
+                              if (!erros || (erros.emocional.length===0 && erros.tecnico.length===0)) return null;
+                              return (
+                                <div style={{marginBottom:10,display:"flex",flexDirection:"column",gap:6}}>
+                                  {erros.emocional.length>0 && (
+                                    <div>
+                                      <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Emocionais</div>
+                                      {erros.emocional.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
+                                    </div>
+                                  )}
+                                  {erros.tecnico.length>0 && (
+                                    <div>
+                                      <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Técnicos</div>
+                                      {erros.tecnico.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
+                            <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer",marginTop:"auto",paddingTop:6}}>Mais detalhes →</div>
+                          </div>
+
+                          {/* Coluna direita — hábitos */}
+                          {(() => {
+                            const h = (habitosLista||[]).find(x=>x.data===key);
+                            if(!h) return null;
+                            const linhas = [
+                              ["Horas de estudo", h.horas],
+                              ["Replays", h.replays],
+                              ["Páginas lidas", h.paginas],
+                            ];
+                            return (
+                              <>
+                                <div style={{width:1,background:th.border,flexShrink:0}}/>
+                                <div style={{width:150,flexShrink:0,display:"flex",flexDirection:"column"}}>
+                                  <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>Hábitos</div>
+                                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                                    {linhas.map(([lb,v])=>(
+                                      <div key={lb}>
+                                        <div style={{fontSize:19,fontWeight:800,color:v>=1?th.text:th.textMuted}}>{v||0}</div>
+                                        <div style={{fontSize:12,color:th.textMuted}}>{lb}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div onClick={()=>setActiveNav("Hábitos")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer",marginTop:"auto",paddingTop:6}}>Mais detalhes →</div>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
                         
                       </div>
                     </>
