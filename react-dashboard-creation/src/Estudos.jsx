@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 const GAS_ESTUDOS_URL = "https://script.google.com/macros/s/AKfycbzBEgswS-Jy8HvgYOQITuS6YgRrT7am5DlR3Mhd6KC4sTpl_Xg5It7XBnIKdr1QWfzi/exec";
 
 const CHAVE_CACHE_RESUMOS = "cache_resumos";
+const CHAVE_CACHE_ORG = "cache_estudos_org";
 
 // O GAS costuma falhar na primeira chamada e responder na segunda.
 // Sem retry, o catch engolia a falha e os resumos salvos nunca apareciam.
@@ -832,6 +833,13 @@ function SimpleMarkdown({ content, th }) {
   return <div>{elements}</div>;
 }
 
+// ─── ÍCONES ───────────────────────────────────────────────────────────────────
+const IcoPasta = ({ s = 17, c }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+  </svg>
+);
+
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 export default function EstudosAlBrooks({ th = {} }) {
   const accent = "#4ecb8d";
@@ -860,7 +868,18 @@ export default function EstudosAlBrooks({ th = {} }) {
     { id: "reversals", titulo: "Trading Price Action — Reversals",      url: "https://drive.google.com/file/d/1jR-IfsxWuMPVuFsPrAwMhb5XgE0ZP_cE/preview" },
   ];
 
-  // Cache imediato + fetch com retry em background.
+  // Organização: pastas + ordem. Guardada no GAS, cacheada aqui.
+  const [orgItens, setOrgItens] = useState([]);
+  const [orgPastas, setOrgPastas] = useState([]);
+  const [pastasAbertas, setPastasAbertas] = useState({});
+  const [novaPasta, setNovaPasta] = useState("");
+  const [showNovaPasta, setShowNovaPasta] = useState(false);
+
+  function aplicarOrg(org) {
+    setOrgItens(org?.itens || []);
+    setOrgPastas(org?.pastas || []);
+  }
+
   useEffect(() => {
     try {
       const c = localStorage.getItem(CHAVE_CACHE_RESUMOS);
@@ -871,6 +890,8 @@ export default function EstudosAlBrooks({ th = {} }) {
           setCarregando(false);
         }
       }
+      const co = localStorage.getItem(CHAVE_CACHE_ORG);
+      if (co) aplicarOrg(JSON.parse(co));
     } catch (e) {}
 
     fetchComRetry(`${GAS_ESTUDOS_URL}?action=lerResumos`)
@@ -878,11 +899,136 @@ export default function EstudosAlBrooks({ th = {} }) {
         const lista = data.resumos || [];
         try { localStorage.setItem(CHAVE_CACHE_RESUMOS, JSON.stringify(lista)); } catch (e) {}
         setResumos([...RESUMOS_BUILTIN, ...lista]);
+        if (data.org) {
+          aplicarOrg(data.org);
+          try { localStorage.setItem(CHAVE_CACHE_ORG, JSON.stringify(data.org)); } catch (e) {}
+        }
         setCarregando(false);
       })
       .catch(() => setCarregando(false));
   }, []);
 
+  // Persiste o estado completo da organização.
+  function salvarOrg(itens, pastas) {
+    const org = { itens, pastas };
+    try { localStorage.setItem(CHAVE_CACHE_ORG, JSON.stringify(org)); } catch (e) {}
+    fetch(GAS_ESTUDOS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action: "salvarEstudosOrg", org }),
+    }).catch(() => {});
+  }
+
+  function atualizarOrg(novosItens, novasPastas) {
+    const it = novosItens ?? orgItens;
+    const pa = novasPastas ?? orgPastas;
+    setOrgItens(it);
+    setOrgPastas(pa);
+    salvarOrg(it, pa);
+  }
+
+  // ---- helpers de organização ----
+  const tipoAtivo = activeTab === "pdfs" ? "pdf" : "resumo";
+
+  function infoDoItem(tipo, id) {
+    return orgItens.find(o => o.tipo === tipo && o.id === id);
+  }
+
+  const pastasDoTipo = orgPastas
+    .filter(p => p.tipo === tipoAtivo)
+    .slice()
+    .sort((a, b) => a.ordem - b.ordem);
+
+  // Ordena uma lista de itens conforme a organização; itens sem registro vão ao fim
+  function ordenar(lista, tipo) {
+    return lista.slice().sort((a, b) => {
+      const ia = infoDoItem(tipo, a.id);
+      const ib = infoDoItem(tipo, b.id);
+      const oa = ia ? ia.ordem : 9999;
+      const ob = ib ? ib.ordem : 9999;
+      return oa - ob;
+    });
+  }
+
+  function itensDaPasta(lista, tipo, nomePasta) {
+    return ordenar(lista.filter(x => {
+      const i = infoDoItem(tipo, x.id);
+      return i ? i.pasta === nomePasta : nomePasta === "";
+    }), tipo);
+  }
+
+  function moverPara(tipo, id, pasta) {
+    const semItem = orgItens.filter(o => !(o.tipo === tipo && o.id === id));
+    const irmaos = semItem.filter(o => o.tipo === tipo && o.pasta === pasta);
+    const maxOrdem = irmaos.length ? Math.max(...irmaos.map(o => o.ordem)) : 0;
+    atualizarOrg([...semItem, { tipo, id, pasta, ordem: maxOrdem + 1 }], null);
+  }
+
+  // Reordena dentro do próprio contexto (mesma pasta)
+  function moverItem(tipo, lista, id, direcao) {
+    const info = infoDoItem(tipo, id);
+    const pasta = info ? info.pasta : "";
+    const irmaos = itensDaPasta(lista, tipo, pasta);
+    const idx = irmaos.findIndex(x => x.id === id);
+    const alvo = idx + direcao;
+    if (idx < 0 || alvo < 0 || alvo >= irmaos.length) return;
+
+    const nova = irmaos.slice();
+    const tmp = nova[idx];
+    nova[idx] = nova[alvo];
+    nova[alvo] = tmp;
+
+    const outros = orgItens.filter(o => !(o.tipo === tipo && nova.some(n => n.id === o.id)));
+    const renumerados = nova.map((x, i) => ({ tipo, id: x.id, pasta, ordem: i + 1 }));
+    atualizarOrg([...outros, ...renumerados], null);
+  }
+
+  function moverPasta(nome, direcao) {
+    const lista = pastasDoTipo.slice();
+    const idx = lista.findIndex(p => p.nome === nome);
+    const alvo = idx + direcao;
+    if (idx < 0 || alvo < 0 || alvo >= lista.length) return;
+    const tmp = lista[idx];
+    lista[idx] = lista[alvo];
+    lista[alvo] = tmp;
+    const outras = orgPastas.filter(p => p.tipo !== tipoAtivo);
+    const renumeradas = lista.map((p, i) => ({ tipo: tipoAtivo, nome: p.nome, ordem: i + 1 }));
+    atualizarOrg(null, [...outras, ...renumeradas]);
+  }
+
+  function criarPasta() {
+    const nome = novaPasta.trim();
+    if (!nome) return;
+    if (pastasDoTipo.some(p => p.nome.toLowerCase() === nome.toLowerCase())) {
+      alert("Já existe uma pasta com esse nome.");
+      return;
+    }
+    const maxOrdem = pastasDoTipo.length ? Math.max(...pastasDoTipo.map(p => p.ordem)) : 0;
+    atualizarOrg(null, [...orgPastas, { tipo: tipoAtivo, nome, ordem: maxOrdem + 1 }]);
+    setPastasAbertas(p => ({ ...p, [`${tipoAtivo}:${nome}`]: true }));
+    setNovaPasta("");
+    setShowNovaPasta(false);
+  }
+
+  function excluirPasta(nome) {
+    const dentro = orgItens.filter(o => o.tipo === tipoAtivo && o.pasta === nome);
+    if (dentro.length > 0) {
+      const ok = window.confirm(
+        `A pasta "${nome}" tem ${dentro.length} item(ns).\n\n` +
+        `OK move os itens para a raiz e exclui a pasta.\nCancelar não faz nada.`
+      );
+      if (!ok) return;
+      const novosItens = orgItens.map(o =>
+        (o.tipo === tipoAtivo && o.pasta === nome) ? { ...o, pasta: "" } : o
+      );
+      atualizarOrg(novosItens, orgPastas.filter(p => !(p.tipo === tipoAtivo && p.nome === nome)));
+      return;
+    }
+    if (!window.confirm(`Excluir a pasta "${nome}"?`)) return;
+    atualizarOrg(null, orgPastas.filter(p => !(p.tipo === tipoAtivo && p.nome === nome)));
+  }
+
+  // ---- resumos ----
   const salvarResumo = () => {
     if (!novoTitulo.trim()) return;
     const novo = {
@@ -917,6 +1063,8 @@ export default function EstudosAlBrooks({ th = {} }) {
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({ action: "deletarResumo", id })
     }).catch(() => {});
+    const semItem = orgItens.filter(o => !(o.tipo === "resumo" && o.id === id));
+    if (semItem.length !== orgItens.length) atualizarOrg(semItem, null);
   };
 
   const tabs = [
@@ -939,6 +1087,118 @@ export default function EstudosAlBrooks({ th = {} }) {
     padding: "9px 20px", background: "transparent", border: `1px solid ${th.border}`,
     borderRadius: 8, color: th.textSub, fontWeight: 600, fontSize: 13, cursor: "pointer",
   };
+
+  const btnSeta = {
+    background: "none", border: "none", cursor: "pointer", color: th.textMuted,
+    fontSize: 12, lineHeight: 1, padding: "2px 4px", fontFamily: "inherit",
+  };
+
+  const selPasta = {
+    background: "transparent", border: `1px solid ${th.border}`, borderRadius: 6,
+    color: th.textMuted, fontSize: 11, padding: "3px 6px", outline: "none",
+    fontFamily: "inherit", cursor: "pointer", maxWidth: 140,
+  };
+
+  // ---- linha de item (serve para resumo e pdf) ----
+  function LinhaItem({ item, tipo, lista, onAbrir, subtitulo, icone, podeExcluir, onExcluir }) {
+    const info = infoDoItem(tipo, item.id);
+    const pasta = info ? info.pasta : "";
+    const irmaos = itensDaPasta(lista, tipo, pasta);
+    const idx = irmaos.findIndex(x => x.id === item.id);
+
+    return (
+      <div style={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 12, padding: "13px 16px", display: "flex", alignItems: "center", gap: 12, transition: "border-color 0.15s" }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = accent}
+        onMouseLeave={e => e.currentTarget.style.borderColor = th.border}>
+
+        <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
+          <button onClick={() => moverItem(tipo, lista, item.id, -1)} disabled={idx <= 0}
+            style={{ ...btnSeta, opacity: idx <= 0 ? 0.25 : 1 }} title="Subir">▲</button>
+          <button onClick={() => moverItem(tipo, lista, item.id, 1)} disabled={idx < 0 || idx >= irmaos.length - 1}
+            style={{ ...btnSeta, opacity: (idx < 0 || idx >= irmaos.length - 1) ? 0.25 : 1 }} title="Descer">▼</button>
+        </div>
+
+        {icone && <span style={{ fontSize: 24, flexShrink: 0 }}>{icone}</span>}
+
+        <div onClick={onAbrir} style={{ flex: 1, cursor: "pointer", minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: th.text, marginBottom: 3 }}>{item.titulo}</div>
+          <div style={{ fontSize: 12, color: th.textMuted }}>{subtitulo}</div>
+        </div>
+
+        <select value={pasta} onChange={e => moverPara(tipo, item.id, e.target.value)} style={selPasta}
+          title="Mover para pasta">
+          <option value="">— raiz —</option>
+          {pastasDoTipo.map(p => <option key={p.nome} value={p.nome}>{p.nome}</option>)}
+        </select>
+
+        {podeExcluir && (
+          <button onClick={e => { e.stopPropagation(); onExcluir(); }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", fontSize: 16, padding: "4px 6px", flexShrink: 0 }}>✕</button>
+        )}
+      </div>
+    );
+  }
+
+  // ---- bloco de pasta ----
+  function BlocoPasta({ pasta, idx, total, qtd, children }) {
+    const chave = `${tipoAtivo}:${pasta.nome}`;
+    const aberta = !!pastasAbertas[chave];
+    return (
+      <div style={{ border: `1px solid ${th.border}`, borderRadius: 12, overflow: "hidden", background: th.surface }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "12px 16px", cursor: "pointer", userSelect: "none" }}
+          onClick={() => setPastasAbertas(p => ({ ...p, [chave]: !p[chave] }))}>
+
+          <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => moverPasta(pasta.nome, -1)} disabled={idx <= 0}
+              style={{ ...btnSeta, opacity: idx <= 0 ? 0.25 : 1 }} title="Subir">▲</button>
+            <button onClick={() => moverPasta(pasta.nome, 1)} disabled={idx >= total - 1}
+              style={{ ...btnSeta, opacity: idx >= total - 1 ? 0.25 : 1 }} title="Descer">▼</button>
+          </div>
+
+          <IcoPasta s={18} c={accent} />
+          <span style={{ fontWeight: 700, fontSize: 14, color: th.text, flex: 1 }}>{pasta.nome}</span>
+          <span style={{ fontSize: 11.5, color: th.textMuted }}>{qtd} {qtd === 1 ? "item" : "itens"}</span>
+
+          <button onClick={e => { e.stopPropagation(); excluirPasta(pasta.nome); }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: th.textMuted, fontSize: 15, padding: "2px 6px" }}
+            title="Excluir pasta">✕</button>
+          <span style={{ color: th.textMuted, fontSize: 12, width: 14, textAlign: "center" }}>{aberta ? "▲" : "▼"}</span>
+        </div>
+
+        {aberta && (
+          <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 8, borderTop: `1px solid ${th.border}`, paddingTop: 12 }}>
+            {qtd === 0
+              ? <div style={{ fontSize: 12.5, color: th.textMuted, padding: "6px 4px" }}>Pasta vazia. Use o seletor de um item para movê-lo pra cá.</div>
+              : children}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function BarraPastas() {
+    return (
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        {!showNovaPasta ? (
+          <button onClick={() => setShowNovaPasta(true)} style={{ ...btnSecondary, padding: "6px 14px", fontSize: 12.5, display: "flex", alignItems: "center", gap: 7 }}>
+            <IcoPasta s={15} c={th.textSub} /> Nova pasta
+          </button>
+        ) : (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input autoFocus placeholder="Nome da pasta" value={novaPasta}
+              onChange={e => setNovaPasta(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") criarPasta(); if (e.key === "Escape") { setShowNovaPasta(false); setNovaPasta(""); } }}
+              style={{ ...inputStyle, width: 210 }} />
+            <button onClick={criarPasta} style={{ ...btnPrimary, padding: "8px 16px", fontSize: 12.5 }}>Criar</button>
+            <button onClick={() => { setShowNovaPasta(false); setNovaPasta(""); }} style={{ ...btnSecondary, padding: "8px 14px", fontSize: 12.5 }}>Cancelar</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const resumosRaiz = itensDaPasta(resumos, "resumo", "");
+  const pdfsRaiz = itensDaPasta(PDFS, "pdf", "");
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", background: th.bg, fontFamily: "'Plus Jakarta Sans','Inter',sans-serif", width: "100%" }}>
@@ -972,31 +1232,35 @@ export default function EstudosAlBrooks({ th = {} }) {
           <div>
             {!resumoSel ? (
               <>
-                <p style={{ fontSize: 13, color: th.textMuted, marginBottom: 20, marginTop: 0 }}>
+                <p style={{ fontSize: 13, color: th.textMuted, marginBottom: 16, marginTop: 0 }}>
                   Aqui ficam os resumos dos materiais já estudados. Clique em um para ler.
                   {carregando && <span style={{ marginLeft: 8, opacity: 0.7 }}>carregando…</span>}
                 </p>
+
+                <BarraPastas />
+
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-                  {resumos.map(r => (
-                    <div key={r.id}
-                      style={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color 0.15s" }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = accent}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = th.border}>
-                      <div onClick={() => r.tipo === "link" ? window.open(r.link, "_blank") : setResumoSel(r)}
-                        style={{ flex: 1, cursor: "pointer" }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: th.text, marginBottom: 3 }}>{r.titulo}</div>
-                        <div style={{ fontSize: 12, color: th.textMuted }}>{r.descricao}</div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        {r.tipo !== "builtin" && (
-                          <button onClick={e => { e.stopPropagation(); deletarResumo(r.id); }}
-                            style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", fontSize: 16, padding: "4px 8px" }}>
-                            ✕
-                          </button>
-                        )}
-                        <span style={{ fontSize: 18, color: th.textMuted }}>{r.tipo === "link" ? "🔗" : "›"}</span>
-                      </div>
-                    </div>
+                  {pastasDoTipo.map((p, i) => {
+                    const dentro = itensDaPasta(resumos, "resumo", p.nome);
+                    return (
+                      <BlocoPasta key={p.nome} pasta={p} idx={i} total={pastasDoTipo.length} qtd={dentro.length}>
+                        {dentro.map(r => (
+                          <LinhaItem key={r.id} item={r} tipo="resumo" lista={resumos}
+                            subtitulo={r.descricao}
+                            onAbrir={() => r.tipo === "link" ? window.open(r.link, "_blank") : setResumoSel(r)}
+                            podeExcluir={r.tipo !== "builtin"}
+                            onExcluir={() => deletarResumo(r.id)} />
+                        ))}
+                      </BlocoPasta>
+                    );
+                  })}
+
+                  {resumosRaiz.map(r => (
+                    <LinhaItem key={r.id} item={r} tipo="resumo" lista={resumos}
+                      subtitulo={r.descricao}
+                      onAbrir={() => r.tipo === "link" ? window.open(r.link, "_blank") : setResumoSel(r)}
+                      podeExcluir={r.tipo !== "builtin"}
+                      onExcluir={() => deletarResumo(r.id)} />
                   ))}
                 </div>
 
@@ -1047,24 +1311,30 @@ export default function EstudosAlBrooks({ th = {} }) {
           <div>
             {!pdfSel ? (
               <>
-                <p style={{ fontSize: 13, color: th.textMuted, marginBottom: 20, marginTop: 0 }}>
+                <p style={{ fontSize: 13, color: th.textMuted, marginBottom: 16, marginTop: 0 }}>
                   Aqui ficam os documentos completos já estudados. Clique em um para abrir.
                 </p>
+
+                <BarraPastas />
+
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {PDFS.map(p => (
-                    <div key={p.id} onClick={() => setPdfSel(p)}
-                      style={{ background: th.surface, border: `1px solid ${th.border}`, borderRadius: 12, padding: "16px 20px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color 0.15s" }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = accent}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = th.border}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                        <span style={{ fontSize: 28 }}>📄</span>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: 14, color: th.text }}>{p.titulo}</div>
-                          <div style={{ fontSize: 12, color: th.textMuted, marginTop: 2 }}>Google Drive · PDF</div>
-                        </div>
-                      </div>
-                      <span style={{ fontSize: 18, color: th.textMuted }}>›</span>
-                    </div>
+                  {pastasDoTipo.map((p, i) => {
+                    const dentro = itensDaPasta(PDFS, "pdf", p.nome);
+                    return (
+                      <BlocoPasta key={p.nome} pasta={p} idx={i} total={pastasDoTipo.length} qtd={dentro.length}>
+                        {dentro.map(pdf => (
+                          <LinhaItem key={pdf.id} item={pdf} tipo="pdf" lista={PDFS}
+                            icone="📄" subtitulo="Google Drive · PDF"
+                            onAbrir={() => setPdfSel(pdf)} podeExcluir={false} />
+                        ))}
+                      </BlocoPasta>
+                    );
+                  })}
+
+                  {pdfsRaiz.map(pdf => (
+                    <LinhaItem key={pdf.id} item={pdf} tipo="pdf" lista={PDFS}
+                      icone="📄" subtitulo="Google Drive · PDF"
+                      onAbrir={() => setPdfSel(pdf)} podeExcluir={false} />
                   ))}
                 </div>
               </>
