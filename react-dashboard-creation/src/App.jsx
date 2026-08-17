@@ -1015,7 +1015,7 @@ const topNav = [
                   return temTrade || temHab;
                 })() && (() => {
                   const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-                  const r = tradesPorData[key]["ION 3"] || { resultado:0, trades:0, taxaAcerto:0 };
+                  const r = tradesPorData[key]?.["ION 3"] || { resultado:0, trades:0, taxaAcerto:0 };
                   const diaSemanaSel = new Date(anoVis, mesVis, diaSel).getDay();
                   const ehFDS = diaSemanaSel===0 || diaSemanaSel===6;
                 
