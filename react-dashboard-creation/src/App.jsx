@@ -1094,7 +1094,7 @@ const topNav = [
                             })()}
 
                             <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer",marginTop:"auto",paddingTop:6}}>Mais detalhes →</div>
-                          </div>
+                                                    </div>}
 
                           {/* Coluna direita — hábitos */}
                           {(() => {
