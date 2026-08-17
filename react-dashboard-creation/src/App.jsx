@@ -973,10 +973,22 @@ const topNav = [
                     // três estados: futuro (tracejado) · passado sem clique (cinza azulado) · com trades (colorido)
                     const naoCliqueiBg = dark ? "#1c2430" : "#dde3ec";
                     const naoCliqueiTxt = dark ? "#8fa2bd" : "#5b6a80";
+        
+// Hábitos do dia — mesma regra da página de Hábitos:
+                    // 3/3 = borda verde · registrado mas incompleto = borda vermelha · sem registro = neutro
+                    const hDia = (habitosLista||[]).find(x=>x.dataStr === undefined ? false : false)
+                      || (habitosLista||[]).find(x=>x.data === `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(dia).padStart(2,"0")}`);
+                    const temHabito = hDia && (hDia.horas>0 || hDia.replays>0 || hDia.paginas>0);
+                    const habitoOk = hDia && hDia.horas>=1 && hDia.replays>=1 && hDia.paginas>=1;
+
                     let fundo, borda, corTexto, peso;
                     if(r){
                       fundo = r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb");
                       borda = "none"; corTexto = th.text; peso = 700;
+                    } else if(temHabito){
+                      fundo = "transparent";
+                      borda = `1.5px solid ${habitoOk ? (dark?"#3d6b52":"#5cb583") : (dark?"#6b4444":"#d9776b")}`;
+                      corTexto = th.textMuted; peso = 600;
                     } else if(futuro || fimDeSemana){
                       fundo = "transparent";
                       borda = `1.5px dashed ${th.border2}`;
@@ -987,15 +999,26 @@ const topNav = [
                     }
                     return (
                       <div key={dia} onClick={()=>!futuro&&setDiaSel(dia===diaSel?null:dia)} title={!r&&!futuro&&!fimDeSemana?"Não cliquei":undefined}
+        
                         style={{borderRadius:6,background:fundo,border:borda,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:corTexto,cursor:futuro?"default":"pointer",fontWeight:peso,boxSizing:"border-box"}}>
                         {dia}
                       </div>
                     );
                   })}
                 </div>
-                {diaSel && tradesPorData[`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`]?.["ION 3"] && (() => {
+
+                
+{diaSel && (() => {
+                  const k = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
+                  const temTrade = !!tradesPorData[k]?.["ION 3"];
+                  const temHab = (habitosLista||[]).some(x=>x.data===k && (x.horas>0||x.replays>0||x.paginas>0));
+                  return temTrade || temHab;
+                })() && (() => {
                   const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-                  const r = tradesPorData[key]["ION 3"];
+                  const r = tradesPorData[key]["ION 3"] || { resultado:0, trades:0, taxaAcerto:0 };
+                  const diaSemanaSel = new Date(anoVis, mesVis, diaSel).getDay();
+                  const ehFDS = diaSemanaSel===0 || diaSemanaSel===6;
+                
                   return (
                     <>
                       <div onClick={()=>setDiaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
@@ -1006,8 +1029,8 @@ const topNav = [
 
                         <div style={{display:"flex",gap:20,alignItems:"stretch"}}>
 
-                          {/* Coluna esquerda — contas */}
-                          <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column"}}>
+{/* Coluna esquerda — contas (oculta no fim de semana) */}
+                          {!ehFDS && <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column"}}>
                             <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>ION 3</div>
                             <div style={{display:"flex",gap:16,marginBottom:12}}>
                               <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
@@ -1084,7 +1107,7 @@ const topNav = [
                             ];
                             return (
                               <>
-                                <div style={{width:1,background:th.border,flexShrink:0}}/>
+                                {!ehFDS && <div style={{width:1,background:th.border,flexShrink:0}}/>}
                                 <div style={{width:150,flexShrink:0,display:"flex",flexDirection:"column"}}>
                                   <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>Hábitos</div>
                                   <div style={{display:"flex",flexDirection:"column",gap:8}}>
