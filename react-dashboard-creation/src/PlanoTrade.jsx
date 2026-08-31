@@ -4,18 +4,21 @@ import React, { useState, useEffect } from "react";
   PlanoTrade.jsx
   ---------------------------------------------------------------
   Página "Plano de Trade" — atualizada conforme o Plano Operacional
-  de Agosto/2026.
-
+  de Setembro/2026 (auditoria de 253 trades concluída em 31/08).
   Principais mudanças desta versão:
-  - FQ encerrado (mantido na tabela, riscado e em cinza, por último)
-  - Novos setups: Trade de Abertura (TSS), Abertura Barra de Força, TL
-  - Stop técnico substituindo stop aritmético
-  - Regra de saída: o ALVO decide, não a quantidade
-  - Risco e tabela de contratos de agosto
+  - Filtro de folga (alvo − stop) como regra central, em bloco próprio
+  - Risco: R fixo R$300, tabela de contratos recalibrada
+  - Teto de stop: 500 (limite 550) · exceção 700 na abertura c/ força
+  - Proteção obrigatória nos 350 pts de MEP
+  - Parcial move do 1x1 para o 1,5x1
+  - M2B/M2S entra no arsenal (maior contribuidor da amostra)
+  - 4 setups marcados "em validação em replay"
+  - Erro no 1º trade do dia como regra universal
   ---------------------------------------------------------------
 */
 
 const ACCENT = "#4ecb8d";
+const REPLAY_TONE = "#6aa6e8";
 
 const FALLBACK_THEME = {
   bg: "#0f1115",
@@ -45,7 +48,6 @@ function useTheme(th) {
 }
 
 /* ---------------- Ícones inline (sem libs externas) ---------------- */
-
 const IcoChevron = ({ open, color }) => (
   <svg
     width="16"
@@ -69,11 +71,9 @@ const IcoChevron = ({ open, color }) => (
 );
 
 /* ---------------- Accordion genérico ---------------- */
-
 function Accordion({ id, title, subtitle, badge, badgeColor, level, defaultOpen, children, theme }) {
   const [open, setOpen] = useState(!!defaultOpen);
   const isTop = level === "top";
-
   return (
     <div
       style={{
@@ -160,7 +160,6 @@ function Accordion({ id, title, subtitle, badge, badgeColor, level, defaultOpen,
 }
 
 /* ---------------- Blocos de texto reutilizáveis ---------------- */
-
 function Field({ label, children, theme }) {
   return (
     <div style={{ marginBottom: 12 }}>
@@ -190,6 +189,7 @@ function Pill({ children, theme, tone = "neutral" }) {
     warn: { bg: "#e0a63a22", text: "#e0a63a" },
     bad: { bg: "#e0555522", text: "#e05555" },
     off: { bg: "#88888818", text: "#7d838d" },
+    replay: { bg: `${REPLAY_TONE}22`, text: REPLAY_TONE },
   };
   const c = tones[tone] || tones.neutral;
   return (
@@ -228,7 +228,6 @@ function Quote({ children, theme }) {
 }
 
 /* ---------------- Helpers de tom (cor por estado de fluência) ---------------- */
-
 function toneBg(tone, theme) {
   const tones = {
     neutral: theme.border,
@@ -236,9 +235,11 @@ function toneBg(tone, theme) {
     warn: "#e0a63a22",
     bad: "#e0555522",
     off: "#88888818",
+    replay: `${REPLAY_TONE}22`,
   };
   return tones[tone] || tones.neutral;
 }
+
 function toneColor(tone, theme) {
   const tones = {
     neutral: theme.textMuted,
@@ -246,12 +247,12 @@ function toneColor(tone, theme) {
     warn: "#e0a63a",
     bad: "#e05555",
     off: "#7d838d",
+    replay: REPLAY_TONE,
   };
   return tones[tone] || tones.neutral;
 }
 
 /* ---------------- Ícones por setup ---------------- */
-
 const IconTRM = ({ color }) => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
@@ -290,6 +291,31 @@ const IconForca = ({ color }) => (
 const IconTL = ({ color }) => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 7h18" /><path d="M3 17h18" /><path d="M7 7v10M17 7v10" />
+  </svg>
+);
+const IconM2B = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 16c4 0 5-9 9-9s5 5 9 5" /><path d="M9 13v6" /><path d="M6.5 16.5L9 19l2.5-2.5" />
+  </svg>
+);
+const IconGapMedia = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 8h6" /><path d="M15 8h6" /><path d="M3 16h6" /><path d="M15 16h6" /><path d="M12 5v14" />
+  </svg>
+);
+const IconConfluencia = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="9" cy="9" r="5" /><circle cx="15" cy="15" r="5" /><circle cx="15" cy="9" r="5" />
+  </svg>
+);
+const IconFalhaH1 = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 18l5-8 4 4 3-5" /><path d="M16 9l4 9" /><line x1="14" y1="4" x2="20" y2="4" />
+  </svg>
+);
+const IconWedge = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 5l18 7" /><path d="M3 19l18 -7" />
   </svg>
 );
 
@@ -339,9 +365,27 @@ const IcoRisk = ({ color }) => (
     <line x1="12" y1="17" x2="12" y2="17" />
   </svg>
 );
+const IcoFolga = ({ color }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12h4l3-8 4 16 3-8h4" />
+  </svg>
+);
+const IcoAlerta = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <line x1="12" y1="8" x2="12" y2="13" />
+    <line x1="12" y1="16.5" x2="12" y2="16.5" />
+  </svg>
+);
+const IcoBarra = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="M3 10h18" />
+    <path d="M8 15h4" />
+  </svg>
+);
 
 /* ---------------- Blocos do painel de detalhe ---------------- */
-
 function StatCard({ theme, label, value, sublabel, accent }) {
   return (
     <div
@@ -451,6 +495,24 @@ function SetupDetail({ s, theme }) {
             Setup encerrado — 30/07/2026
           </div>
           <div style={{ fontSize: 14, color: theme.textMuted, lineHeight: 1.6 }}>{s.motivoEncerramento}</div>
+        </div>
+      )}
+
+      {/* Aviso de setup em validação em replay */}
+      {s.validacaoReplay && (
+        <div
+          style={{
+            background: `${REPLAY_TONE}14`,
+            border: `1px solid ${REPLAY_TONE}40`,
+            borderRadius: 12,
+            padding: "14px 16px",
+            marginBottom: 22,
+          }}
+        >
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: REPLAY_TONE, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 }}>
+            Em validação em replay — fora do operacional ao vivo
+          </div>
+          <div style={{ fontSize: 14, color: theme.textMuted, lineHeight: 1.6 }}>{s.notaReplay}</div>
         </div>
       )}
 
@@ -619,14 +681,17 @@ function SetupPopover({ s, theme, onClose }) {
 }
 
 /* ---------------- Tabela comparativa de setups (abre popup ao clicar) ---------------- */
-
 function SetupsTable({ theme, setups: setupsRaw }) {
   const [openId, setOpenId] = useState(null);
-  // ordem alfabetica; setups encerrados sempre ao final
+
+  // ordem: ativos > em validacao em replay > encerrados; alfabetica dentro de cada grupo
+  const rank = (s) => (s.encerrado ? 2 : s.validacaoReplay ? 1 : 0);
   const setups = [...setupsRaw].sort((a, b) => {
-    if (!!a.encerrado !== !!b.encerrado) return a.encerrado ? 1 : -1;
+    const d = rank(a) - rank(b);
+    if (d !== 0) return d;
     return a.nomeCurto.localeCompare(b.nomeCurto, "pt-BR");
   });
+
   const openSetup = setups.find((s) => s.id === openId);
 
   return (
@@ -676,7 +741,7 @@ function SetupsTable({ theme, setups: setupsRaw }) {
                   style={{
                     cursor: "pointer",
                     background: i % 2 === 1 ? `${theme.cardAlt}80` : "transparent",
-                    opacity: off ? 0.6 : 1,
+                    opacity: off ? 0.6 : s.validacaoReplay ? 0.85 : 1,
                   }}
                 >
                   <td style={{ padding: "12px 14px", borderBottom: `1px solid ${theme.border}` }}>
@@ -723,15 +788,59 @@ function SetupsTable({ theme, setups: setupsRaw }) {
           </tbody>
         </table>
       </div>
-
       {openSetup && <SetupPopover s={openSetup} theme={theme} onClose={() => setOpenId(null)} />}
     </div>
   );
 }
 
 /* ---------------- Dados dos setups ---------------- */
-
 const SETUPS = [
+  {
+    id: "m2b-m2s",
+    nomeCurto: "M2B / M2S",
+    nome: "M2B / M2S — Setup na MM20 em tendência",
+    subtitulo: "Pullback na MM20",
+    Icon: IconM2B,
+    timeframeShort: "M5 (contexto) → M2 (gatilho)",
+    barraSinalChips: ["Inside", "Outside", "2BR"],
+    stopAceito: "Atrás da barra de sinal + gordura, ou T/F prévio",
+    split: "Alvo decide",
+    rxr: "2x1+",
+    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega · Alvo fixo: 100% no alvo",
+    badge: "Prioritário",
+    badgeColor: null,
+    fluencia: { label: "Prioritário", tone: "good", detalhe: "Maior contribuidor da amostra: 14 trades, 57,1% de acerto, +5,47R" },
+    descricao: "Com tendência já estabelecida — mais de 20 barras acima ou abaixo da MM20 — o pullback até a média oferece entrada de continuidade com invalidação próxima. É o setup com maior contribuição da auditoria de 253 trades: 14 operações, 57,1% de acerto, +5,47R. Merece prioridade de mapeamento no pré-mercado, não apenas reação quando aparece.",
+    regrasList: [
+      "Mais de 20 barras acima/abaixo da MM20 no M5 — tendência estabelecida, não presumida",
+      "Pullback até a MM20 (ou até a MME9, na variante)",
+      "Entrada pela contagem de barras do Brooks: H1/L1, H2/L2, H3/L3 — não existe exigência de \"segunda tentativa\"",
+      "Gatilho no M2 — inside, outside ou 2BR",
+    ],
+    filtrosList: [
+      "M60 alinhado com a direção do trade — é o filtro que separou ganhadores de perdedores na amostra",
+      "Folga de pelo menos 250 pts entre alvo e stop; acima de 350 é o trade que se procura",
+      "Premissa prévia definida no pré-mercado",
+      "Preferir a entrada pelo M2, não pelo M5 — mesmo tamanho de stop, melhor posição dentro do ciclo",
+    ],
+    ondeInvalida: "Atrás da barra de sinal com gordura de 20–30%, ou no fundo/topo prévio do swing. Com menos de 20 barras de um lado da MM20, o setup não é candidato — é outra coisa.",
+    gatilhos: [
+      { label: "a", text: "Inside bar" },
+      { label: "b", text: "Outside bar" },
+      { label: "c", text: "2BR" },
+    ],
+    redFlagsList: [
+      "Ignorar o M60 — dois dos cinco perdedores da amostra são exatamente isso (#83 \"localização do 60 pesou mais\"; #105 \"era tendência de alta no 60, não me liguei\")",
+      "Usar stop intermediário quando o técnico é longo (#99: \"stop técnico era de 800pts, usei um intermediário\") — violinado",
+      "Entrar pelo M5 quando havia entrada melhor no M2 (#28) — mesmo tamanho de stop, pior posição no ciclo",
+      "Ignorar o único argumento contrário (#64: \"tinha uma POC perto, mas era o único argumento contra\")",
+    ],
+    exemplosList: [
+      "21/01 (#26) — rompimento de topo prévio, correção em micro canal fraco, inside de corpo comprador. \"Entrada, gestão e saída PERFEITAS.\" +1,74R",
+      "23/03 (#100) — logo após uma violinada no mesmo dia, segundo M2B com inside positiva e stop mais claro. Pagou 1.300 pts limpos.",
+      "22/01 (#28) — o contra-exemplo útil: +1,77R, mas entrada pelo M5 em vez do M2. \"Fica a anotação da diferença de um trade bem estruturado para um mais ou menos bem estruturado.\"",
+    ],
+  },
   {
     id: "trm",
     nomeCurto: "TRM",
@@ -743,7 +852,7 @@ const SETUPS = [
     stopAceito: "Atrás da barra de sinal + gordura 20–30%",
     split: "Alvo decide",
     rxr: "1,5x1+",
-    gestaoGanhos: "Alvo curto: 100% no alvo · Alvo aberto: parcial 1x1 + carrega (3+ ctts)",
+    gestaoGanhos: "Alvo curto: 100% no alvo · Alvo aberto: primeira parcial no 1,5x1 + carrega",
     badge: "Atenção",
     badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
     fluencia: { label: "Atenção", tone: "warn", detalhe: "Historicamente o setup mais confiável, mas fechou julho em −4R" },
@@ -756,6 +865,7 @@ const SETUPS = [
     filtrosList: [
       "Confluência de 2 a 3 níveis coincidindo na mesma região",
       "A favor da tendência macro (semanal/diário)",
+      "Folga de pelo menos 250 pts entre alvo e stop",
       "Espaço até a MME9 do M2 suficiente para viabilizar a parcial",
       "Só entrar quando a direção contrária não fizer sentido — havendo argumento razoável para o outro lado, segurar",
     ],
@@ -786,18 +896,18 @@ const SETUPS = [
     stopAceito: "Barra de sinal (se excelente) ou T/F prévio",
     split: "Alvo decide",
     rxr: "1,5x1+",
-    gestaoGanhos: "2 ctts: 100% no 1x1 (regra de agosto) · 3+ ctts: parcial 1x1 + carrega",
+    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega · Alvo fixo: 100% no alvo",
     badge: "Funcional",
     badgeColor: null,
     fluencia: { label: "Funcional", tone: "good", detalhe: "Setup de continuidade — apoia-se no que o mercado já demonstrou" },
     descricao: "Dentro de uma tendência já estabelecida, o pullback até a média de referência oferece entrada de continuidade — o viés a favor já está validado pelo alinhamento completo das médias.",
     regrasList: [
-      "Alinhamento COMPLETO de todas as médias — 200/50/20/9 (regra nova de agosto)",
+      "Alinhamento COMPLETO de todas as médias — 200/50/20/9",
       "Estrutura de tendência prévia — mínimo 2 T/F/T/F",
       "Preço calçado na MME9 ou MME20",
     ],
     filtrosList: [
-      "Espaço gráfico mínimo 1x1 até o próximo alvo",
+      "Folga de pelo menos 250 pts entre alvo e stop; acima de 350 é o trade que se procura",
       "Gatilho a favor do 60'/D",
       "VWAP próxima e confluência no ponto de PB",
     ],
@@ -810,7 +920,7 @@ const SETUPS = [
     redFlagsList: [
       "Entrar sem alinhamento completo das médias",
       "Pullback raso após pullback profundo exige barra de sinal 10/10",
-      "Com 2 contratos, tentar carregar em vez de sair 100% no 1x1 — decisão discricionária com lucro na tela é onde a execução mais oscila",
+      "Encurtar o stop para o trade caber no risco — se a invalidação está longe, esperar entrada mais perto ou passar",
     ],
     exemplosList: [
       "29/07 — b30 do M5: 1º PB na MME9 após impulso + micro canal, quase 20 barras abaixo da MM20, barra de sinal inside minúscula. Pagou.",
@@ -828,7 +938,7 @@ const SETUPS = [
     stopAceito: "Barra de sinal (se excelente) ou T/F prévio",
     split: "Alvo decide",
     rxr: "1,5x1+",
-    gestaoGanhos: "2 ctts: 100% no 1x1 (regra de agosto) · 3+ ctts: parcial 1x1 + carrega",
+    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega · Alvo fixo: 100% no alvo",
     badge: "Em validação",
     badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
     fluencia: { label: "Em validação", tone: "warn", detalhe: "Subtipo com histórico mais fraco — exige rigor no critério de rompimento" },
@@ -837,10 +947,11 @@ const SETUPS = [
       "Precisa ter rompido de fato — sem TC de pós de topo/fundo micro",
       "Barra de rompimento fechando perto do extremo",
       "Barra de continuidade a favor — peso inverso: rompimento fraco pede continuidade forte, e vice-versa",
-      "Alinhamento completo das médias (regra de agosto)",
+      "Alinhamento completo das médias",
     ],
     filtrosList: [
       "Timeframe M2 se o nível está contido em até ~40 barras (~80min); acima disso, sobe para M5/M15",
+      "Folga de pelo menos 250 pts entre alvo e stop",
       "Gatilho a favor do 60'/D e VWAP próxima",
       "Confluência no ponto de retorno",
     ],
@@ -871,7 +982,7 @@ const SETUPS = [
     stopAceito: "Barra de sinal (se excelente) ou T/F prévio",
     split: "Alvo decide",
     rxr: "1,5x1+",
-    gestaoGanhos: "2 ctts: 100% no 1x1 (regra de agosto) · 3+ ctts: parcial 1x1 + carrega",
+    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega · Alvo fixo: 100% no alvo",
     badge: "Coletando dados",
     badgeColor: { bg: "#88888822", text: "#9aa3b2" },
     fluencia: { label: "Sem amostra", tone: "neutral", detalhe: "Poucas ocorrências com a regra já formalizada — observar próximas entradas" },
@@ -883,6 +994,8 @@ const SETUPS = [
     ],
     filtrosList: [
       "Mesmos do TC de Meio de Movimento — gatilho a favor do 60'/D",
+      "Caminho livre até alvos em aberto — sem obstáculo relevante no meio",
+      "Folga de pelo menos 250 pts entre alvo e stop",
       "Confluência no ponto de entrada",
     ],
     ondeInvalida: "Stop atrás da barra de sinal se excelente; caso contrário, no T/F prévio do swing. Sem histórico de reação prévia na 9 do M2, o setup não é candidato.",
@@ -894,6 +1007,7 @@ const SETUPS = [
     redFlagsList: [
       "Ser pioneiro na 9 do 2' sem histórico de reação prévia",
       "Médias desalinhadas mascarando tendência ainda não confirmada",
+      "Fazer o setup sem espaço até o alvo — erro nomeado em 11/02: \"TC de ST sem muito ESPAÇO\"",
     ],
     exemplosList: [
       "29/07 — b26 do M5: acionado na b65 do M2 com inside bar; 1ª correção após micro canal de 6 barras sem sinal de CLX; inside tanto no M5 quanto no M2.",
@@ -948,25 +1062,27 @@ const SETUPS = [
     Icon: IconForca,
     timeframeShort: "M5 (janela) → M2 (gatilho)",
     barraSinalChips: ["A própria barra de força"],
-    stopAceito: "Atrás da barra forte · teto 600 pts",
+    stopAceito: "Atrás da barra forte · teto 700 pts (2 ctts)",
     split: "100% no alvo",
     rxr: "1x1",
-    gestaoGanhos: "Alvo SEMPRE 1x1 da própria barra · saída 100% no alvo, sem parcial",
-    badge: "Novo",
+    gestaoGanhos: "Alvo SEMPRE 1x1 da própria barra · proteção obrigatória nos 350 pts de MEP",
+    badge: "Contador aberto",
     badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
-    fluencia: { label: "Novo", tone: "warn", detalhe: "Setup novo, sem histórico — tag própria no diário para atribuição em setembro" },
-    descricao: "A primeira barra forte da abertura carrega o desequilíbrio inicial do dia. Opera esse impulso enquanto ele ainda é jovem, com alvo curto e objetivo.",
+    fluencia: { label: "Contador n=3", tone: "warn", detalhe: "Teto de 700 pts é provisório — revisão na 10ª ocorrência" },
+    descricao: "A primeira barra forte da abertura carrega o desequilíbrio inicial do dia. Opera esse impulso enquanto ele ainda é jovem, com alvo curto e objetivo. Único setup em que o filtro de folga NÃO se aplica — o alvo é 1x1 da própria barra, então a folga é zero por definição.",
     regrasList: [
       "Janela até a b2 do M5 (até 9h10)",
       "Um dos três gatilhos presentes (ver abaixo)",
       "Não operar contra a força do gap",
+      "Sem confirmação na barra seguinte, sai — não espera os 700 pts",
     ],
     filtrosList: [
       "Premissa prévia definida no pré-mercado",
       "Localização da abertura — compradora / vendedora / neutra (neutra não opera)",
-      "Teto de stop de 600 pts na abertura",
+      "Teto de stop teórico de 700 pts → 2 contratos (R$280 no R de R$300)",
+      "O filtro de folga não se aplica a este setup",
     ],
-    ondeInvalida: "Stop atrás da própria barra forte; ou na abertura da barra, se a reversão do corpo já invalidar a leitura. Fora da janela até a b2 do M5, não é mais este setup.",
+    ondeInvalida: "Stop atrás da própria barra forte, teto teórico de 700 pts; ou na abertura da barra, se a reversão do corpo já invalidar a leitura. Andou 350 pts a favor, protege — não volta mais ao stop. Fora da janela até a b2 do M5, não é mais este setup.",
     gatilhos: [
       { label: "a", text: "Barra expressiva no M2+ revertendo fechamentos anteriores" },
       { label: "b", text: "Rompimento de região importante a favor de premissa prévia" },
@@ -977,9 +1093,10 @@ const SETUPS = [
       "Operar contra o gap",
       "Forçar entrada fora da janela da b2",
       "Segurar além do 1x1 — o alvo deste setup é fixo",
+      "Deixar o trade voltar ao stop depois de ter andado 350 pts a favor",
     ],
     exemplosList: [
-      "A acumular — setup estreando em agosto/2026.",
+      "Contador aberto, n=3. Anotar por ocorrência: stop assumido · MEN máximo · MEP máximo · protegeu nos 350? · resultado. Revisão do teto de 700 na 10ª ocorrência.",
     ],
   },
   {
@@ -994,9 +1111,9 @@ const SETUPS = [
     split: "100% no alvo",
     rxr: "1x1",
     gestaoGanhos: "Alvo = 50% do range · saída 100% no alvo, sem parcial",
-    badge: "Novo no TSS",
-    badgeColor: null,
-    fluencia: { label: "Maduro", tone: "good", detalhe: "Configuração já executada com sucesso no OTS (EQL) — nova apenas no operacional TSS" },
+    badge: "Recalibrar",
+    badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
+    fluencia: { label: "Recalibrar", tone: "warn", detalhe: "Stop de 20% do range herdado do EQL — recalibração pendente antes de rodar em volume" },
     descricao: "Em lateralidade, os extremos do range são onde a probabilidade de reversão é maior e o risco é mais barato. Opera o que o mercado já demonstrou — range validado — e não o que ele pode vir a fazer. Ocupa o vácuo que antes era preenchido pelo FQ: operar extremos em dias travados.",
     regrasList: [
       "TR com 2 topos E 2 fundos JÁ demarcados — estrutura pré-existente, nunca antecipada",
@@ -1024,6 +1141,181 @@ const SETUPS = [
       "Julho/2026 — diversos EQL executados na conta OTS, mês que fechou +6R.",
     ],
   },
+
+  /* ---------- Em validação em replay ---------- */
+  {
+    id: "gap-media",
+    nomeCurto: "Gap de média",
+    nome: "Gap de média",
+    subtitulo: "Distância à média em tendência",
+    Icon: IconGapMedia,
+    timeframeShort: "M15 / M5 → M2",
+    barraSinalChips: ["Inside", "Outside", "2BR"],
+    stopAceito: "Barra de sinal ou T/F prévio",
+    split: "Alvo decide",
+    rxr: "1,5x1+",
+    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega",
+    validacaoReplay: true,
+    notaReplay: "12 trades no replay de jan–mar/2026 · 41,7% de acerto · +0,60R · 25% de taxa de erro. É o setup com maior volume entre os que estão em validação. A captura foi a melhor de todas as famílias (60% do MEP), o que sugere que a leitura de saída nele já está calibrada — o que falta validar é o critério de entrada.",
+    badge: "Replay",
+    badgeColor: { bg: `${REPLAY_TONE}22`, text: REPLAY_TONE },
+    fluencia: { label: "Em replay", tone: "replay", detalhe: "12 trades no replay · 41,7% · +0,60R" },
+    descricao: "O preço se afasta demais da média de referência e a distância vira magneto — o retorno à média é o movimento operado. Nos replays aparece principalmente em ciclo de canal amplo (BC) e em tendência (TC).",
+    regrasList: [
+      "Gap claro entre preço e a média de referência (M2, M5 ou M15)",
+      "Média de referência com inclinação definida, não achatada",
+      "Gatilho no M2 dentro da região de reação",
+    ],
+    filtrosList: [
+      "Folga de pelo menos 250 pts entre alvo e stop",
+      "Confluência na região de reação — S/R, Fibo, VWAP, POC",
+      "Contexto de tendência ou canal, não de lateralidade travada",
+    ],
+    ondeInvalida: "Atrás da barra de sinal, ou no extremo do movimento se a barra for frágil. Doji não serve como barra de sinal — erro nomeado em 27/01: \"DOJI como SB + Stop inadequado\".",
+    gatilhos: [
+      { label: "a", text: "Inside bar" },
+      { label: "b", text: "Outside bar" },
+      { label: "c", text: "2BR" },
+    ],
+    redFlagsList: [
+      "Aceitar doji como barra de sinal por causa de confluência — a confluência não conserta a barra",
+      "Entrar na violação perto do fim da barra em vez de esperar o fechamento (#57)",
+      "Usar stop de barra em violação que não seja novo extremo (#74)",
+    ],
+    exemplosList: [
+      "12/01 (#14) — GM no M2 + M5, micro canal no 5/15/60, alvo aberto para baixo. \"Trade IMPECÁVEL e executado PERFEITAMENTE.\" +1,90R",
+      "02/03 (#65) — GM logo após um M2S stopado; espaço grande levou a parcial a quase 2x o risco. +1,79R",
+    ],
+  },
+  {
+    id: "rev-3conf",
+    nomeCurto: "Reversão em 3 confluências",
+    nome: "Reversão em 3 confluências c/ SB",
+    subtitulo: "Extremo com 3 níveis",
+    Icon: IconConfluencia,
+    timeframeShort: "M15 / M5 → M2",
+    barraSinalChips: ["Inside", "Outside", "Martelo"],
+    stopAceito: "Afastado do extremo — não colado",
+    split: "Alvo decide",
+    rxr: "1,5x1+",
+    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega",
+    validacaoReplay: true,
+    notaReplay: "4 trades no replay · 75,0% de acerto · +1,26R. Amostra pequena, mas o único com acerto acima de 70% entre os que estão em validação. O padrão que aparece nos três ganhadores é o mesmo: movimento climático chegando em região com três níveis coincidentes.",
+    badge: "Replay",
+    badgeColor: { bg: `${REPLAY_TONE}22`, text: REPLAY_TONE },
+    fluencia: { label: "Em replay", tone: "replay", detalhe: "4 trades no replay · 75,0% · +1,26R" },
+    descricao: "Movimento climático e esticado chega a uma região onde três níveis independentes coincidem — alvos de Fibo, linha de canal, S/R macro, MA longa. A convergência aumenta a chance de reação, e a barra de sinal confirma que ela começou.",
+    regrasList: [
+      "Três níveis independentes coincidindo na mesma região",
+      "Movimento chegando esticado / climático",
+      "Barra de sinal confirmando a reação",
+    ],
+    filtrosList: [
+      "Folga de pelo menos 250 pts entre alvo e stop",
+      "Stop afastado do extremo — quanto mais improvável o rompimento, mais longe o stop",
+      "Preferência por região que já rejeitou antes",
+    ],
+    ondeInvalida: "Afastado do extremo, nunca colado. Registro de 20/01: \"se tenho uma resistência e não acredito que irá romper, devo deixar afastado o stop. Por isso não fui stopado.\"",
+    gatilhos: [
+      { label: "a", text: "Inside bar" },
+      { label: "b", text: "Outside bar" },
+      { label: "c", text: "Martelo / shooting star" },
+    ],
+    redFlagsList: [
+      "Stop colado no extremo — o setup exige gordura por definição",
+      "Falta de agilidade para sair quando o movimento vai e volta rápido (#60)",
+      "Contar como confluência níveis que na verdade são o mesmo nível com nomes diferentes",
+    ],
+    exemplosList: [
+      "20/01 (#23) — \"Operação de PACIÊNCIA! Aguardei ansiosamente chegar no ponto de mais confluências.\" +1,30R. É o exemplo de referência do setup.",
+    ],
+  },
+  {
+    id: "falha-h1l1",
+    nomeCurto: "Falha de H1/L1",
+    nome: "Falha de H1 / L1",
+    subtitulo: "Primeira tentativa falha",
+    Icon: IconFalhaH1,
+    timeframeShort: "M5 → M2",
+    barraSinalChips: ["Outside", "Inside"],
+    stopAceito: "Atrás da barra de falha",
+    split: "Alvo decide",
+    rxr: "2x1",
+    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega",
+    validacaoReplay: true,
+    notaReplay: "2 trades no replay · 50,0% · +1,00R. Amostra mínima. O ganhador e o perdedor se separam por um único critério: alinhamento das médias. O perdedor (#22) tem a correção já escrita — \"preciso me abster desse tipo de trade na ausência de médias alinhadas\".",
+    badge: "Replay",
+    badgeColor: { bg: `${REPLAY_TONE}22`, text: REPLAY_TONE },
+    fluencia: { label: "Em replay", tone: "replay", detalhe: "2 trades no replay · 50,0% · +1,00R" },
+    descricao: "A primeira tentativa de continuidade falha e arma os traders que entraram nela. A falha do H1 ou do L1 vira gatilho na direção oposta — mas só quando o contexto maior já apontava para esse lado.",
+    regrasList: [
+      "H1 ou L1 acionado e falhando",
+      "Médias alinhadas na direção do trade — condição obrigatória",
+      "Barra de sinal confirmando a falha",
+    ],
+    filtrosList: [
+      "Folga de pelo menos 250 pts entre alvo e stop",
+      "Contexto do M15/M60 a favor",
+      "Região de referência relevante — LTB/LTA de canal, M2S/M2B em TF maior",
+    ],
+    ondeInvalida: "Atrás da barra que produziu a falha. Sem médias alinhadas, o setup não é candidato — é a diferença exata entre os dois casos da amostra.",
+    gatilhos: [
+      { label: "a", text: "Outside bar fechando no extremo" },
+      { label: "b", text: "Inside bar após a falha" },
+    ],
+    redFlagsList: [
+      "Operar em contexto lateral sem médias alinhadas (#22: \"contexto geral mais lateral e dia onde já caiu forte e subiu forte\")",
+      "Confundir violação com falha — falha exige o acionamento e a reversão",
+    ],
+    exemplosList: [
+      "06/03 (#76) — LTB de canal amplo + M2S no M15 em tendência + M2S na 9 do 60 + falha de H1 no M2 com outside fechando na mínima. Pagou 2x1 em 5 minutos.",
+      "20/01 (#22) — o contra-exemplo: falha de L1 com micro canal no M5, mas contexto lateral. Stop. Origem do filtro das médias alinhadas.",
+    ],
+  },
+  {
+    id: "wedge-tr",
+    nomeCurto: "Wedge top/bottom em TR",
+    nome: "Wedge top / bottom em TR c/ SB",
+    subtitulo: "Cunha no extremo do range",
+    Icon: IconWedge,
+    timeframeShort: "M5 → M2",
+    barraSinalChips: ["Inside", "Outside"],
+    stopAceito: "Além do ponto de inflexão da cunha",
+    split: "Alvo decide",
+    rxr: "1,5x1+",
+    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega",
+    validacaoReplay: true,
+    notaReplay: "2 trades no replay · 50,0% · +1,13R · zero erros nomeados. Amostra mínima, mas nenhuma das duas ocorrências teve erro de execução — o que ainda falta é volume para saber se o edge é real.",
+    badge: "Replay",
+    badgeColor: { bg: `${REPLAY_TONE}22`, text: REPLAY_TONE },
+    fluencia: { label: "Em replay", tone: "replay", detalhe: "2 trades no replay · 50,0% · +1,13R" },
+    descricao: "Três empurrões consecutivos perdendo força dentro de um trading range formam uma cunha no extremo. A cunha sinaliza exaustão da tentativa de romper e devolve o preço ao miolo do range.",
+    regrasList: [
+      "Cunha formada no extremo de um TR já demarcado",
+      "Três empurrões com perda de amplitude",
+      "Barra de sinal no ponto de inflexão",
+    ],
+    filtrosList: [
+      "Folga de pelo menos 250 pts entre alvo e stop",
+      "TR com estrutura clara — 2 topos e 2 fundos",
+      "Preferência quando a cunha viola o ponto de inflexão e volta",
+    ],
+    ondeInvalida: "Além do ponto de inflexão da cunha, com stop mais longo do que o de barra — o setup chacoalha por natureza. Registro de 27/03: saiu no 0x0 ao travar na MM20 do M2, \"já havia pegado um MEN maior que o dos trades que normalmente dão certo\".",
+    gatilhos: [
+      { label: "a", text: "Inside bar no ponto de inflexão" },
+      { label: "b", text: "Outside bar rompendo as médias" },
+    ],
+    redFlagsList: [
+      "Usar stop de barra — o padrão exige gordura",
+      "Entrar antes da cunha ter os três empurrões",
+      "Insistir depois que o MEN já passou do que é normal nos ganhadores",
+    ],
+    exemplosList: [
+      "26/03 (#104) — wedge que violou o ponto de inflexão, compra em inside no M2 rompendo as médias, stop e alvo mais longos. +1,13R",
+    ],
+  },
+
+  /* ---------- Encerrado ---------- */
   {
     id: "fq",
     nomeCurto: "FQ",
@@ -1064,21 +1356,60 @@ const SETUPS = [
     ],
     exemplosList: [
       "30/07 — último teste consciente: 2 FQs, 2 stops, −R$320 no dia. Confirmou a decisão de 27/07.",
+      "Replay jan–mar/2026: 17 trades, 41,2% de acerto, +3,18R — mas a pior captura de todas as famílias (33% do MEP). Erra muito e não coleta quando acerta.",
     ],
   },
 ];
 
 /* ---------------- Componente principal ---------------- */
-
 export default function PlanoTrade({ th }) {
   const theme = useTheme(th);
 
   const contratos = [
-    { stop: "500 pts", ctts: "2 ctts" },
-    { stop: "350 pts", ctts: "3 ctts" },
-    { stop: "250 pts", ctts: "4 ctts" },
-    { stop: "200 pts", ctts: "5 ctts" },
+    { stop: "200 pts", ctts: "7 ctts" },
+    { stop: "250 pts", ctts: "6 ctts" },
+    { stop: "300 pts", ctts: "5 ctts" },
+    { stop: "350 pts", ctts: "4 ctts" },
+    { stop: "400 pts", ctts: "3–4 ctts" },
+    { stop: "500 pts", ctts: "3 ctts" },
   ];
+
+  const folgaLinhas = [
+    { faixa: "≤ 250 pts", decisao: "Não entra", base: "36,8% · −14,59R", tone: "bad" },
+    { faixa: "251 – 350 pts", decisao: "Entra se for bom", base: "52,2% · +0,144R/t", tone: "neutral" },
+    { faixa: "> 350 pts", decisao: "É o que se procura", base: "58,5% · +0,466R/t", tone: "good" },
+  ];
+
+  const bolso = [
+    { stop: "200 pts", min: "450", ideal: "550" },
+    { stop: "250 pts", min: "500", ideal: "600" },
+    { stop: "300 pts", min: "550", ideal: "650" },
+    { stop: "350 pts", min: "600", ideal: "700" },
+    { stop: "400 pts", min: "650", ideal: "750" },
+    { stop: "450 pts", min: "700", ideal: "800" },
+    { stop: "500 pts", min: "750", ideal: "850" },
+  ];
+
+  const regrasUniversais = [
+    { Icon: IcoShield, text: "Andou 350 pts → protege. Não volta ao stop.", hi: true },
+    { Icon: IcoAlerta, text: "Erro no 1º trade → o 2º só se for nota 10", hi: true },
+    { Icon: IcoBarra, text: "Stop de barra não substitui estrutural longo", hi: false },
+    { Icon: IconMapPinOff, text: "Ponto de decisão: não faço nada", hi: false },
+    { Icon: IconRepeatOff, text: "Não tomo 2 stops na mesma região", hi: false },
+    { Icon: IconZoomQuestion, text: "Não pego trades que não fazem sentido no M5", hi: false },
+  ];
+
+  const thStyle = {
+    textAlign: "left",
+    padding: "8px 10px",
+    color: theme.textMuted,
+    fontSize: 11.5,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    borderBottom: `1px solid ${theme.border}`,
+    fontWeight: 700,
+  };
+  const tdStyle = { padding: "8px 10px", borderBottom: `1px solid ${theme.border}`, fontSize: 13.5 };
 
   return (
     <div
@@ -1101,7 +1432,7 @@ export default function PlanoTrade({ th }) {
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: theme.text }}>Plano de trade</div>
         <div style={{ fontSize: 14, color: theme.textMuted, marginTop: 4 }}>
-          Meu Trading System v.1.0 · atualizado agosto/2026
+          Meu Trading System v.1.1 · atualizado setembro/2026
         </div>
       </div>
 
@@ -1156,7 +1487,6 @@ export default function PlanoTrade({ th }) {
           <div style={{ fontSize: 20, fontWeight: 800, color: theme.text, lineHeight: 1.2, marginBottom: 18 }}>
             Mentalidade
           </div>
-
           <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18 }}>
             <Quote theme={theme}>
               Professionals think, feel and act differently from losers. Changing is hard, but
@@ -1177,6 +1507,114 @@ export default function PlanoTrade({ th }) {
 
       <hr style={{ border: "none", borderTop: `1px solid ${theme.border}`, margin: "28px 0" }} />
 
+      {/* FILTRO DE FOLGA — regra central */}
+      <div
+        style={{
+          background: theme.card,
+          border: `1px solid ${theme.accent}`,
+          borderRadius: 14,
+          padding: 22,
+          marginBottom: 28,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <IcoFolga color={theme.accent} />
+          <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>
+            Filtro de folga · regra central
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: 24,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: theme.accent, margin: "2px 0 14px" }}>
+              Folga = alvo − stop
+            </div>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Folga</th>
+                  <th style={thStyle}>Decisão</th>
+                  <th style={{ ...thStyle, textAlign: "right" }}>Base · 253 trades</th>
+                </tr>
+              </thead>
+              <tbody>
+                {folgaLinhas.map((l) => (
+                  <tr key={l.faixa} style={{ background: l.tone === "neutral" ? "transparent" : toneBg(l.tone, theme) }}>
+                    <td style={{ ...tdStyle, fontWeight: 700 }}>{l.faixa}</td>
+                    <td style={{ ...tdStyle, fontWeight: l.tone === "neutral" ? 400 : 700, color: toneColor(l.tone, theme) }}>
+                      {l.decisao}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700, color: theme.textMuted }}>{l.base}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div
+              style={{
+                background: "#e0a63a14",
+                border: "1px solid #e0a63a40",
+                borderRadius: 10,
+                padding: "12px 14px",
+                marginTop: 16,
+                fontSize: 13,
+                lineHeight: 1.55,
+                color: theme.textMuted,
+              }}
+            >
+              <b style={{ color: "#e0a63a" }}>Exceção — Abertura com barra de força.</b> O alvo é
+              1x1 da própria barra, então a folga é zero por definição e o filtro não se aplica.
+              Stop teórico máx. 700 pts · proteção obrigatória nos 350 · sem confirmação na barra
+              seguinte, sai.
+            </div>
+          </div>
+
+          <div>
+            <div
+              style={{
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: theme.accent,
+                textTransform: "uppercase",
+                letterSpacing: 0.4,
+                marginBottom: 6,
+              }}
+            >
+              Tabela de bolso
+            </div>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Stop</th>
+                  <th style={{ ...thStyle, textAlign: "right" }}>Alvo mínimo</th>
+                  <th style={{ ...thStyle, textAlign: "right" }}>Alvo ideal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bolso.map((b) => (
+                  <tr key={b.stop}>
+                    <td style={tdStyle}>{b.stop}</td>
+                    <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700 }}>{b.min}</td>
+                    <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700, color: theme.accent }}>{b.ideal}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ fontSize: 13, color: theme.textMuted, marginTop: 12, lineHeight: 1.55 }}>
+              Conta: <b style={{ color: theme.text }}>stop + 250 entra · stop + 350 procura.</b>
+              <br />
+              Não checar múltiplo alvo/stop — testado, não agrega nada em cima da folga.
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* RISCO | GESTÃO DE SAÍDA | REGRAS UNIVERSAIS */}
       <div
         style={{
@@ -1196,21 +1634,26 @@ export default function PlanoTrade({ th }) {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <IcoRisk color={theme.accent} />
-            <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>Risco · agosto/2026</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>Risco · setembro/2026</div>
           </div>
+
           <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 14 }}>
             {[
-              { k: "R fixo", v: "R$ 200" },
+              { k: "R fixo", v: "R$ 300", accent: true },
               { k: "Stop diário", v: "R$ 500" },
-              { k: "Stop por trade", v: "R$ 200–250 (até 300 em caso excepcional)" },
-              { k: "Teto em pontos", v: "600 na abertura · 500 no resto do dia" },
+              { k: "Zona confortável", v: "250 – 400 pts" },
+              { k: "Teto de stop", v: "500 pts · limite 550" },
+              { k: "Exceção", v: "700 pts (abertura c/ força)" },
             ].map((r) => (
               <div key={r.k} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 12.5 }}>
                 <span style={{ color: theme.textMuted }}>{r.k}</span>
-                <span style={{ color: theme.text, fontWeight: 700, textAlign: "right" }}>{r.v}</span>
+                <span style={{ color: r.accent ? theme.accent : theme.text, fontWeight: 700, textAlign: "right" }}>
+                  {r.v}
+                </span>
               </div>
             ))}
           </div>
+
           <div style={{ fontSize: 12.5, color: theme.textMuted, marginBottom: 8 }}>
             Contratos são <b style={{ color: theme.text }}>consequência</b> do stop, não escolha:
           </div>
@@ -1231,6 +1674,9 @@ export default function PlanoTrade({ th }) {
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.text, marginTop: 2 }}>{c.ctts}</div>
               </div>
             ))}
+          </div>
+          <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 10, lineHeight: 1.5 }}>
+            400 pts é zona de escolha: 3 ctts = R$240 · 4 ctts = R$320.
           </div>
         </div>
 
@@ -1258,8 +1704,7 @@ export default function PlanoTrade({ th }) {
                 Alvo fixo e curto
               </div>
               <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
-                Abertura 1x1 · TRM de correção simples · TL nos 50% do range → sai 100% no alvo,
-                sem parcial.
+                Abertura 1x1 · TL nos 50% do range → sai 100% no alvo, sem parcial.
               </div>
             </div>
             <div style={{ background: theme.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
@@ -1267,24 +1712,25 @@ export default function PlanoTrade({ th }) {
                 Alvo aberto
               </div>
               <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
-                TC em tendência · TRM em confluência de reversão → parcial no 1x1 + carrega. Só
-                faz sentido com 3+ contratos.
+                TC em tendência · TRM em confluência · M2B/M2S → <b>primeira parcial no 1,5x1</b> +
+                carrega.
               </div>
             </div>
             <div
               style={{
-                background: "#e0a63a14",
-                border: "1px solid #e0a63a40",
+                background: `${theme.accent}14`,
+                border: `1px solid ${theme.accent}40`,
                 borderRadius: 10,
                 padding: "10px 12px",
               }}
             >
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: "#e0a63a", marginBottom: 3 }}>
-                Decisão de agosto · revisar em setembro
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
+                Decisão de setembro · substitui a regra de agosto
               </div>
               <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
-                TC de 2 contratos sai 100% no 1x1, sem exceção. Contrapartida obrigatória: anotar
-                no diário quanto teria pago se carregasse (MEP máximo).
+                A parcial sai do 1x1 e vai para o <b>1,5x1</b>. Motivo: nenhum dos 51 trades
+                perdedores tocou o 1x1 — a parcial ali nunca protegeu de nada. O 1,5x1 é atingido
+                em 65% dos trades que tocam o 1x1, contra 38% que chegam ao 2x1.
               </div>
             </div>
           </div>
@@ -1303,22 +1749,26 @@ export default function PlanoTrade({ th }) {
             <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>Regras universais</div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
-            {[
-              { Icon: IconMapPinOff, text: "Ponto de decisão: não faço nada" },
-              { Icon: IconRepeatOff, text: "Não tomo 2 stops na mesma região" },
-              { Icon: IconZoomQuestion, text: "Não pego trades que não fazem sentido no M5" },
-            ].map((r, i) => (
+            {regrasUniversais.map((r, i) => (
               <div
                 key={i}
                 style={{
-                  background: theme.cardAlt,
-                  border: `1px solid ${theme.border}`,
+                  background: r.hi ? `${theme.accent}14` : theme.cardAlt,
+                  border: `1px solid ${r.hi ? theme.accent + "40" : theme.border}`,
                   borderRadius: 10,
                   padding: 14,
                 }}
               >
-                <r.Icon color={theme.textMuted} />
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.text, marginTop: 10, lineHeight: 1.4 }}>
+                <r.Icon color={r.hi ? theme.accent : theme.textMuted} />
+                <div
+                  style={{
+                    fontSize: 13.5,
+                    fontWeight: 700,
+                    color: r.hi ? theme.accent : theme.text,
+                    marginTop: 10,
+                    lineHeight: 1.4,
+                  }}
+                >
                   {r.text}
                 </div>
               </div>
@@ -1341,14 +1791,15 @@ export default function PlanoTrade({ th }) {
           Que setup para que mercado
         </div>
         <div style={{ fontSize: 13.5, color: theme.textMuted, marginBottom: 16 }}>
-          TC para tendência · TRM para reversões · TL para lateralidades
+          Contextos que pagam nas duas amostras: BO (rompimento) e TC (tendência / canal estreito).
+          BC (canal amplo) saiu da lista · TR segue como recusa.
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 10 }}>
           {[
-            { m: "Movimentos climáticos", s: "TRM" },
+            { m: "Tendência estabelecida na MM20", s: "M2B / M2S" },
             { m: "Tendência clara", s: "TC Meio de Movimento · TC Supertrend" },
             { m: "Rompimento e correção", s: "TC Pós BO" },
-            { m: "Tendência testando S/R estruturado", s: "TC Pré BO (pausado)" },
+            { m: "Movimentos climáticos", s: "TRM" },
             { m: "Laterais com direção preferida", s: "TL" },
             { m: "Abertura com força direcional", s: "Trade de Abertura · Barra de Força" },
           ].map((t) => (
@@ -1372,10 +1823,10 @@ export default function PlanoTrade({ th }) {
       <div style={{ margin: "24px 0 12px" }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>Setups — Trading System Starter</div>
         <div style={{ fontSize: 13.5, color: theme.textMuted, marginTop: 2 }}>
-          TC Pré BO pausado · FQ encerrado em 30/07/2026
+          Ativos primeiro · <span style={{ color: REPLAY_TONE, fontWeight: 700 }}>em validação em replay</span> no meio ·
+          encerrados por último. TC Pré BO eliminado · FQ encerrado em 30/07/2026.
         </div>
       </div>
-
       <SetupsTable theme={theme} setups={SETUPS} />
     </div>
   );
