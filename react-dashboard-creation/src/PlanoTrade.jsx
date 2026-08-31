@@ -1490,12 +1490,12 @@ export default function PlanoTrade({ th }) {
           <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18 }}>
             <Quote theme={theme}>
               Professionals think, feel and act differently from losers. Changing is hard, but
-              becoming a professional demands commitment to that shift in posture.
+              to become a professional you need to change your PERSONALITY. 
             </Quote>
             <Quote theme={theme}>
-              Going all-in on trading is doing what I know is necessary to succeed. I won't get
-              there faster by being an exception — I need to cut the idea that it's "different"
-              for me and truly commit.
+              Going all-in on trading is doing what you know is NECESSARY to succeed. You won't get
+              there faster. You're not the exception — you need to cut the idea that it's "different"
+              for you and actually COMPROMISE.
             </Quote>
             <Quote theme={theme}>
               No mercado, a gente tem que ser muito humilde e, às vezes, a pessoa mais humilde
