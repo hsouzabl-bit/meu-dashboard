@@ -40,6 +40,8 @@ function useTheme(th) {
     // camada de elevacao: clareia sobre qualquer fundo escuro, adapta a todos os temas
     cardAlt: isDark ? "rgba(255,255,255,0.05)" : (th?.resumeBg ?? FALLBACK_THEME.cardAlt),
     border: isDark ? "rgba(255,255,255,0.11)" : (th?.border ?? FALLBACK_THEME.border),
+    // listra da tabela: escurece em vez de clarear, para nao lavar o texto no tema escuro
+    zebra: isDark ? "rgba(0,0,0,0.22)" : "rgba(0,0,0,0.035)",
     text: th?.text ?? FALLBACK_THEME.text,
     textMuted: th?.textSub ?? th?.textMuted ?? FALLBACK_THEME.textMuted,
     // segue o accent do tema selecionado
@@ -681,7 +683,7 @@ function SetupPopover({ s, theme, onClose }) {
 }
 
 /* ---------------- Tabela comparativa de setups (abre popup ao clicar) ---------------- */
-function SetupsTable({ theme, setups: setupsRaw }) {
+function SetupsTable({ theme, setups: setupsRaw, bare }) {
   const [openId, setOpenId] = useState(null);
 
   // ordem: ativos > em validacao em replay > encerrados; alfabetica dentro de cada grupo
@@ -695,7 +697,13 @@ function SetupsTable({ theme, setups: setupsRaw }) {
   const openSetup = setups.find((s) => s.id === openId);
 
   return (
-    <div style={{ border: `1px solid ${theme.border}`, borderRadius: 14, overflow: "hidden" }}>
+    <div
+      style={{
+        border: bare ? "none" : `1px solid ${theme.border}`,
+        borderRadius: bare ? 0 : 14,
+        overflow: "hidden",
+      }}
+    >
       <div style={{ overflowX: "auto" }}>
         <table
           style={{
@@ -740,7 +748,7 @@ function SetupsTable({ theme, setups: setupsRaw }) {
                   onClick={() => setOpenId(s.id)}
                   style={{
                     cursor: "pointer",
-                    background: i % 2 === 1 ? `${theme.cardAlt}80` : "transparent",
+                    background: i % 2 === 1 ? theme.zebra : "transparent",
                     opacity: off ? 0.6 : s.validacaoReplay ? 0.85 : 1,
                   }}
                 >
@@ -793,10 +801,40 @@ function SetupsTable({ theme, setups: setupsRaw }) {
   );
 }
 
+/* ---------------- Categorias de mercado ---------------- */
+const CATEGORIAS = [
+  {
+    id: "tendencia",
+    titulo: "Tendência",
+    subtitulo: "Continuidade a favor da direção estabelecida",
+  },
+  {
+    id: "lateralidade",
+    titulo: "Lateralidade",
+    subtitulo: "Extremos de range e exaustão dentro dele",
+  },
+  {
+    id: "reversao",
+    titulo: "Reversão",
+    subtitulo: "Movimento esticado chegando em região de trava",
+  },
+  {
+    id: "abertura",
+    titulo: "Abertura",
+    subtitulo: "Desequilíbrio inicial do dia, janela até a b2 do M5",
+  },
+  {
+    id: "encerrado",
+    titulo: "Encerrados",
+    subtitulo: "Fora do operacional — registro histórico e trava anti-recaída",
+  },
+];
+
 /* ---------------- Dados dos setups ---------------- */
 const SETUPS = [
   {
     id: "m2b-m2s",
+    categoria: "tendencia",
     nomeCurto: "M2B / M2S",
     nome: "M2B / M2S — Setup na MM20 em tendência",
     subtitulo: "Pullback na MM20",
@@ -843,6 +881,7 @@ const SETUPS = [
   },
   {
     id: "trm",
+    categoria: "reversao",
     nomeCurto: "TRM",
     nome: "TRM — Trade de Retorno às Médias",
     subtitulo: "Retorno às médias",
@@ -887,6 +926,7 @@ const SETUPS = [
   },
   {
     id: "tc-mm",
+    categoria: "tendencia",
     nomeCurto: "TC Meio de Mov.",
     nome: "TC — Meio de Movimento (MME9)",
     subtitulo: "Pullback na MME9",
@@ -929,6 +969,7 @@ const SETUPS = [
   },
   {
     id: "tc-pos",
+    categoria: "tendencia",
     nomeCurto: "TC Pós BO",
     nome: "TC — Pós BO (rompimento)",
     subtitulo: "Continuidade pós-rompimento",
@@ -973,6 +1014,7 @@ const SETUPS = [
   },
   {
     id: "tc-super",
+    categoria: "tendencia",
     nomeCurto: "TC Supertrend",
     nome: "TC — Supertrend (9 do 2')",
     subtitulo: "9 do M2",
@@ -1015,8 +1057,9 @@ const SETUPS = [
   },
   {
     id: "ta",
-    nomeCurto: "Trade de Abertura",
-    nome: "TA — Trade de Abertura (TSS)",
+    categoria: "abertura",
+    nomeCurto: "Trade de Abertura TSS",
+    nome: "Trade de Abertura TSS",
     subtitulo: "Volatilidade inicial",
     Icon: IconAbertura,
     timeframeShort: "M5/M15 · entrada a mercado",
@@ -1056,6 +1099,7 @@ const SETUPS = [
   },
   {
     id: "abertura-forca",
+    categoria: "abertura",
     nomeCurto: "Abertura — Barra de Força",
     nome: "Abertura com Barra de FORÇA",
     subtitulo: "Impulso da b1/b2",
@@ -1101,6 +1145,7 @@ const SETUPS = [
   },
   {
     id: "tl",
+    categoria: "lateralidade",
     nomeCurto: "TL",
     nome: "TL — Trade de Lateralidade",
     subtitulo: "Extremos de range",
@@ -1145,6 +1190,7 @@ const SETUPS = [
   /* ---------- Em validação em replay ---------- */
   {
     id: "gap-media",
+    categoria: "tendencia",
     nomeCurto: "Gap de média",
     nome: "Gap de média",
     subtitulo: "Distância à média em tendência",
@@ -1189,6 +1235,7 @@ const SETUPS = [
   },
   {
     id: "rev-3conf",
+    categoria: "reversao",
     nomeCurto: "Reversão em 3 confluências",
     nome: "Reversão em 3 confluências c/ SB",
     subtitulo: "Extremo com 3 níveis",
@@ -1232,6 +1279,7 @@ const SETUPS = [
   },
   {
     id: "falha-h1l1",
+    categoria: "tendencia",
     nomeCurto: "Falha de H1/L1",
     nome: "Falha de H1 / L1",
     subtitulo: "Primeira tentativa falha",
@@ -1274,6 +1322,7 @@ const SETUPS = [
   },
   {
     id: "wedge-tr",
+    categoria: "lateralidade",
     nomeCurto: "Wedge top/bottom em TR",
     nome: "Wedge top / bottom em TR c/ SB",
     subtitulo: "Cunha no extremo do range",
@@ -1318,6 +1367,7 @@ const SETUPS = [
   /* ---------- Encerrado ---------- */
   {
     id: "fq",
+    categoria: "encerrado",
     nomeCurto: "FQ",
     nome: "FQ — Falha de Estrutura",
     subtitulo: "Encerrado em 30/07/2026",
@@ -1490,12 +1540,12 @@ export default function PlanoTrade({ th }) {
           <div style={{ borderLeft: `2px solid ${theme.border}`, paddingLeft: 18 }}>
             <Quote theme={theme}>
               Professionals think, feel and act differently from losers. Changing is hard, but
-              to become a professional you need to change your PERSONALITY. 
+              becoming a professional demands commitment to that shift in posture.
             </Quote>
             <Quote theme={theme}>
-              Going all-in on trading is doing what you know is NECESSARY to succeed. You won't get
-              there faster. You're not the exception — you need to cut the idea that it's "different"
-              for you and actually COMPROMISE.
+              Going all-in on trading is doing what I know is necessary to succeed. I won't get
+              there faster by being an exception — I need to cut the idea that it's "different"
+              for me and truly commit.
             </Quote>
             <Quote theme={theme}>
               No mercado, a gente tem que ser muito humilde e, às vezes, a pessoa mais humilde
@@ -1801,7 +1851,7 @@ export default function PlanoTrade({ th }) {
             { m: "Rompimento e correção", s: "TC Pós BO" },
             { m: "Movimentos climáticos", s: "TRM" },
             { m: "Laterais com direção preferida", s: "TL" },
-            { m: "Abertura com força direcional", s: "Trade de Abertura · Barra de Força" },
+            { m: "Abertura com força direcional", s: "Trade de Abertura TSS · Barra de Força" },
           ].map((t) => (
             <div
               key={t.m}
@@ -1819,15 +1869,43 @@ export default function PlanoTrade({ th }) {
         </div>
       </div>
 
-      {/* SETUPS */}
-      <div style={{ margin: "24px 0 12px" }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>Setups — Trading System Starter</div>
+      {/* SETUPS — agrupados por categoria de mercado */}
+      <div style={{ margin: "24px 0 14px" }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>Setups — Meu Trading System v1.1</div>
         <div style={{ fontSize: 13.5, color: theme.textMuted, marginTop: 2 }}>
-          Ativos primeiro · <span style={{ color: REPLAY_TONE, fontWeight: 700 }}>em validação em replay</span> no meio ·
-          encerrados por último. TC Pré BO eliminado · FQ encerrado em 30/07/2026.
+          Agrupados por categoria de mercado. Dentro de cada grupo: ativos primeiro ·{" "}
+          <span style={{ color: REPLAY_TONE, fontWeight: 700 }}>em validação em replay</span> depois. TC Pré BO
+          eliminado.
         </div>
       </div>
-      <SetupsTable theme={theme} setups={SETUPS} />
+
+      {CATEGORIAS.map((c, idx) => {
+        const doGrupo = SETUPS.filter((s) => s.categoria === c.id);
+        if (doGrupo.length === 0) return null;
+        const emReplay = doGrupo.filter((s) => s.validacaoReplay).length;
+        return (
+          <Accordion
+            key={c.id}
+            level="top"
+            theme={theme}
+            defaultOpen={idx === 0}
+            title={c.titulo}
+            subtitle={c.subtitulo}
+            badge={
+              emReplay > 0
+                ? `${doGrupo.length} setups · ${emReplay} em replay`
+                : `${doGrupo.length} setup${doGrupo.length > 1 ? "s" : ""}`
+            }
+            badgeColor={
+              emReplay > 0
+                ? { bg: `${REPLAY_TONE}22`, text: REPLAY_TONE }
+                : { bg: `${theme.accent}22`, text: theme.accent }
+            }
+          >
+            <SetupsTable theme={theme} setups={doGrupo} bare />
+          </Accordion>
+        );
+      })}
     </div>
   );
 }
