@@ -1879,7 +1879,7 @@ export default function PlanoTrade({ th }) {
         </div>
       </div>
 
-      {CATEGORIAS.map((c, idx) => {
+      {CATEGORIAS.map((c) => {
         const doGrupo = SETUPS.filter((s) => s.categoria === c.id);
         if (doGrupo.length === 0) return null;
         const emReplay = doGrupo.filter((s) => s.validacaoReplay).length;
@@ -1888,7 +1888,6 @@ export default function PlanoTrade({ th }) {
             key={c.id}
             level="top"
             theme={theme}
-            defaultOpen={idx === 0}
             title={c.titulo}
             subtitle={c.subtitulo}
             badge={
