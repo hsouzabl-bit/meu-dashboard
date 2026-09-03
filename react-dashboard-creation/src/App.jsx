@@ -427,6 +427,18 @@ export default function App(){
 
   const diasDia = dados?.diasDetalhes || {};
 
+    // Horas e Replays vêm dos hábitos — total do mês corrente, sem preenchimento manual.
+  const prefixoMesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}`;
+  const totaisMesHabitos = (habitosLista||[]).reduce((acc, h) => {
+    if(String(h.data).startsWith(prefixoMesAtual)){
+      acc.horas   += h.horas   || 0;
+      acc.replays += h.replays || 0;
+      acc.paginas += h.paginas || 0;
+    }
+    return acc;
+  }, { horas:0, replays:0, paginas:0 });
+  const fmtH = v => Number.isInteger(v) ? String(v) : String(Math.round(v*10)/10).replace(".", ",");
+
   const dataFormatada = hoje.toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"});
 
   const diaKey  = diaSel?`${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`:null;
@@ -725,36 +737,34 @@ const topNav = [
 
                 <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
                   <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Horas de Estudo</span>
-                  <input type="number" value={horasEstudoValor} onChange={e=>setHorasEstudoValor(e.target.value)} onBlur={()=>salvarMetricasManuaisApp({horasEstudoValor})}
-                    style={{fontSize:26,fontWeight:800,color:ACCENT_ATUAL,background:"transparent",border:"none",outline:"none",width:"100%",padding:0,fontFamily:"inherit"}}/>
+
+                  <div style={{fontSize:26,fontWeight:800,color:ACCENT_ATUAL,lineHeight:1.1}}>{fmtH(totaisMesHabitos.horas)}</div>
                   <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:th.textMuted}}>
-                    Meta:
-                    <input type="number" value={horasEstudoMeta} onChange={e=>setHorasEstudoMeta(e.target.value)} onBlur={()=>salvarMetricasManuaisApp({horasEstudoMeta})}
-                      style={{fontSize:11,color:th.textMuted,background:"transparent",border:"none",outline:"none",width:50,padding:0,fontFamily:"inherit"}}/>
+                    Meta: 80 · via aba Hábitos
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
                     <div style={{flex:1,background:th.resumeBg,borderRadius:4,height:5}}>
-                      <div style={{width:`${pct(Number(horasEstudoValor)||0, Number(horasEstudoMeta)||1)}%`,background:ACCENT_ATUAL,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
+                      <div style={{width:`${pct(totaisMesHabitos.horas, 80)}%`,background:ACCENT_ATUAL,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
                     </div>
-                    <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pct(Number(horasEstudoValor)||0, Number(horasEstudoMeta)||1)}%</span>
+                    <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pct(totaisMesHabitos.horas, 80)}%</span>
                   </div>
+                  
                 </div>
 
                 <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
                   <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Replays</span>
-                  <input type="number" value={replaysManualValor} onChange={e=>setReplaysManualValor(e.target.value)} onBlur={()=>salvarMetricasManuaisApp({replaysValor: replaysManualValor})}
-                    style={{fontSize:26,fontWeight:800,color:ACCENT_ATUAL,background:"transparent",border:"none",outline:"none",width:"100%",padding:0,fontFamily:"inherit"}}/>
+
+                  <div style={{fontSize:26,fontWeight:800,color:ACCENT_ATUAL,lineHeight:1.1}}>{totaisMesHabitos.replays}</div>
                   <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:th.textMuted}}>
-                    Meta:
-                    <input type="number" value={replaysManualMeta} onChange={e=>setReplaysManualMeta(e.target.value)} onBlur={()=>salvarMetricasManuaisApp({replaysMeta: replaysManualMeta})}
-                      style={{fontSize:11,color:th.textMuted,background:"transparent",border:"none",outline:"none",width:50,padding:0,fontFamily:"inherit"}}/>
+                    Meta: 20 · via aba Hábitos
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
                     <div style={{flex:1,background:th.resumeBg,borderRadius:4,height:5}}>
-                      <div style={{width:`${pct(Number(replaysManualValor)||0, Number(replaysManualMeta)||1)}%`,background:ACCENT_ATUAL,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
+                      <div style={{width:`${pct(totaisMesHabitos.replays, 20)}%`,background:ACCENT_ATUAL,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
                     </div>
-                    <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pct(Number(replaysManualValor)||0, Number(replaysManualMeta)||1)}%</span>
+                    <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pct(totaisMesHabitos.replays, 20)}%</span>
                   </div>
+                  
                 </div>
 
                 <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
