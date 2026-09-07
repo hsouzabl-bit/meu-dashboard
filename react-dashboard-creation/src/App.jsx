@@ -406,13 +406,13 @@ export default function App(){
       const c = localStorage.getItem("cache_habitos");
       if(c) aplicar(JSON.parse(c));
     } catch(e){}
-    const t = setTimeout(()=>{
 
-      try {
+        try {
       const co = localStorage.getItem("cache_ots");
       if(co) setOtsPorDataApp(JSON.parse(co).porData || {});
     } catch(e){}
-      
+
+    const t = setTimeout(()=>{
       fetchComRetry(`${API_DIARIO}?action=lerHabitos`)
         .then(j=>{
           const lista = j.habitos || [];
@@ -420,8 +420,20 @@ export default function App(){
           aplicar(lista);
           setHabitosCarregado(true);
         })
-        .catch(()=>setHabitosCarregado(true));
+        .catch(()=>setHabitosCarregado(true))
+        // OTS logo depois, em sequência — nunca em paralelo com a chamada acima
+        .finally(()=>{
+          fetchComRetry(`${API_DIARIO}?action=getOTSData`)
+            .then(j=>{
+              if(j.erro) return;
+              setOtsPorDataApp(j.porData || {});
+              try { localStorage.setItem("cache_ots", JSON.stringify(j)); } catch(e){}
+            })
+            .catch(()=>{});
+        });
     }, 3000);
+
+    
     return ()=>clearTimeout(t);
   },[]);
 
