@@ -1047,9 +1047,9 @@ const topNav = [
                       else neutro();
                     } else if(calFiltro === "habitos"){
                       if(temHabito){
-                        fundo = "transparent";
-                        borda = `1.5px solid ${habitoOk ? verdeBd : vermBd}`;
-                        corTexto = th.textMuted; peso = 600;
+                        fundo = habitoOk ? fundoPos : fundoNeg;
+                        borda = "none";
+                        corTexto = th.text; peso = 700;
                       } else if(futuro){
                         fundo = "transparent";
                         borda = `1.5px dashed ${th.border2}`;
