@@ -138,6 +138,14 @@ export default function App(){
   const [sidebarExpandido,setSidebarExpandido] = useState(true);
   const [metasExpandido, setMetasExpandido] = useState(true);
 
+  const [calFiltro,setCalFiltro] = useState(()=>{
+    try { return localStorage.getItem("cal_filtro") || "todos"; } catch(e){ return "todos"; }
+  });
+  const trocarCalFiltro = (v)=>{
+    setCalFiltro(v);
+    try { localStorage.setItem("cal_filtro", v); } catch(e){}
+  };
+  
   const [diaSel,setDiaSel] = useState(null);
   const [diaDisciplinaSel, setDiaDisciplinaSel] = useState(null);
   const hoje = new Date();
@@ -983,7 +991,18 @@ const topNav = [
 
               {/* Linha 1, Coluna B: Calendário */}
               <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative",display:"flex",flexDirection:"column",height:"100%"}}>
-                <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:10,display:"block"}}>{MESES_PT[mesVis]}</span>
+                
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:10}}>
+                  <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>{MESES_PT[mesVis]}</span>
+                  <select value={calFiltro} onChange={e=>trocarCalFiltro(e.target.value)}
+                    style={{fontSize:11,fontWeight:600,color:th.textSub,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:7,padding:"4px 8px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
+                    <option value="todos">Todos</option>
+                    <option value="ion3">ION 3</option>
+                    <option value="ots">ION OTS</option>
+                    <option value="habitos">Hábitos</option>
+                  </select>
+                </div>
+                
                 <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
                   {DIAS_SEMANA.map(ds=>(
                     <div key={ds} style={{textAlign:"center",fontSize:10,fontWeight:700,color:th.textMuted,padding:"2px 0"}}>{ds}</div>
@@ -996,29 +1015,64 @@ const topNav = [
                     const naoCliqueiBg = dark ? "#1c2430" : "#dde3ec";
                     const naoCliqueiTxt = dark ? "#8fa2bd" : "#5b6a80";
         
-// Hábitos do dia — mesma regra da página de Hábitos:
-                    // 3/3 = borda verde · registrado mas incompleto = borda vermelha · sem registro = neutro
-                    const hDia = (habitosLista||[]).find(x=>x.dataStr === undefined ? false : false)
-                      || (habitosLista||[]).find(x=>x.data === `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(dia).padStart(2,"0")}`);
+                    // Cores conforme o filtro selecionado.
+                    const chaveDia = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(dia).padStart(2,"0")}`;
+                    const hDia = (habitosLista||[]).find(x=>x.data === chaveDia);
                     const temHabito = hDia && (hDia.horas>0 || hDia.replays>0 || hDia.paginas>0);
                     const habitoOk = hDia && hDia.horas>=1 && hDia.replays>=1 && hDia.paginas>=1;
+                    const oDia = otsPorDataApp[chaveDia];
+
+                    const verdeBd = dark?"#3d6b52":"#5cb583";
+                    const vermBd  = dark?"#6b4444":"#d9776b";
+                    const fundoPos = dark?"#1a7048":"#eaf7f0";
+                    const fundoNeg = dark?"#421c26":"#fbeceb";
 
                     let fundo, borda, corTexto, peso;
-                    if(r){
-                      fundo = r.resultado>=0 ? (dark?"#1a7048":"#eaf7f0") : (dark?"#421c26":"#fbeceb");
-                      borda = "none"; corTexto = th.text; peso = 700;
-                    } else if(temHabito){
-                      fundo = "transparent";
-                      borda = `1.5px solid ${habitoOk ? (dark?"#3d6b52":"#5cb583") : (dark?"#6b4444":"#d9776b")}`;
-                      corTexto = th.textMuted; peso = 600;
-                    } else if(futuro || fimDeSemana){
-                      fundo = "transparent";
-                      borda = `1.5px dashed ${th.border2}`;
-                      corTexto = dark ? "rgba(255,255,255,0.22)" : "#c2c2c8";
-                      peso = 400;
+                    const neutro = ()=>{
+                      if(futuro || fimDeSemana){
+                        fundo = "transparent";
+                        borda = `1.5px dashed ${th.border2}`;
+                        corTexto = dark ? "rgba(255,255,255,0.22)" : "#c2c2c8";
+                        peso = 400;
+                      } else {
+                        fundo = naoCliqueiBg; borda = "none"; corTexto = naoCliqueiTxt; peso = 600;
+                      }
+                    };
+
+                    if(calFiltro === "ion3"){
+                      if(r){ fundo = r.resultado>=0 ? fundoPos : fundoNeg; borda="none"; corTexto=th.text; peso=700; }
+                      else neutro();
+                    } else if(calFiltro === "ots"){
+                      if(oDia){ fundo = oDia.resultado>=0 ? fundoPos : fundoNeg; borda="none"; corTexto=th.text; peso=700; }
+                      else neutro();
+                    } else if(calFiltro === "habitos"){
+                      if(temHabito){
+                        fundo = "transparent";
+                        borda = `1.5px solid ${habitoOk ? verdeBd : vermBd}`;
+                        corTexto = th.textMuted; peso = 600;
+                      } else if(futuro){
+                        fundo = "transparent";
+                        borda = `1.5px dashed ${th.border2}`;
+                        corTexto = dark ? "rgba(255,255,255,0.22)" : "#c2c2c8";
+                        peso = 400;
+
+                                              } else {
+                        fundo = "transparent";
+                        borda = `1.5px solid ${th.border2}`;
+                        corTexto = th.textMuted; peso = 500;
+                      }
+                        
                     } else {
-                      fundo = naoCliqueiBg; borda = "none"; corTexto = naoCliqueiTxt; peso = 600;
+                      // "todos" — fundo pelo ION 3, borda pelos hábitos (comportamento atual)
+                      if(r){ fundo = r.resultado>=0 ? fundoPos : fundoNeg; borda="none"; corTexto=th.text; peso=700; }
+                      else if(temHabito){
+                        fundo = "transparent";
+                        borda = `1.5px solid ${habitoOk ? verdeBd : vermBd}`;
+                        corTexto = th.textMuted; peso = 600;
+                      }
+                      else neutro();
                     }
+        
                     return (
                       <div key={dia} onClick={()=>!futuro&&setDiaSel(dia===diaSel?null:dia)} title={!r&&!futuro&&!fimDeSemana?"Não cliquei":undefined}
         
