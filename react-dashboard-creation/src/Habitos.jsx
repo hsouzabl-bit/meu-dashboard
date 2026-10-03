@@ -8,10 +8,25 @@ const DIAS_SEM = ["seg","ter","qua","qui","sex","sáb","dom"];
 
 // Registro de hábitos começa aqui. Antes disso não há dado — não conta como falha.
 const INICIO_REGISTRO = "2026-08-07";
-// Quarter corrente recortado: só o proporcional deste intervalo.
-const QUARTER_INI = "2026-08-07";
-const QUARTER_FIM = "2026-09-30";
-const DIAS_QUARTER_CHEIO = 92; // referência de um trimestre completo
+
+// Trimestres de calendário: jan–mar, abr–jun, jul–set, out–dez.
+const NOMES_TRI = ["Jan–Mar", "Abr–Jun", "Jul–Set", "Out–Dez"];
+function chaveTri(ano, tri){ return `${ano}-T${tri+1}`; }
+function iniTri(ano, tri){ return `${ano}-${String(tri*3+1).padStart(2,"0")}-01`; }
+function fimTri(ano, tri){
+  const ultimoDia = new Date(ano, tri*3+3, 0).getDate();
+  return `${ano}-${String(tri*3+3).padStart(2,"0")}-${String(ultimoDia).padStart(2,"0")}`;
+}
+function triDaData(iso){
+  const ano = parseInt(iso.slice(0,4),10);
+  const mes = parseInt(iso.slice(5,7),10) - 1;
+  return { ano, tri: Math.floor(mes/3) };
+}
+function rotuloTri(chave){
+  const a = parseInt(chave.slice(0,4),10);
+  const t = parseInt(chave.slice(6),10) - 1;
+  return `${NOMES_TRI[t]}/${String(a).slice(2)}`;
+}
 
 const HABITOS = [
   { campo:"horas",   nota:"notaHoras",   label:"Horas",   labelLongo:"Horas de estudo", step:"0.5", cor:"#1D9E75", metaPadrao:240 },
@@ -54,6 +69,19 @@ export default function Habitos({ th, habitosProp }){
   const [anoVis, setAnoVis] = useState(hoje.getFullYear());
   const [diaSel, setDiaSel] = useState(null);
   const [serieSel, setSerieSel] = useState("horas");
+
+  const triHoje = triDaData(hojeChave);
+  const [triSel, setTriSel] = useState(()=>{
+    try {
+      const c = localStorage.getItem("quarter_sel");
+      if(c && /^\d{4}-T[1-4]$/.test(c)) return c;
+    } catch(e){}
+    return chaveTri(triHoje.ano, triHoje.tri);
+  });
+  const trocarTri = (v)=>{
+    setTriSel(v);
+    try { localStorage.setItem("quarter_sel", v); } catch(e){}
+  };
 
   const [rascunho, setRascunho] = useState(null);
   const [alterado, setAlterado] = useState(false);
@@ -171,22 +199,33 @@ export default function Habitos({ th, habitosProp }){
     if(h.horas || h.replays || h.paginas) totalMes.dias++;
   });
 
-  // ── quarter recortado ──────────────────────────────────────────────────────
-  const diasQuarter = diasEntre(QUARTER_INI, QUARTER_FIM);
-  const fator = diasQuarter / DIAS_QUARTER_CHEIO;
-  const fimEfetivo = hojeChave < QUARTER_FIM ? hojeChave : QUARTER_FIM;
-  const diasDecorridos = hojeChave < QUARTER_INI ? 0 : Math.min(diasEntre(QUARTER_INI, fimEfetivo), diasQuarter);
+  // ── trimestre de calendário ───────────────────────────────────────────────
+  const anoTri = parseInt(triSel.slice(0,4),10);
+  const numTri = parseInt(triSel.slice(6),10) - 1;
+  const qIni = iniTri(anoTri, numTri);
+  const qFim = fimTri(anoTri, numTri);
+
+  const diasQuarter = diasEntre(qIni, qFim);
+  const fimEfetivo = hojeChave < qFim ? hojeChave : qFim;
+  const diasDecorridos = hojeChave < qIni ? 0 : Math.min(diasEntre(qIni, fimEfetivo), diasQuarter);
   const pctEsperado = diasQuarter > 0 ? (diasDecorridos / diasQuarter) : 0;
 
-  const doQuarter = habitos.filter(h => h.data >= QUARTER_INI && h.data <= QUARTER_FIM);
+  const doQuarter = habitos.filter(h => h.data >= qIni && h.data <= qFim);
   const totalQuarter = { horas:0, replays:0, paginas:0 };
   doQuarter.forEach(h=>{
     totalQuarter.horas += h.horas; totalQuarter.replays += h.replays; totalQuarter.paginas += h.paginas;
   });
 
+  // Trimestre cheio: a meta digitada é o alvo integral, sem proporcional.
   function metaEfetiva(campo){
-    return (Number(metas[campo]) || 0) * fator;
+    return Number(metas[campo]) || 0;
   }
+
+  const trisDisponiveis = (()=>{
+    const set = new Set([chaveTri(triHoje.ano, triHoje.tri), triSel]);
+    habitos.forEach(h=>{ const t = triDaData(h.data); set.add(chaveTri(t.ano, t.tri)); });
+    return [...set].sort().reverse();
+  })();
 
   // ── sequências (só a partir do início do registro) ─────────────────────────
   function completou(d){ return d && d.horas >= 1 && d.replays >= 1 && d.paginas >= 1; }
@@ -246,7 +285,7 @@ export default function Habitos({ th, habitosProp }){
         const me = metaEfetiva(h.campo);
         ponto[h.campo] = me > 0 ? Math.round((acum / me) * 1000) / 10 : 0;
       });
-      const dec = Math.min(diasEntre(QUARTER_INI, d.data), diasQuarter);
+      const dec = Math.min(diasEntre(qIni, d.data), diasQuarter);
       ponto.esperado = Math.round((dec / diasQuarter) * 1000) / 10;
       acc.push(ponto);
       return acc;
@@ -331,7 +370,7 @@ export default function Habitos({ th, habitosProp }){
                 </div>
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:5, fontSize:10.5, color:th.textMuted }}>
-                meta do quarter cheio:
+                meta do trimestre:
                 <input type="number" value={metas[h.campo]} onChange={e=>alterarMeta(h.campo, e.target.value)}
                   style={{ width:46, fontSize:10.5, color:th.textSub, background:"transparent", border:"none",
                     borderBottom:`1px solid ${th.border2}`, outline:"none", padding:0, fontFamily:"inherit" }}/>
@@ -369,8 +408,18 @@ export default function Habitos({ th, habitosProp }){
           </div>
         </div>
       </div>
-      <div style={{ ...legenda, marginBottom:22 }}>
-        Metas do quarter recortado: 07/08 a 30/09 ({diasQuarter} dias) · o traço na barra marca o ritmo esperado até hoje
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:22, flexWrap:"wrap" }}>
+        <select value={triSel} onChange={e=>trocarTri(e.target.value)}
+          style={{ background:th.cardBg, color:th.text, border:`1px solid ${th.border2}`,
+            borderRadius:8, padding:"4px 9px", fontSize:11.5, fontWeight:600,
+            outline:"none", cursor:"pointer", fontFamily:"inherit" }}>
+          {trisDisponiveis.map(c=>(
+            <option key={c} value={c}>{rotuloTri(c)}</option>
+          ))}
+        </select>
+        <span style={legenda}>
+          {qIni.split("-").reverse().join("/")} a {qFim.split("-").reverse().join("/")} · {diasDecorridos} de {diasQuarter} dias · o traço na barra marca o ritmo esperado
+        </span>
       </div>
 
       {/* ═══ CALENDÁRIO + GRÁFICO DIÁRIO ═══ */}
@@ -542,15 +591,15 @@ const registrado = temAlgo(d);
         </div>
 
         <div style={{ minWidth:0 }}>
-          <div style={secao}>Ritmo do quarter</div>
-      
+          <div style={secao}>Ritmo do trimestre · {rotuloTri(triSel)}</div>
+
         <div style={{ ...legenda, marginTop:3, marginBottom:12 }}>
-          % da meta efetiva por hábito · a linha cinza é o ritmo necessário para fechar 30/09 em dia
+          % da meta por hábito · a linha cinza é o ritmo necessário para fechar o trimestre em dia
         </div>
 
         {serieRitmo.length < 2 ? (
           <div style={{ padding:"60px 0", textAlign:"center", color:th.textMuted, fontSize:12.5, background:sutil, borderRadius:12 }}>
-            Ainda sem dados suficientes no quarter
+            Ainda sem dados suficientes neste trimestre
           </div>
         ) : (
           <>
