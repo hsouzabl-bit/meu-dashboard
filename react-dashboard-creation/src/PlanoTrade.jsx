@@ -3,10 +3,12 @@ import React, { useState, useEffect } from "react";
 /*
   PlanoTrade.jsx
   ---------------------------------------------------------------
-  Página "Plano de Trade" — v2.0, outubro/2026.
+  Página "Plano de Trade" — v2.1, outubro/2026.
   Dois planos selecionáveis, com persistência da última escolha:
-  - MESA PROP (MIDE 3) — conta aprovada; ION 3 e ION OTS encerradas
-    pela mesa, setups delas migrados para Encerrados / Stand-by
+  - MESA PROP (MIDE 3) — conta aprovada; mesmos nove trades da conta real
+    + DMF, com GR próprio (R$300, contratos pelo stop, 350 protege, saída
+    cheia no 1x1 com 3 ctts, parcial + carrego com 4+). Ativos derivados
+    de SETUPS_REAL via paraMesa(); stand-by e encerrados ficam só aqui.
   - CONTA REAL — 1 contrato, GR R$150/dia, alvo fixo 350 pts,
     300 protege no 0x0 · 350 sai
   Removido nesta versão: todo o bloco de filtro de folga (alvo − stop).
@@ -323,6 +325,11 @@ const IconWedge = ({ color }) => (
 const IconFBO = ({ color }) => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 8h18" /><path d="M3 16h18" /><path d="M9 12l3-3 3 3" /><path d="M12 9v9" />
+  </svg>
+);
+const IconDMF = ({ color }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12h10" /><path d="M3 19h10" /><path d="M8 15.5L18 4" /><path d="M13 4h5v5" />
   </svg>
 );
 
@@ -867,369 +874,11 @@ const CATEGORIAS = [
 ];
 
 /* =========================================================================
-   SETUPS — MESA PROP (MIDE 3)
+   SETUPS — MESA PROP (MIDE 3) · fora do operacional
+   Só stand-by e encerrados. Os ativos da mesa são derivados da conta real
+   (mesmos setups, GR diferente) — ver SETUPS_MESA, depois de SETUPS_REAL.
    ========================================================================= */
-const SETUPS_MESA = [
-  {
-    id: "mesa-m2b-m2s",
-    categoria: "tendencia",
-    nomeCurto: "M2B / M2S",
-    nome: "M2B / M2S — Setup na MM20 em tendência",
-    subtitulo: "Pullback na MM20",
-    Icon: IconM2B,
-    timeframeShort: "M5 (contexto) → M2 (gatilho)",
-    barraSinalChips: ["Inside", "Outside", "2BR"],
-    stopAceito: "Atrás da barra de sinal + gordura, ou T/F prévio",
-    split: "Alvo decide",
-    rxr: "2x1+",
-    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega · Alvo fixo: 100% no alvo",
-    badge: "Prioritário",
-    badgeColor: null,
-    fluencia: { label: "Prioritário", tone: "good", detalhe: "Maior contribuidor da amostra: 14 trades, 57,1% de acerto, +5,47R" },
-    descricao: "Com tendência já estabelecida — mais de 20 barras acima ou abaixo da MM20 — o pullback até a média oferece entrada de continuidade com invalidação próxima. É o setup com maior contribuição da auditoria de 253 trades: 14 operações, 57,1% de acerto, +5,47R. Merece prioridade de mapeamento no pré-mercado, não apenas reação quando aparece.",
-    regrasList: [
-      "Mais de 20 barras acima/abaixo da MM20 no M5 — tendência estabelecida, não presumida",
-      "Pullback até a MM20 (ou até a MME9, na variante)",
-      "Entrada pela contagem de barras do Brooks: H1/L1, H2/L2, H3/L3 — não existe exigência de \"segunda tentativa\"",
-      "Gatilho no M2 — inside, outside ou 2BR",
-    ],
-    filtrosList: [
-      "M60 alinhado com a direção do trade — é o filtro que separou ganhadores de perdedores na amostra",
-      "Premissa prévia definida no pré-mercado",
-      "Preferir a entrada pelo M2, não pelo M5 — mesmo tamanho de stop, melhor posição dentro do ciclo",
-    ],
-    ondeInvalida: "Atrás da barra de sinal com gordura de 20–30%, ou no fundo/topo prévio do swing. Com menos de 20 barras de um lado da MM20, o setup não é candidato — é outra coisa.",
-    gatilhos: [
-      { label: "a", text: "Inside bar" },
-      { label: "b", text: "Outside bar" },
-      { label: "c", text: "2BR" },
-    ],
-    redFlagsList: [
-      "Ignorar o M60 — dois dos cinco perdedores da amostra são exatamente isso (#83 \"localização do 60 pesou mais\"; #105 \"era tendência de alta no 60, não me liguei\")",
-      "Usar stop intermediário quando o técnico é longo (#99: \"stop técnico era de 800pts, usei um intermediário\") — violinado",
-      "Entrar pelo M5 quando havia entrada melhor no M2 (#28) — mesmo tamanho de stop, pior posição no ciclo",
-      "Ignorar o único argumento contrário (#64: \"tinha uma POC perto, mas era o único argumento contra\")",
-    ],
-    exemplosList: [
-      "21/01 (#26) — rompimento de topo prévio, correção em micro canal fraco, inside de corpo comprador. \"Entrada, gestão e saída PERFEITAS.\" +1,74R",
-      "23/03 (#100) — logo após uma violinada no mesmo dia, segundo M2B com inside positiva e stop mais claro. Pagou 1.300 pts limpos.",
-      "22/01 (#28) — o contra-exemplo útil: +1,77R, mas entrada pelo M5 em vez do M2. \"Fica a anotação da diferença de um trade bem estruturado para um mais ou menos bem estruturado.\"",
-    ],
-  },
-  {
-    id: "mesa-trm",
-    categoria: "reversao",
-    nomeCurto: "TRM",
-    nome: "TRM — Trade de Retorno às Médias",
-    subtitulo: "Retorno às médias",
-    Icon: IconTRM,
-    timeframeShort: "M5 → M2",
-    barraSinalChips: ["Inside", "Outside", "2BR"],
-    stopAceito: "Atrás da barra de sinal + gordura 20–30%",
-    split: "Alvo decide",
-    rxr: "1,5x1+",
-    gestaoGanhos: "Alvo curto: 100% no alvo · Alvo aberto: primeira parcial no 1,5x1 + carrega",
-    badge: "Atenção",
-    badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
-    fluencia: { label: "Atenção", tone: "warn", detalhe: "Historicamente o setup mais confiável, mas fechou julho em −4R" },
-    descricao: "Mercado esticado demais de um movimento direcional atinge um ponto de resistência real (confluência de níveis), onde a probabilidade de continuidade cai e a de reação/correção sobe — captura o \"elástico esticado\" antes de um retorno às médias.",
-    regrasList: [
-      "Afastamento — 3 barras sem tocar a MME9 do M5",
-      "Região de trava / alvo / confluência presente — S/R, LT/CL, Fibo, MA longa ou VWAP",
-      "Gatilho de qualidade adequada dentro da região",
-    ],
-    filtrosList: [
-      "CLX logo antes da barra de sinal — nos replays, 9 trades com esse filtro e 89% de acerto",
-      "Alvo de fibo na região da entrada",
-      "Confluência de fatores / cluster de alvos na mesma região",
-      "Esticado até da MME9 do M2",
-      "Só entrar quando a direção contrária não fizer sentido — havendo argumento razoável para o outro lado, segurar",
-    ],
-    ondeInvalida: "Stop técnico atrás da barra de sinal, com gordura de 20–30% do tamanho da barra: barra de ~100–150 pts → ~30 pts; ~200 pts → 50–60 pts; ~400 pts → 50–100 pts no máximo. Sem o afastamento mínimo de 3 barras sem tocar a MME9 do M5, o setup nem é candidato.",
-    gatilhos: [
-      { label: "a", text: "Inside bar" },
-      { label: "b", text: "Outside bar" },
-      { label: "c", text: "2BR" },
-      { label: "d", text: "Martelo / shooting star" },
-    ],
-    redFlagsList: [
-      "Antecipar a região — esperar o preço chegar lá; nos replays isso aparece como erro nomeado em 13/01: \"ANTECIPAR região\"",
-      "\"Muito esticado\" como único argumento — nos replays esse rótulo aparece mais nos perdedores (44% de acerto) do que nos vencedores (62% sem ele)",
-      "Pegar reação contra o M2 sem confirmação de fechamento",
-      "Ignorar o caso contrário legítimo na mesma região — foi o que gerou o −4R de julho",
-    ],
-    exemplosList: [
-      "25/05 — ii no M2 e inside no M5 pós CLX claro, alvo 2 de fibo, região de resistência macro. \"Trade simplesmente IMPECÁVEL.\" +2,36R, melhor do mês.",
-      "29/07 — TRM de compra das ~10h30: havia argumentos a favor E contra na mesma região. Deu mais peso ao lado a favor e stopou. Origem do filtro do lado contrário.",
-    ],
-  },
-  {
-    id: "mesa-tc-mm",
-    categoria: "tendencia",
-    nomeCurto: "TC Meio de Mov.",
-    nome: "TC — Meio de Movimento (MME9)",
-    subtitulo: "Pullback na MME9",
-    Icon: IconTCMM,
-    timeframeShort: "M5 → M2",
-    barraSinalChips: ["Inside", "Outside", "2BR"],
-    stopAceito: "Barra de sinal (se excelente) ou T/F prévio",
-    split: "Alvo decide",
-    rxr: "1,5x1+",
-    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega · Alvo fixo: 100% no alvo",
-    badge: "Funcional",
-    badgeColor: null,
-    fluencia: { label: "Funcional", tone: "good", detalhe: "Setup de continuidade — apoia-se no que o mercado já demonstrou" },
-    descricao: "Dentro de uma tendência já estabelecida, o pullback até a média de referência oferece entrada de continuidade — o viés a favor já está validado pelo alinhamento completo das médias.",
-    regrasList: [
-      "Alinhamento COMPLETO de todas as médias — 200/50/20/9",
-      "Estrutura de tendência prévia — mínimo 2 T/F/T/F",
-      "Preço calçado na MME9 ou MME20",
-    ],
-    filtrosList: [
-      "Gatilho a favor do 60'/D",
-      "VWAP próxima e confluência no ponto de PB",
-    ],
-    ondeInvalida: "Stop atrás da barra de sinal se ela for excelente (mesma gordura de 20–30%); caso contrário, no T/F prévio ou no ponto de invalidação total da leitura. Sem alinhamento completo das médias e estrutura de tendência prévia, o setup não é candidato.",
-    gatilhos: [
-      { label: "a", text: "Inside bar" },
-      { label: "b", text: "Outside bar" },
-      { label: "c", text: "2BR — barra de força revertendo barra de força contrária" },
-    ],
-    redFlagsList: [
-      "Entrar sem alinhamento completo das médias",
-      "Pullback raso após pullback profundo exige barra de sinal 10/10",
-      "Encurtar o stop para o trade caber no risco — se a invalidação está longe, esperar entrada mais perto ou passar",
-    ],
-    exemplosList: [
-      "29/07 — b30 do M5: 1º PB na MME9 após impulso + micro canal, quase 20 barras abaixo da MM20, barra de sinal inside minúscula. Pagou.",
-      "29/07 — b44 do M5: MME9 seguindo segurando os preços, excelente barra de sinal quase tocando a MM20, bom espaço até as mínimas do dia.",
-    ],
-  },
-  {
-    id: "mesa-tc-pos",
-    categoria: "tendencia",
-    nomeCurto: "TC Pós BO",
-    nome: "TC — Pós BO (rompimento)",
-    subtitulo: "Continuidade pós-rompimento",
-    Icon: IconTCPos,
-    timeframeShort: "M2 / M5 (janela 40 barras)",
-    barraSinalChips: ["Inside", "Outside", "2BR"],
-    stopAceito: "Barra de sinal (se excelente) ou T/F prévio",
-    split: "Alvo decide",
-    rxr: "1,5x1+",
-    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega · Alvo fixo: 100% no alvo",
-    badge: "Em validação",
-    badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
-    fluencia: { label: "Em validação", tone: "warn", detalhe: "Subtipo com histórico mais fraco — exige rigor no critério de rompimento" },
-    descricao: "Captura continuidade após um rompimento genuíno de uma região relevante (lateralidade mín. 2T/2F, triângulo, ou máx/mín do dia) que já provou ter distanciado e retornado — é o teste do rompimento, não a entrada nele.",
-    regrasList: [
-      "Precisa ter rompido de fato — sem TC de pós de topo/fundo micro",
-      "Barra de rompimento fechando perto do extremo",
-      "Barra de continuidade a favor — peso inverso: rompimento fraco pede continuidade forte, e vice-versa",
-      "Alinhamento completo das médias",
-    ],
-    filtrosList: [
-      "Timeframe M2 se o nível está contido em até ~40 barras (~80min); acima disso, sobe para M5/M15",
-      "Gatilho a favor do 60'/D e VWAP próxima",
-      "Confluência no ponto de retorno",
-    ],
-    ondeInvalida: "Stop atrás da barra de sinal se ela for excelente; caso contrário, no T/F prévio. Sem afastamento real e barra de continuidade a favor, não há candidato — mesmo com as duas confirmadas, se o preço não avançar antes de puxar o pullback, desconfiar.",
-    gatilhos: [
-      { label: "a", text: "Inside bar" },
-      { label: "b", text: "Outside bar" },
-      { label: "c", text: "2BR" },
-    ],
-    redFlagsList: [
-      "Romper topo/fundo micro sem afastamento real — \"fez zero sentido no M5\"",
-      "Entrar antecipado na 9 do 2' em vez de esperar o toque na 9 do 5' ou na região rompida",
-      "Repetir entrada na mesma região após stop",
-      "Operar em ponto de decisão ainda aberto",
-    ],
-    exemplosList: [
-      "17/06 — par de comparação: 1º trade (antecipado na 9 do 2', loss) vs. 2º trade no mesmo dia (esperou o toque na 9 do 5', +355pts).",
-    ],
-  },
-  {
-    id: "mesa-tc-super",
-    categoria: "tendencia",
-    nomeCurto: "TC Supertrend",
-    nome: "TC — Supertrend (9 do 2')",
-    subtitulo: "9 do M2",
-    Icon: IconTCSuper,
-    timeframeShort: "M5 → M2",
-    barraSinalChips: ["Inside", "Outside", "2BR"],
-    stopAceito: "Barra de sinal (se excelente) ou T/F prévio",
-    split: "Alvo decide",
-    rxr: "1,5x1+",
-    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega · Alvo fixo: 100% no alvo",
-    badge: "Coletando dados",
-    badgeColor: { bg: "#88888822", text: "#9aa3b2" },
-    fluencia: { label: "Sem amostra", tone: "neutral", detalhe: "Poucas ocorrências com a regra já formalizada — observar próximas entradas" },
-    descricao: "Mesmo cenário de tendência com médias alinhadas do TC de MM, mas usa especificamente a MME9 do M2 — exige que ela já tenha se provado como suporte/resistência viva antes, evitando ser o primeiro a testar um nível ainda não validado.",
-    regrasList: [
-      "Alinhamento completo das médias (200/50/20/9)",
-      "MME9 do M2 já reagiu pelo menos 1x antes — nunca ser o primeiro",
-      "Pullback até a MME9 do M2, dentro do histórico de reação já estabelecido",
-    ],
-    filtrosList: [
-      "Mesmos do TC de Meio de Movimento — gatilho a favor do 60'/D",
-      "Caminho livre até alvos em aberto — sem obstáculo relevante no meio",
-      "Confluência no ponto de entrada",
-    ],
-    ondeInvalida: "Stop atrás da barra de sinal se excelente; caso contrário, no T/F prévio do swing. Sem histórico de reação prévia na 9 do M2, o setup não é candidato.",
-    gatilhos: [
-      { label: "a", text: "Inside bar" },
-      { label: "b", text: "Outside bar" },
-      { label: "c", text: "2BR" },
-    ],
-    redFlagsList: [
-      "Ser pioneiro na 9 do 2' sem histórico de reação prévia",
-      "Médias desalinhadas mascarando tendência ainda não confirmada",
-      "Fazer o setup sem espaço até o alvo — erro nomeado em 11/02: \"TC de ST sem muito ESPAÇO\"",
-    ],
-    exemplosList: [
-      "29/07 — b26 do M5: acionado na b65 do M2 com inside bar; 1ª correção após micro canal de 6 barras sem sinal de CLX; inside tanto no M5 quanto no M2.",
-    ],
-  },
-  {
-    id: "mesa-abertura-forca",
-    categoria: "abertura",
-    nomeCurto: "Abertura — Barra de Força",
-    nome: "Abertura com Barra de FORÇA",
-    subtitulo: "Impulso da b1/b2",
-    Icon: IconForca,
-    timeframeShort: "M5 (janela) → M2 (gatilho)",
-    barraSinalChips: ["A própria barra de força"],
-    stopAceito: "Atrás da barra forte · teto 700 pts",
-    split: "100% no alvo",
-    rxr: "1x1",
-    gestaoGanhos: "Alvo SEMPRE 1x1 da própria barra · proteção obrigatória nos 350 pts de MEP",
-    badge: "Contador aberto",
-    badgeColor: { bg: "#e0a63a22", text: "#e0a63a" },
-    fluencia: { label: "Contador n=3", tone: "warn", detalhe: "Teto de 700 pts é provisório — revisão na 10ª ocorrência" },
-    descricao: "A primeira barra forte da abertura carrega o desequilíbrio inicial do dia. Opera esse impulso enquanto ele ainda é jovem, com alvo curto e objetivo.",
-    regrasList: [
-      "Janela até a b2 do M5",
-      "B1 forte, engolfando muitas barras ou rompendo com força um T/F claro, a favor de ideia prévia do pré-mercado",
-      "Não operar contra a força do gap",
-      "Sem confirmação na barra seguinte, sai — não espera os 700 pts",
-    ],
-    filtrosList: [
-      "Premissa prévia definida no pré-mercado",
-      "Localização da abertura — compradora / vendedora / neutra (neutra não opera)",
-      "Teto de stop teórico de 700 pts",
-    ],
-    ondeInvalida: "Stop atrás da própria barra forte, teto teórico de 700 pts; ou na abertura da barra, se a reversão do corpo já invalidar a leitura. Andou 350 pts a favor, protege — não volta mais ao stop. Fora da janela até a b2 do M5, não é mais este setup.",
-    gatilhos: [
-      { label: "a", text: "Barra expressiva no M2+ revertendo fechamentos anteriores" },
-      { label: "b", text: "Rompimento de região importante a favor de premissa prévia" },
-      { label: "c", text: "Falha de gap em região de trava — sem operar contra a força do gap" },
-    ],
-    redFlagsList: [
-      "Perseguir movimento já esticado",
-      "Operar contra o gap",
-      "Forçar entrada fora da janela da b2",
-      "Segurar além do 1x1 — o alvo deste setup é fixo",
-      "Deixar o trade voltar ao stop depois de ter andado 350 pts a favor",
-    ],
-    exemplosList: [
-      "Contador aberto, n=3. Anotar por ocorrência: stop assumido · MEN máximo · MEP máximo · protegeu nos 350? · resultado. Revisão do teto de 700 na 10ª ocorrência.",
-    ],
-  },
-  {
-    id: "mesa-tl",
-    categoria: "lateralidade",
-    nomeCurto: "TL",
-    nome: "TL — Trade de Lateralidade",
-    subtitulo: "Extremos de range",
-    Icon: IconTL,
-    timeframeShort: "M5 (range) → M2 (gatilho)",
-    barraSinalChips: ["Entrada na violação do doji"],
-    stopAceito: "Estrutural · nos replays 375–625, mediana 500",
-    split: "100% no alvo",
-    rxr: "1x1",
-    gestaoGanhos: "Alvo = 50% do range · saída 100% no alvo, sem parcial",
-    badge: "Funcional",
-    badgeColor: null,
-    fluencia: { label: "Funcional", tone: "good", detalhe: "Replays: 7 trades, 4 ganhos, +2,07R — e os 4 ganhos entraram na violação do doji, sem barra de sinal" },
-    descricao: "Em lateralidade, os extremos do range são onde a probabilidade de reversão é maior e o risco é mais barato. Opera o que o mercado já demonstrou — range validado — e não o que ele pode vir a fazer. Ocupa o vácuo que antes era preenchido pelo FQ: operar extremos em dias travados.",
-    regrasList: [
-      "TR com 2 topos E 2 fundos JÁ demarcados — estrutura pré-existente, nunca antecipada",
-      "B1 doji, no mínimo no M5",
-      "O extremo do doji tem que coincidir com uma referência já mapeada — extremo do range, média relevante, T/F prévio, alvo de fibo ou linha de canal",
-      "Entrada na violação do doji, SEM barra de sinal — com barra de sinal o trade vira FBO de TR c/ SB, que está encerrado",
-    ],
-    filtrosList: [
-      "B1 do M15 também doji",
-      "Bem afastado das médias",
-      "Direção preferida da lateralidade, quando houver",
-      "Qualidade do extremo — isolado, já testado",
-    ],
-    ondeInvalida: "Stop estrutural. A regra antiga de 20% além do extremo do range foi herdada do EQL do OTS e saiu — nos replays os stops praticados ficaram entre 375 e 625 pts, mediana 500, sem relação com o tamanho do range.",
-    gatilhos: [
-      { label: "a", text: "Violação do extremo do doji — por ordem limit ou aguardando o rompimento" },
-    ],
-    redFlagsList: [
-      "Operar range que ainda está se formando — exige 2 topos E 2 fundos já demarcados",
-      "Esperar barra de sinal — nos replays os 3 perdedores incluem 2 com gatilho marcado, e os 4 ganhos foram todos sem gatilho",
-      "Entrada antecipada, antes do preço chegar ao extremo (23/04: \"FOMO + Violinada\")",
-      "M15 fechando barra forte contra a direção do trade (11/03)",
-      "GM iminente no M5 ou M15 contra, ou o M2 acabou de falhar o GM dele (08/05)",
-    ],
-    exemplosList: [
-      "02/04 — compra abaixo de doji do M15, MM200 e alvo 2 de dois pivôs na região, mercado extremamente esticado das médias. +1,00R",
-      "08/04 — gap de 5 mil pontos mais 2 mil de subida, b1 do M15 doji, venda do DT. +1,84R, MEP de 2.350 pts.",
-    ],
-  },
-  {
-    id: "mesa-gap-media",
-    categoria: "tendencia",
-    nomeCurto: "Gap de média",
-    nome: "Gap de média",
-    subtitulo: "Quebra da MM20 com fechamento além",
-    Icon: IconGapMedia,
-    timeframeShort: "M15 / M5 → M2",
-    barraSinalChips: ["Inside", "Outside", "2BR", "Martelo", "Shooting star"],
-    stopAceito: "Barra de sinal ou T/F prévio",
-    split: "Alvo decide",
-    rxr: "1,5x1+",
-    gestaoGanhos: "Alvo aberto: primeira parcial no 1,5x1 + carrega",
-    badge: "Funcional",
-    badgeColor: null,
-    fluencia: { label: "Funcional", tone: "good", detalhe: "Replays: 10 trades sem antecipação, 67% de acerto. Os 5 antecipados foram 5 losses." },
-    descricao: "Quebra da MM20 com no mínimo 1 fechamento completamente além dela. O gap entre preço e média vira magneto e o retorno é o movimento operado. O que separa ganhador de perdedor nos replays não é o contexto nem o timeframe: é não antecipar.",
-    regrasList: [
-      "Quebra da MM20 com no mínimo 1 fechamento completamente além dela",
-      "Tendência prévia de 20+ barras",
-      "Dentro ou testando T/F duplo",
-      "Setup completo, nunca antecipado — barra de sinal boa e fechada, nunca por violação",
-    ],
-    filtrosList: [
-      "Correção comportada até a MM20",
-      "Excelente barra de sinal — inside, outside ou reversão clara fechando na extremidade",
-      "Setup para a mesma direção também no M15 (ex.: gap de média do M5 que seja também M2B/M2S no M15)",
-    ],
-    ondeInvalida: "Atrás da barra de sinal, ou no extremo do movimento se a barra for frágil. Doji não serve como barra de sinal — erro nomeado em 27/01: \"DOJI como SB + Stop inadequado\". No meio de TTR o setup não existe.",
-    gatilhos: [
-      { label: "a", text: "Inside bar" },
-      { label: "b", text: "Outside bar" },
-      { label: "c", text: "2BR" },
-      { label: "d", text: "Martelo / shooting star" },
-    ],
-    redFlagsList: [
-      "Antecipar o gap — nos replays, 5 antecipações e 5 losses, nenhuma chegou a 350 pts a favor",
-      "Aceitar doji como barra de sinal por causa de confluência — a confluência não conserta a barra",
-      "Entrar na violação perto do fim da barra em vez de esperar o fechamento (#57)",
-      "Fazer o setup no meio de TTR",
-      "Entrar com força relevante vindo do lado oposto",
-    ],
-    exemplosList: [
-      "12/01 (#14) — GM no M2 + M5, micro canal no 5/15/60, alvo aberto para baixo. \"Trade IMPECÁVEL e executado PERFEITAMENTE.\" +1,90R",
-      "02/03 (#65) — GM logo após um M2S stopado; espaço grande levou a parcial a quase 2x o risco. +1,79R",
-      "01/04 — o contra-exemplo: \"Antecipação do GM do M5 por meio de inside no M2\". Stop cheio.",
-    ],
-  },
-
+const SETUPS_MESA_FORA = [
   /* ---------- Stand-by ---------- */
   {
     id: "mesa-wedge-tr",
@@ -2012,6 +1661,126 @@ const SETUPS_REAL = [
   },
 ];
 
+/* =========================================================================
+   SETUPS — MESA PROP (MIDE 3) · ativos
+   Mesmos nove trades da conta real + DMF. Muda o GR: R$300 fixo, contratos
+   pelo stop, 350 protege sempre, saída cheia no 1x1 com 3 ctts, parcial no
+   1x1 + carrego só com 4+ ctts (stop ≤375). Definido em 04/10/2026.
+   ========================================================================= */
+
+const STOP_MESA = "Estrutural · teto 500 pts";
+const SPLIT_MESA = "1x1 · parcial só com 4+ ctts";
+const RXR_MESA = "1x1 · 1,5R só se decidido antes";
+const GESTAO_MESA =
+  "350 protege · stop ~500 (3 ctts): 100% no 1x1 · stop ≤375 (4+ ctts): parcial no 1x1, resto no 0x0 e conduz até trava/fibo nomeada antes";
+
+// troca o item da lista que começa com `inicio` pelo texto novo
+function trocarItem(lista, inicio, novo) {
+  return lista.map((t) => (t.startsWith(inicio) ? novo : t));
+}
+
+// ajustes de texto onde a ficha da conta real fala do alvo fixo de 350
+const AJUSTES_MESA = {
+  "mesa-abertura-forca": () => ({
+    gestaoGanhos: "1x1 da própria barra · 100% no alvo · 350 protege · barra seguinte sem continuidade, sai",
+    descricao:
+      "O alvo aqui é sempre 1x1 da própria barra, o que na prática dá por volta de 500 pts, com saída 100% — sem parcial, mesmo com 3 contratos. É o setup de melhor acerto do arsenal nos replays (77%) e o de maior captura (93% do MEP), justamente porque o alvo é fixo e a saída é cheia.",
+  }),
+  "mesa-m2bs-9": (s) => ({
+    redFlagsList: trocarItem(
+      s.redFlagsList,
+      "Renegociar o alvo",
+      "Renegociar o alvo no meio do trade — a ordem no 1x1 fica posicionada desde a entrada, e o 1,5R só vale se decidido antes do clique"
+    ),
+  }),
+  "mesa-m2bs-20": (s) => ({
+    filtrosList: trocarItem(
+      s.filtrosList,
+      "Espaço mínimo de 300 pts",
+      "Espaço mínimo de 300 pts até o fundo anterior (ou topo, na venda)"
+    ),
+  }),
+  "mesa-tcmm-9": (s) => ({
+    redFlagsList: trocarItem(
+      s.redFlagsList,
+      "Tentar conduzir depois do alvo",
+      "Conduzir sem o alvo do carrego nomeado antes da entrada — nos replays, quatro dos doze TC MM perderam valor na gestão e nenhum na seleção"
+    ),
+  }),
+  "mesa-tcmm-20": (s) => ({
+    redFlagsList: trocarItem(
+      s.redFlagsList,
+      "Tentar conduzir depois do alvo",
+      "Conduzir sem o alvo do carrego nomeado antes da entrada"
+    ),
+  }),
+  "mesa-tl-doji": (s) => ({
+    descricao: s.descricao.replace("O único trade de lateralidade da conta real.", "O único trade de lateralidade do arsenal."),
+  }),
+};
+
+function paraMesa(real) {
+  const id = real.id.replace(/^real-/, "mesa-");
+  const ehAbertura = real.categoria === "abertura";
+  const base = {
+    ...real,
+    id,
+    ...(ehAbertura
+      ? {}
+      : { stopAceito: STOP_MESA, split: SPLIT_MESA, rxr: RXR_MESA, gestaoGanhos: GESTAO_MESA }),
+  };
+  const ajuste = AJUSTES_MESA[id];
+  return ajuste ? { ...base, ...ajuste(base) } : base;
+}
+
+const SETUP_DMF = {
+  id: "mesa-dmf",
+  categoria: "lateralidade",
+  nomeCurto: "DMF",
+  nome: "DMF — rompimento do EQL",
+  subtitulo: "Só na mesa · saída do equilíbrio",
+  Icon: IconDMF,
+  timeframeShort: "EQL mapeado → barra de rompimento",
+  barraSinalChips: ["A própria barra de rompimento"],
+  stopAceito: "Dentro do range, além da barra de rompimento · teto 750 pts",
+  split: "100% no alvo",
+  rxr: "1x1 da projeção do EQL",
+  gestaoGanhos: "Follow-through imediato · 350 protege · alvo na projeção do EQL (ou 1x1 da barra)",
+  badge: "Só na mesa",
+  badgeColor: null,
+  fluencia: { label: "Só na mesa", tone: "neutral", detalhe: "Vem do operacional OTS · não é operado na conta real" },
+  descricao:
+    "Saída do equilíbrio com força. Enquanto o preço está no EQL, os dois lados concordam com o valor; quando uma barra forte e decisiva rompe 20% além do extremo, um lado desistiu, e o movimento tende a projetar o tamanho do próprio range. É o único trade de rompimento puro do arsenal, e existe só na MIDE 3.",
+  regrasList: [
+    "Precisa estar em EQL",
+    "Rompimento de 20% acima ou abaixo do EQL",
+    "Barra forte e decisiva no rompimento",
+    "Não pode ser da 4ª barra em diante da mesma perna — se veio de um lado ao outro do EQL numa perna só, não opera",
+    "Entrada no fechamento quando a barra fecha colada na máxima/mínima; na violação quando tem pavio relevante ou se quiser mais confirmação. Geralmente é no fechamento",
+  ],
+  filtrosList: [
+    "Alvo: projeção do EQL (1x1 do movimento projetado). Se ela for menor que o 1x1 da barra e não fechar a conta com o stop, vale o 1x1 da barra",
+  ],
+  ondeInvalida:
+    "Stop dentro do range, no mínimo alguns pontos além da barra de rompimento. Teto de 750 pts com 2 contratos (R$300) — passou disso, não tem trade, nunca encurtar para caber. Follow-through obrigatório: não fechou uma barra a favor depois da barra de entrada, SAI NA HORA, não espera o stop.",
+  gatilhos: [
+    { label: "a", text: "Fechamento da barra de rompimento, quando fecha colada na máxima/mínima" },
+    { label: "b", text: "Violação da barra de rompimento, quando tem pavio relevante ou se quiser mais confirmação" },
+  ],
+  redFlagsList: [
+    "Entrar da 4ª barra em diante da mesma perna",
+    "Rompimento sem barra forte e decisiva",
+    "Segurar depois que a barra seguinte à entrada não fechou a favor",
+    "Stop acima de 750 pts — não encurta para caber, passa",
+    "Entrar por convicção alheia",
+  ],
+  exemplosList: [
+    "Início de setembro — recusou um DMF sugerido pelo mentor, com stop de 1.000 pts em janela de notícia: \"não posso entrar em trade nenhum por convicção alheia; se EU não aceitei o stop é melhor não fazer\". O teto de 750 transforma essa decisão em regra.",
+  ],
+};
+
+const SETUPS_MESA = [...SETUPS_REAL.map(paraMesa), SETUP_DMF, ...SETUPS_MESA_FORA];
+
 /* ---------------- Dados por plano ---------------- */
 const PLANOS = [
   { id: "mesa", rotulo: "Mesa prop · MIDE 3" },
@@ -2046,12 +1815,13 @@ export default function PlanoTrade({ th }) {
 
   /* ---- Risco por plano ---- */
   const riscoMesa = [
-    { k: "R fixo", v: "R$ 380", accent: true },
-    { k: "Risco por trade", v: "R$ 330 – 380" },
+    { k: "R fixo", v: "R$ 300", accent: true },
     { k: "Loss diário", v: "R$ 700" },
+    { k: "2 stops cheios", v: "Encerra o dia" },
+    { k: "3º stop", v: "Só se os 2 primeiros somarem até R$ 400" },
     { k: "Limites na plataforma", v: "3 entradas / 3 stops (OCO)" },
-    { k: "Trades por janela", v: "1 · 9h–10h · 10h–11h · 11h–12h30" },
-    { k: "Teto de stop", v: "500 pts · exceção 700 (abertura)" },
+    { k: "Janelas (referência)", v: "1 por janela · 9h–10h · 10h–11h · 11h–12h30" },
+    { k: "Teto de stop", v: "500 pts · DMF 750" },
   ];
 
   const riscoReal = [
@@ -2064,15 +1834,17 @@ export default function PlanoTrade({ th }) {
   ];
 
   const contratosMesa = [
-    { stop: "330 pts", ctts: "2 ctts" },
-    { stop: "380 pts", ctts: "2 ctts" },
-    { stop: "500 pts", ctts: "2 ctts" },
+    { stop: "≤ 375 pts", ctts: "4+ ctts" },
+    { stop: "500 pts", ctts: "3 ctts" },
+    { stop: "DMF até 750", ctts: "2 ctts" },
   ];
 
   /* ---- Regras universais por plano ---- */
   const regrasMesa = [
     { Icon: IcoShield, text: "Andou 350 pts → protege. Não volta ao stop.", hi: true },
     { Icon: IcoCanal, text: "Canal estreito no M5 define o lado do dia", hi: true },
+    { Icon: IcoTentativas, text: "Só pode desistir após 2 tentativas falhadas", hi: true },
+    { Icon: IcoBarra, text: "Só barra fechada · doji não entra", hi: false },
     { Icon: IcoAlerta, text: "Erro no 1º trade → o 2º só se for nota 10", hi: false },
     { Icon: IcoBarra, text: "Stop de barra não substitui estrutural longo", hi: false },
     { Icon: IconMapPinOff, text: "Ponto de decisão: não faço nada", hi: false },
@@ -2092,16 +1864,6 @@ export default function PlanoTrade({ th }) {
   ];
 
   /* ---- Taxonomia por plano ---- */
-  const taxonomiaMesa = [
-    { m: "Abertura com força direcional", s: "Abertura com Barra de Força" },
-    { m: "Tendência estabelecida na MM20", s: "M2B / M2S" },
-    { m: "Tendência clara", s: "TC Meio de Movimento · TC Supertrend" },
-    { m: "Rompimento e correção", s: "TC Pós BO" },
-    { m: "Quebra da MM20 em tendência prévia", s: "Gap de média" },
-    { m: "Movimentos climáticos em região de trava", s: "TRM" },
-    { m: "Lateralidade com b1 doji", s: "TL" },
-  ];
-
   const taxonomiaReal = [
     { m: "Abertura com força direcional", s: "Abertura com Barra de Força" },
     { m: "Tendência estabelecida — 20+ barras", s: "M2B / M2S na 9 · M2B / M2S na 20" },
@@ -2110,6 +1872,11 @@ export default function PlanoTrade({ th }) {
     { m: "Quebra da MM20 em tendência prévia", s: "Gap de média" },
     { m: "Movimento afastado em região de trava", s: "TRM" },
     { m: "Lateralidade com b1 doji", s: "TL da b1 doji" },
+  ];
+
+  const taxonomiaMesa = [
+    ...taxonomiaReal,
+    { m: "Rompimento com força de EQL", s: "DMF" },
   ];
 
   const risco = isReal ? riscoReal : riscoMesa;
@@ -2137,7 +1904,7 @@ export default function PlanoTrade({ th }) {
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: theme.text }}>Plano de trade</div>
         <div style={{ fontSize: 14, color: theme.textMuted, marginTop: 4 }}>
-          Meu Trading System v2.0 · atualizado outubro/2026
+          Meu Trading System v2.1 · atualizado outubro/2026
         </div>
       </div>
 
@@ -2325,9 +2092,22 @@ export default function PlanoTrade({ th }) {
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize: 12, color: theme.textMuted, marginTop: 10, lineHeight: 1.5 }}>
-                Conta aprovada em outubro/2026. ION 3 e ION OTS foram canceladas — a mesa ION
-                encerrou as atividades.
+              <div
+                style={{
+                  background: `${theme.accent}14`,
+                  border: `1px solid ${theme.accent}40`,
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  color: theme.text,
+                  marginTop: 14,
+                }}
+              >
+                <b style={{ color: theme.accent }}>Fase atual.</b> Conta aprovada em 01/10/2026.
+                Para liberar o saque: bater R$ 3.000 de novo no simulador remunerado e depois fechar
+                1 mês positivo. Drawdown máximo de R$ 3.000 — com R de R$ 300, são 10R para passar e
+                10R de colchão. O R menor só faria sentido se houvesse dúvida sobre o edge.
               </div>
             </>
           )}
@@ -2344,7 +2124,7 @@ export default function PlanoTrade({ th }) {
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <IconDoorExit color={theme.accent} />
             <div style={{ fontSize: 16, fontWeight: 800, color: theme.text }}>
-              Gestão de saída {isReal ? "· mecanizada" : "· o alvo decide"}
+              Gestão de saída {isReal ? "· mecanizada" : "· o stop decide os contratos"}
             </div>
           </div>
 
@@ -2405,25 +2185,62 @@ export default function PlanoTrade({ th }) {
           ) : (
             <>
               <div style={{ fontSize: 14, color: theme.textMuted, lineHeight: 1.6, marginBottom: 14 }}>
-                Quem decide a saída é o <b style={{ color: theme.text }}>alvo</b>, não a quantidade de
-                contratos.
+                O stop define os contratos, e os contratos definem se existe parcial. Abaixo de 4
+                contratos a parcial perde o sentido.
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ background: theme.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
+                <div
+                  style={{
+                    background: `${theme.accent}14`,
+                    border: `1px solid ${theme.accent}40`,
+                    borderRadius: 10,
+                    padding: "10px 12px",
+                  }}
+                >
                   <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
-                    Alvo fixo e curto
+                    350 protege, sempre
                   </div>
                   <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
-                    Abertura 1x1 · TL nos 50% do range → sai 100% no alvo, sem parcial.
+                    Em qualquer stop. Tocou 350 a favor, não volta mais ao stop — com ou sem parcial
+                    executada.
                   </div>
                 </div>
                 <div style={{ background: theme.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
                   <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
-                    Alvo aberto
+                    Stop ~500 · 3 ctts — o caso padrão
                   </div>
                   <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
-                    TC em tendência · TRM em confluência · M2B/M2S → <b>primeira parcial no 1,5x1</b>{" "}
-                    + carrega.
+                    Saída cheia no 1x1. Buscar 1,5R só se decidido <b>antes do clique</b>, com a ordem
+                    já posicionada lá — nunca no meio do trade.
+                  </div>
+                </div>
+                <div style={{ background: theme.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
+                    Stop ≤375 · 4+ ctts
+                  </div>
+                  <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
+                    <b>Parcial no 1x1</b> e o resto vai pro 0x0 na hora da parcial. O alvo do carrego —
+                    trava ou fibo — é nomeado antes da entrada. Pode zerar tudo no 1x1 se não evoluir.
+                    Base: dos trades que tocam o 1x1, 65% chegam a 1,5x1 e 38% a 2x1.
+                  </div>
+                </div>
+                <div style={{ background: theme.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
+                    Saída antecipada é permissão, não gatilho
+                  </div>
+                  <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
+                    Igual à conta real: só depois de <b>2 tentativas falhadas</b>, lidas pelo M2. A
+                    partir daí <b>pode</b> sair no 0x0 ou no máximo a −150 pts. Passou de −150, deixa
+                    ir até o stop.
+                  </div>
+                </div>
+                <div style={{ background: theme.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: theme.accent, marginBottom: 3 }}>
+                    Exceção — abertura e DMF
+                  </div>
+                  <div style={{ fontSize: 13.5, color: theme.text, lineHeight: 1.5 }}>
+                    Follow-through imediato. Não fechou uma barra a favor depois da barra de entrada,{" "}
+                    <b>cai fora</b>.
                   </div>
                 </div>
                 <div
@@ -2531,7 +2348,7 @@ export default function PlanoTrade({ th }) {
         <div style={{ fontSize: 13.5, color: theme.textMuted, marginTop: 2 }}>
           {isReal
             ? "Nove trades em quatro famílias. Comum a todos, exceto a abertura: 1 contrato · stop estrutural com teto de 500 pts · alvo 350 pts com ordem desde a entrada · 300 protege no 0x0 · 350 sai · só barra fechada · doji não entra."
-            : "Agrupados por categoria de mercado. Dentro de cada grupo: ativos primeiro · stand-by depois · encerrados no fim."}
+            : "Os nove trades da conta real + o DMF. Comum a todos, exceto abertura e DMF: R$ 300 · stop estrutural com teto de 500 pts · contratos pelo stop · 350 protege · saída cheia no 1x1 com 3 ctts, parcial + carrego com 4+ · só barra fechada · doji não entra."}
         </div>
       </div>
 
