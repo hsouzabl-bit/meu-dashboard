@@ -866,6 +866,8 @@ export default function EstudosAlBrooks({ th = {} }) {
     { id: "trends",    titulo: "Trading Price Action — Trends",         url: "https://drive.google.com/file/d/1nzV1Ky3Lek4WvOVBAFyIVb68CeXqTPUs/preview" },
     { id: "ranges",    titulo: "Trading Price Action — Trading Ranges", url: "https://drive.google.com/file/d/1mNKYzZ_jFaGNpeiQZzrVnJ_VjR-_mT7E/preview" },
     { id: "reversals", titulo: "Trading Price Action — Reversals",      url: "https://drive.google.com/file/d/1jR-IfsxWuMPVuFsPrAwMhb5XgE0ZP_cE/preview" },
+    { id: "reversals-estudo", titulo: "Reversals — Estudo dissecado",   url: "https://drive.google.com/file/d/1OhkjIQ2gJID6ljc0Kin0K_UbdAZ6pmDS/preview" },
+    
   ];
 
   // Organização: pastas + ordem. Guardada no GAS, cacheada aqui.
