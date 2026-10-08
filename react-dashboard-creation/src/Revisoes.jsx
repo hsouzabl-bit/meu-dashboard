@@ -201,20 +201,32 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       resultado: c.resultado,
       trades: c.trades,
       taxaAcerto: c.taxaAcerto,
-      erros: c.qtdErros ?? 0,
+      erros: c.qtdErros ?? 0,          // quantidade — usada nos cards
+      listaErros: c.erros || [],       // os textos
+      errosTecnico: c.errosTecnico || [],
+      errosEmocional: c.errosEmocional || [],
       nota10: c.nota10 ?? 0,
     };
+  }
+
+  // Classifica um erro pelo texto, usando as listas que o GAS já separou.
+  function tipoDoErro(d, texto) {
+    if ((d.errosEmocional || []).indexOf(texto) >= 0) return "emocional";
+    if ((d.errosTecnico   || []).indexOf(texto) >= 0) return "técnico";
+    return null;
   }
 
   function resumoSemana(sabadoStr, conta) {
     const sabado = new Date(sabadoStr + "T12:00:00");
     let totalRes = 0, totalOps = 0, somaAcerto = 0, diasAcerto = 0, totalErros = 0, diasComDados = 0;
+    const listaErros = [];
     for (let offset = -5; offset <= -1; offset++) {
       const dt = new Date(sabado);
       dt.setDate(sabado.getDate() + offset);
       const dataStr = isoData(dt.getFullYear(), dt.getMonth(), dt.getDate());
       const d = dadosDoDia(dataStr, conta);
       if (!d) continue;
+      (d.listaErros || []).forEach(txt => listaErros.push({ data: dataStr, texto: txt, tipo: tipoDoErro(d, txt) }));
       const r = parseFloat(d.resultado);
       if (!isNaN(r)) { totalRes += r; diasComDados++; }
       const ops = parseFloat(d.trades);
@@ -224,7 +236,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       const er = parseFloat(d.erros);
       if (!isNaN(er)) totalErros += er;
     }
-    return { totalRes, totalOps, acertoMedio: diasAcerto > 0 ? Math.round(somaAcerto/diasAcerto) : null, totalErros, diasComDados };
+    return { totalRes, totalOps, acertoMedio: diasAcerto > 0 ? Math.round(somaAcerto/diasAcerto) : null, totalErros, diasComDados, listaErros };
   }
 
   function resumoMensal(conta) {
@@ -879,6 +891,79 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       );
     }
 
+    // Etiqueta de tipo do erro. null = tipo não preenchido na planilha.
+    function TagTipo({ tipo }) {
+      if (!tipo) return null;
+      const emocional = tipo === "emocional";
+      return (
+        <span style={{
+          fontSize: 9.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em",
+          borderRadius: 4, padding: "1px 6px", flexShrink: 0, whiteSpace: "nowrap",
+          color: emocional ? (isDark ? "#e0a86b" : "#8a5a1e") : (isDark ? "#8ab4e0" : "#2a5a8a"),
+          background: emocional
+            ? (isDark ? "rgba(224,168,107,0.14)" : "#fdf2e2")
+            : (isDark ? "rgba(138,180,224,0.14)" : "#e9f1fa"),
+        }}>{tipo}</span>
+      );
+    }
+
+    // Erros do dia, só-leitura, vindos da planilha.
+    function blocoErrosDoDia(conta) {
+      const d = dadosDoDia(painelDia, conta);
+      const lista = d?.listaErros || [];
+      if (!lista.length) return null;
+      return (
+        <div>
+          <label style={labelStyle}>Erros do dia · {lista.length}</label>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {lista.map((txt, i) => (
+              <div key={i} style={{
+                background: camada2, border: `1px solid ${bordaSuave}`, borderRadius: 8,
+                padding: "8px 11px", display: "flex", gap: 8, alignItems: "flex-start",
+              }}>
+                <TagTipo tipo={tipoDoErro(d, txt)} />
+                <span style={{ fontSize: 13, color: text, lineHeight: 1.5 }}>{txt}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Erros da semana inteira, agrupados por conta. Só-leitura.
+    function blocoErrosDaSemana() {
+      const blocos = [CONTA_MIDE3, CONTA_REAL].map(c => ({
+        conta: c,
+        lista: resumoSemana(painelDia, c).listaErros,
+      })).filter(b => b.lista.length > 0);
+      if (!blocos.length) return null;
+      const total = blocos.reduce((a, b) => a + b.lista.length, 0);
+
+      return (
+        <div style={{ background: camada1, border: `1px solid ${bordaSuave}`, borderRadius: 10, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 13 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Erros da semana · {total}
+          </div>
+          {blocos.map(b => (
+            <div key={b.conta} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: textMuted, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                {b.conta} · {b.lista.length}
+              </span>
+              {b.lista.map((e, i) => (
+                <div key={i} style={{ background: camada2, border: `1px solid ${bordaSuave}`, borderRadius: 8, padding: "8px 11px", display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: textMuted, flexShrink: 0, paddingTop: 1 }}>
+                    {e.data.slice(8,10)}/{e.data.slice(5,7)}
+                  </span>
+                  <TagTipo tipo={e.tipo} />
+                  <span style={{ fontSize: 13, color: text, lineHeight: 1.5 }}>{e.texto}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
     function contaBlock(conta, keys, lista) {
       return (
         <div style={{ background: camada1, border: `1px solid ${bordaSuave}`, borderRadius: 10, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
@@ -889,6 +974,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
             {campo("Acerto %", keys.ac, "number", "ex: 60")}
             {campo("Erros", keys.err, "number", "ex: 2")}
           </div>
+          {blocoErrosDoDia(conta)}
           {campo(`Resumo ${conta}`, keys.resumo, "textarea", "O que funcionou? O que errou?", 2)}
           {blocoLinks(conta, lista)}
         </div>
@@ -922,6 +1008,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
           )}
           {painelTipo === "semanal" && (
             <>
+              {blocoErrosDaSemana()}
               {campo("1) Como foram meus resultados essa semana?", "semResultados", "textarea", "", 3)}
               {campo("2) O que poderia ter feito meu resultado ser melhor?", "semMelhorar", "textarea", "", 3)}
               {campo("3) O que fiz bem?", "semBem", "textarea", "", 3)}
