@@ -19,13 +19,15 @@ const CABECALHOS = ["Seg", "Ter", "Qua", "Qui", "Sex", "", "Semana"];
 const DIAS_NOME = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
-const CONTA_ION3 = "ION 3";
-const CONTA_OTS  = "ION OTS";
+// Contas ativas desde out/2026. Os nomes são EXATAMENTE os das abas da
+// planilha Gestão Trader 2026 — o GAS devolve porData chaveado por eles.
+const CONTA_MIDE3 = "MIDE 3";
+const CONTA_REAL  = "Real";
 const CONTA_TODAS = "Todas as contas";
-const CONTAS = [CONTA_ION3, CONTA_OTS, CONTA_TODAS];
+const CONTAS = [CONTA_MIDE3, CONTA_REAL, CONTA_TODAS];
 
-// ION OTS opera valores menores: ±50 já é gain/loss, não empate
-const LIMITES = { [CONTA_ION3]: 100, [CONTA_OTS]: 50 };
+// Faixa de empate por conta: entre −X e +X o dia pinta cinza.
+const LIMITES = { [CONTA_MIDE3]: 100, [CONTA_REAL]: 30 };
 
 function gerarId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function hojeISO() {
@@ -111,12 +113,12 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       const c = localStorage.getItem(CHAVE_CONTA);
       if (c && CONTAS.indexOf(c) >= 0) return c;
     } catch(e) {}
-    return CONTA_ION3;
+    return CONTA_MIDE3;
   });
   const [revisoes, setRevisoes]   = useState(revisoesProp || []);
   const [updates, setUpdates]     = useState(updatesProp  || []);
-  const [tradesPorData, setTradesPorData] = useState(tradesPorDataProp || {});
-  const [otsPorData, setOtsPorData]       = useState({});
+  // porData das contas novas: { "2026-10-07": { "MIDE 3": {...}, "Real": {...} } }
+  const [contasPorData, setContasPorData] = useState({});
   const [loading, setLoading]     = useState(loadingProp && !revisoesProp?.length);
   const [saving, setSaving]       = useState(false);
 
@@ -124,8 +126,11 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   const [painelTipo, setPainelTipo] = useState("diario");
   const [formDados, setFormDados]   = useState({});
   const [formDirty, setFormDirty]   = useState(false);
-  const [linksIon3, setLinksIon3]   = useState([]);
-  const [linksOts, setLinksOts]     = useState([]);
+  const [linksMide3, setLinksMide3] = useState([]);
+  const [linksReal, setLinksReal]   = useState([]);
+  // JSON original do dia aberto — preservado no salvar pra não apagar o
+  // histórico ION gravado antes de outubro/2026.
+  const [savedOriginal, setSavedOriginal] = useState({});
 
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [updateForm, setUpdateForm]         = useState({ titulo: "", descricao: "" });
@@ -140,21 +145,21 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
   useEffect(() => { if (revisoesProp?.length)   setRevisoes(revisoesProp);   }, [revisoesProp]);
   useEffect(() => { if (updatesProp?.length)    setUpdates(updatesProp);     }, [updatesProp]);
-  useEffect(() => { if (tradesPorDataProp && Object.keys(tradesPorDataProp).length) setTradesPorData(tradesPorDataProp); }, [tradesPorDataProp]);
   useEffect(() => { setLoading(loadingProp && !revisoesProp?.length); }, [loadingProp]);
 
-  // OTS: cache imediato + busca em background, com atraso pra não competir com o Dashboard
+  // Contas: cache imediato + busca em background, com atraso pra não competir
+  // com o getDashboardInit. Uma chamada cobre MIDE 3 e Real.
   useEffect(() => {
-    const cache = localStorage.getItem("cache_ots");
+    const cache = localStorage.getItem("cache_contas");
     if (cache) {
-      try { setOtsPorData(JSON.parse(cache).porData || {}); } catch(e) {}
+      try { setContasPorData(JSON.parse(cache).porData || {}); } catch(e) {}
     }
     const timer = setTimeout(() => {
-      fetchComRetryRev(`${GAS_DIARIO}?action=getOTSData`)
+      fetchComRetryRev(`${GAS_DIARIO}?action=getContasData`)
         .then(j => {
           if (!j.erro) {
-            setOtsPorData(j.porData || {});
-            try { localStorage.setItem("cache_ots", JSON.stringify(j)); } catch(e) {}
+            setContasPorData(j.porData || {});
+            try { localStorage.setItem("cache_contas", JSON.stringify(j)); } catch(e) {}
           }
         })
         .catch(() => {});
@@ -169,8 +174,11 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       setRevisoes(rRev.revisoes || []);
       const rUpd = await fetchComRetryRev(`${GAS_DIARIO}?action=lerUpdates`);
       setUpdates(rUpd.updates || []);
-      const rTrades = await fetchComRetryRev(`${GAS_DIARIO}?action=lerTradesPorData`);
-      setTradesPorData(rTrades.porData || {});
+      const rContas = await fetchComRetryRev(`${GAS_DIARIO}?action=getContasData`);
+      if (!rContas.erro) {
+        setContasPorData(rContas.porData || {});
+        try { localStorage.setItem("cache_contas", JSON.stringify(rContas)); } catch(e) {}
+      }
       if (onCarregar) onCarregar();
     } catch(e) { console.error(e); }
     setLoading(false);
@@ -187,13 +195,15 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
   // ---- fonte de dados conforme a conta ----
   function dadosDoDia(dataStr, conta) {
-    if (conta === CONTA_OTS) {
-      const o = otsPorData[dataStr];
-      if (!o) return null;
-      return { resultado: o.resultado, trades: o.trades, taxaAcerto: o.taxaAcerto, erros: o.qtdErros ?? 0 };
-    }
-    const t = tradesPorData[dataStr] || {};
-    return t["ION 3"] || t["ion 3"] || null;
+    const c = (contasPorData[dataStr] || {})[conta];
+    if (!c) return null;
+    return {
+      resultado: c.resultado,
+      trades: c.trades,
+      taxaAcerto: c.taxaAcerto,
+      erros: c.qtdErros ?? 0,
+      nota10: c.nota10 ?? 0,
+    };
   }
 
   function resumoSemana(sabadoStr, conta) {
@@ -238,33 +248,55 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   }
 
   function abrirDia(dataStr) {
-    const rev  = revisaoPorData[dataStr] || {};
-    const ion3 = dadosDoDia(dataStr, CONTA_ION3) || {};
-    const ots  = dadosDoDia(dataStr, CONTA_OTS) || {};
+    const rev   = revisaoPorData[dataStr] || {};
+    const mide3 = dadosDoDia(dataStr, CONTA_MIDE3) || {};
+    const real  = dadosDoDia(dataStr, CONTA_REAL)  || {};
     let saved = {};
     try { saved = JSON.parse(rev.resumoCurto || "{}"); } catch {}
 
     setPainelDia(dataStr);
     setPainelTipo("diario");
+    setSavedOriginal(saved);
     setFormDados({
-      // ION 3 — lê chave nova; se não existir, cai na antiga (dados salvos antes da reforma)
-      resultadoIon3: saved.resultadoIon3 ?? (rev.resultadoIon2 !== undefined && rev.resultadoIon2 !== "" ? rev.resultadoIon2 : (ion3.resultado ?? "")),
-      qtdOpsIon3:    saved.qtdOpsIon3    ?? saved.qtdOpsIon2  ?? (ion3.trades     ?? ""),
-      acertoIon3:    saved.acertoIon3    ?? saved.acertoIon2  ?? (ion3.taxaAcerto ?? ""),
-      errosIon3:     saved.errosIon3     ?? saved.errosIon2   ?? (ion3.erros      ?? ""),
-      resumoIon3:    saved.resumoIon3    ?? saved.resumoIon2  ?? "",
-      // ION OTS
-      resultadoOts:  saved.resultadoOts  ?? (ots.resultado  ?? ""),
-      qtdOpsOts:     saved.qtdOpsOts     ?? (ots.trades     ?? ""),
-      acertoOts:     saved.acertoOts     ?? (ots.taxaAcerto ?? ""),
-      errosOts:      saved.errosOts      ?? (ots.erros      ?? ""),
-      resumoOts:     saved.resumoOts     ?? "",
-      // geral
+      resultadoMide3: saved.resultadoMide3 ?? (mide3.resultado  ?? ""),
+      qtdOpsMide3:    saved.qtdOpsMide3    ?? (mide3.trades     ?? ""),
+      acertoMide3:    saved.acertoMide3    ?? (mide3.taxaAcerto ?? ""),
+      errosMide3:     saved.errosMide3     ?? (mide3.erros      ?? ""),
+      resumoMide3:    saved.resumoMide3    ?? "",
+      resultadoReal:  saved.resultadoReal  ?? (real.resultado  ?? ""),
+      qtdOpsReal:     saved.qtdOpsReal     ?? (real.trades     ?? ""),
+      acertoReal:     saved.acertoReal     ?? (real.taxaAcerto ?? ""),
+      errosReal:      saved.errosReal      ?? (real.erros      ?? ""),
+      resumoReal:     saved.resumoReal     ?? "",
       revisaoDetalhada: rev.revisaoDetalhada ?? "",
     });
-    setLinksIon3(saved.linksIon3 || saved.linksIon2 || []);
-    setLinksOts(saved.linksOts || []);
+    setLinksMide3(saved.linksMide3 || []);
+    setLinksReal(saved.linksReal || []);
     setFormDirty(false);
+  }
+
+  // ---- histórico ION (contas encerradas em set/2026) ----
+  // Só-leitura. Fica escondido quando o dia não tem nada gravado de ION.
+  function historicoIon(saved, rev) {
+    const ion3 = {
+      resultado: saved.resultadoIon3 ?? (rev?.resultadoIon2 || ""),
+      ops:       saved.qtdOpsIon3 ?? saved.qtdOpsIon2 ?? "",
+      acerto:    saved.acertoIon3 ?? saved.acertoIon2 ?? "",
+      erros:     saved.errosIon3  ?? saved.errosIon2  ?? "",
+      resumo:    saved.resumoIon3 ?? saved.resumoIon2 ?? "",
+      links:     saved.linksIon3  || saved.linksIon2  || [],
+    };
+    const ots = {
+      resultado: saved.resultadoOts ?? (rev?.resultadoMide2 || ""),
+      ops:       saved.qtdOpsOts ?? "",
+      acerto:    saved.acertoOts ?? "",
+      erros:     saved.errosOts  ?? "",
+      resumo:    saved.resumoOts ?? "",
+      links:     saved.linksOts  || [],
+    };
+    const temConteudo = b => [b.resultado, b.ops, b.acerto, b.erros, b.resumo]
+      .some(v => v !== "" && v !== null && v !== undefined) || b.links.length > 0;
+    return { ion3, ots, tem: temConteudo(ion3) || temConteudo(ots) };
   }
 
   function abrirSemana(sabStr) {
@@ -273,14 +305,15 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     try { saved = JSON.parse(rev.resumoCurto || "{}"); } catch {}
     setPainelDia(sabStr);
     setPainelTipo("semanal");
+    setSavedOriginal(saved);
     setFormDados({
       semResultados: saved.semResultados ?? saved.resumoCurto ?? "",
       semMelhorar:   saved.semMelhorar   ?? "",
       semBem:        saved.semBem        ?? "",
       semRegra:      saved.semRegra      ?? "",
     });
-    setLinksIon3([]);
-    setLinksOts([]);
+    setLinksMide3([]);
+    setLinksReal([]);
     setFormDirty(false);
   }
 
@@ -297,17 +330,17 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
   function addLink(conta) {
     const novo = { id: gerarId(), descricao: "", url: "" };
-    if (conta === CONTA_OTS) setLinksOts(p => [...p, novo]); else setLinksIon3(p => [...p, novo]);
+    if (conta === CONTA_REAL) setLinksReal(p => [...p, novo]); else setLinksMide3(p => [...p, novo]);
     setFormDirty(true);
   }
   function updateLink(conta, id, campo, valor) {
     const fn = p => p.map(l => l.id === id ? { ...l, [campo]: valor } : l);
-    if (conta === CONTA_OTS) setLinksOts(fn); else setLinksIon3(fn);
+    if (conta === CONTA_REAL) setLinksReal(fn); else setLinksMide3(fn);
     setFormDirty(true);
   }
   function removeLink(conta, id) {
     const fn = p => p.filter(l => l.id !== id);
-    if (conta === CONTA_OTS) setLinksOts(fn); else setLinksIon3(fn);
+    if (conta === CONTA_REAL) setLinksReal(fn); else setLinksMide3(fn);
     setFormDirty(true);
   }
 
@@ -315,37 +348,43 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
     setSaving(true);
     const existente = painelTipo === "diario" ? (revisaoPorData[painelDia] || null) : (semanasPorSab[painelDia] || null);
 
+    // ...savedOriginal preserva o que já estava gravado no dia — inclusive as
+    // chaves ION das contas encerradas, que a tela não edita mais.
     const payloadResumo = painelTipo === "semanal"
       ? {
+          ...savedOriginal,
           semResultados: formDados.semResultados ?? "",
           semMelhorar:   formDados.semMelhorar   ?? "",
           semBem:        formDados.semBem        ?? "",
           semRegra:      formDados.semRegra      ?? "",
         }
       : {
-          resultadoIon3: formDados.resultadoIon3 ?? "",
-          qtdOpsIon3:    formDados.qtdOpsIon3    ?? "",
-          acertoIon3:    formDados.acertoIon3    ?? "",
-          errosIon3:     formDados.errosIon3     ?? "",
-          resumoIon3:    formDados.resumoIon3    ?? "",
-          resultadoOts:  formDados.resultadoOts  ?? "",
-          qtdOpsOts:     formDados.qtdOpsOts     ?? "",
-          acertoOts:     formDados.acertoOts     ?? "",
-          errosOts:      formDados.errosOts      ?? "",
-          resumoOts:     formDados.resumoOts     ?? "",
-          linksIon3:     linksIon3.filter(l => l.url || l.descricao),
-          linksOts:      linksOts.filter(l => l.url || l.descricao),
+          ...savedOriginal,
+          resultadoMide3: formDados.resultadoMide3 ?? "",
+          qtdOpsMide3:    formDados.qtdOpsMide3    ?? "",
+          acertoMide3:    formDados.acertoMide3    ?? "",
+          errosMide3:     formDados.errosMide3     ?? "",
+          resumoMide3:    formDados.resumoMide3    ?? "",
+          resultadoReal:  formDados.resultadoReal  ?? "",
+          qtdOpsReal:     formDados.qtdOpsReal     ?? "",
+          acertoReal:     formDados.acertoReal     ?? "",
+          errosReal:      formDados.errosReal      ?? "",
+          resumoReal:     formDados.resumoReal     ?? "",
+          linksMide3:     linksMide3.filter(l => l.url || l.descricao),
+          linksReal:      linksReal.filter(l => l.url || l.descricao),
         };
 
+    // As colunas da planilha mantêm os nomes antigos (resultado_ion2 /
+    // resultado_mide2) — são só posições; não vale migrar e arriscar o histórico.
     const revisao = {
       id:              existente?.id || gerarId(),
       data:            painelDia,
       tipo:            painelTipo,
-      resultadoIon2:   painelTipo === "diario" ? (formDados.resultadoIon3 ?? "") : "",
-      resultadoMide2:  painelTipo === "diario" ? (formDados.resultadoOts ?? "") : "",
-      qtdOps:          formDados.qtdOpsIon3 ?? "",
-      acerto:          formDados.acertoIon3 ?? "",
-      erros:           formDados.errosIon3  ?? "",
+      resultadoIon2:   painelTipo === "diario" ? (formDados.resultadoMide3 ?? "") : "",
+      resultadoMide2:  painelTipo === "diario" ? (formDados.resultadoReal ?? "") : "",
+      qtdOps:          formDados.qtdOpsMide3 ?? "",
+      acerto:          formDados.acertoMide3 ?? "",
+      erros:           formDados.errosMide3  ?? "",
       resumoCurto:     JSON.stringify(payloadResumo),
       revisaoDetalhada: formDados.revisaoDetalhada ?? "",
     };
@@ -450,7 +489,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
   }
 
   function renderCalendario() {
-    const limiteConta = combinado ? LIMITES[CONTA_ION3] : LIMITES[contaSel];
+    const limiteConta = combinado ? LIMITES[CONTA_MIDE3] : LIMITES[contaSel];
     const total = new Date(ano, mes + 1, 0).getDate();
     const hoje = hojeISO();
     const cells = [];
@@ -493,8 +532,8 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
         const revSem = semanasPorSab[dataStr] || null;
 
         if (combinado) {
-          const semA = resumoSemana(dataStr, CONTA_ION3);
-          const semB = resumoSemana(dataStr, CONTA_OTS);
+          const semA = resumoSemana(dataStr, CONTA_MIDE3);
+          const semB = resumoSemana(dataStr, CONTA_REAL);
           const temDados = semA.diasComDados > 0 || semB.diasComDados > 0;
           cells.push(
             <div key={d} onClick={() => abrirSemana(dataStr)} style={{
@@ -514,7 +553,7 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
               </div>
               {temDados ? (
                 <div style={{ display: "flex", flex: 1, borderTop: `1px solid ${bordaSuave}` }}>
-                  {[[CONTA_ION3, semA, "ION 3", true], [CONTA_OTS, semB, "OTS", false]].map(([ct, sm, rot, cb]) => {
+                  {[[CONTA_MIDE3, semA, "MIDE 3", true], [CONTA_REAL, semB, "Real", false]].map(([ct, sm, rot, cb]) => {
                     const cor = sm.diasComDados > 0 ? corResultado(sm.totalRes, LIMITES[ct]) : null;
                     return (
                       <div key={ct} style={{ flex: 1, minWidth: 0, padding: "6px 9px 7px", borderRight: cb ? `1px solid ${bordaSuave}` : "none", display: "flex", flexDirection: "column", gap: 2 }}>
@@ -588,12 +627,13 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       let temLinks = false;
       try {
         const s = JSON.parse(rev?.resumoCurto || "{}");
-        temLinks = (s.linksIon3 || s.linksIon2 || []).length > 0 || (s.linksOts || []).length > 0;
+        temLinks = (s.linksMide3 || []).length > 0 || (s.linksReal || []).length > 0
+               || (s.linksIon3 || s.linksIon2 || []).length > 0 || (s.linksOts || []).length > 0;
       } catch {}
 
       if (combinado) {
-        const dA = dadosDoDia(dataStr, CONTA_ION3);
-        const dB = dadosDoDia(dataStr, CONTA_OTS);
+        const dA = dadosDoDia(dataStr, CONTA_MIDE3);
+        const dB = dadosDoDia(dataStr, CONTA_REAL);
         const semRegistro = !dA && !dB && !rev;
 
         cells.push(
@@ -614,8 +654,8 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
             </div>
             {isFuturo && semRegistro ? null : (
               <div style={{ display: "flex", flex: 1, borderTop: `1px solid ${bordaSuave}` }}>
-                <MetadeConta rotulo="ION 3" dados={dA} limite={LIMITES[CONTA_ION3]} isFuturo={isFuturo} comBorda />
-                <MetadeConta rotulo="OTS"   dados={dB} limite={LIMITES[CONTA_OTS]}  isFuturo={isFuturo} />
+                <MetadeConta rotulo="MIDE 3" dados={dA} limite={LIMITES[CONTA_MIDE3]} isFuturo={isFuturo} comBorda />
+                <MetadeConta rotulo="Real"   dados={dB} limite={LIMITES[CONTA_REAL]}  isFuturo={isFuturo} />
               </div>
             )}
           </div>
@@ -691,17 +731,17 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
     // ---- card de resumo do mês ----
     if (combinado) {
-      const mA = resumoMensal(CONTA_ION3);
-      const mB = resumoMensal(CONTA_OTS);
+      const mA = resumoMensal(CONTA_MIDE3);
+      const mB = resumoMensal(CONTA_REAL);
       const somaRes = mA.totalRes + mB.totalRes;
       const somaOps = mA.totalOps + mB.totalOps;
       const somaErros = mA.totalErros + mB.totalErros;
       const somaDias = Math.max(mA.diasComDados, mB.diasComDados);
-      const coresSoma = (mA.diasComDados + mB.diasComDados) > 0 ? corResultado(somaRes, LIMITES[CONTA_ION3]) : null;
+      const coresSoma = (mA.diasComDados + mB.diasComDados) > 0 ? corResultado(somaRes, LIMITES[CONTA_MIDE3]) : null;
 
       const blocos = [
-        { rot: "ION 3", r: mA, cores: mA.diasComDados > 0 ? corResultado(mA.totalRes, LIMITES[CONTA_ION3]) : null, destaque: false },
-        { rot: "ION OTS", r: mB, cores: mB.diasComDados > 0 ? corResultado(mB.totalRes, LIMITES[CONTA_OTS]) : null, destaque: false },
+        { rot: "MIDE 3", r: mA, cores: mA.diasComDados > 0 ? corResultado(mA.totalRes, LIMITES[CONTA_MIDE3]) : null, destaque: false },
+        { rot: "Real", r: mB, cores: mB.diasComDados > 0 ? corResultado(mB.totalRes, LIMITES[CONTA_REAL]) : null, destaque: false },
         { rot: "Total", r: { totalRes: somaRes, totalOps: somaOps, totalErros: somaErros, diasComDados: somaDias, acertoMedio: null }, cores: coresSoma, destaque: true },
       ];
 
@@ -798,6 +838,47 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
       );
     }
 
+    // Bloco só-leitura das contas ION, encerradas em set/2026. Aparece apenas
+    // nos dias que já tinham algo gravado nelas.
+    function blocoHistoricoIon() {
+      const h = historicoIon(savedOriginal, existente);
+      if (!h.tem) return null;
+
+      function metade(rot, b) {
+        const temAlgo = [b.resultado, b.ops, b.acerto, b.erros, b.resumo]
+          .some(v => v !== "" && v !== null && v !== undefined) || b.links.length > 0;
+        if (!temAlgo) return null;
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: textMuted, textTransform: "uppercase", letterSpacing: "0.07em" }}>{rot}</span>
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+              {b.resultado !== "" && <span style={{ fontSize: 13, color: text }}>R$ {b.resultado}</span>}
+              {b.ops    !== "" && <span style={{ fontSize: 13, color: textSub }}>{b.ops} ops</span>}
+              {b.acerto !== "" && <span style={{ fontSize: 13, color: textSub }}>{b.acerto}% acerto</span>}
+              {b.erros  !== "" && <span style={{ fontSize: 13, color: textSub }}>{b.erros} err</span>}
+            </div>
+            {b.resumo && <p style={{ margin: 0, fontSize: 13, color: text, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{b.resumo}</p>}
+            {b.links.map(l => (
+              <a key={l.id || l.url} href={l.url} target="_blank" rel="noreferrer"
+                style={{ fontSize: 12.5, color: ACCENT, textDecoration: "none" }}>
+                ↗ {l.descricao || l.url}
+              </a>
+            ))}
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ background: camada2, border: `1px dashed ${bordaSuave}`, borderRadius: 10, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 14, opacity: 0.85 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 800, color: textMuted, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Histórico ION · somente leitura
+          </div>
+          {metade("ION 3", h.ion3)}
+          {metade("ION OTS", h.ots)}
+        </div>
+      );
+    }
+
     function contaBlock(conta, keys, lista) {
       return (
         <div style={{ background: camada1, border: `1px solid ${bordaSuave}`, borderRadius: 10, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
@@ -833,8 +914,9 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
           {painelTipo === "diario" && (
             <>
-              {contaBlock(CONTA_ION3, { res:"resultadoIon3", ops:"qtdOpsIon3", ac:"acertoIon3", err:"errosIon3", resumo:"resumoIon3" }, linksIon3)}
-              {contaBlock(CONTA_OTS, { res:"resultadoOts", ops:"qtdOpsOts", ac:"acertoOts", err:"errosOts", resumo:"resumoOts" }, linksOts)}
+              {contaBlock(CONTA_MIDE3, { res:"resultadoMide3", ops:"qtdOpsMide3", ac:"acertoMide3", err:"errosMide3", resumo:"resumoMide3" }, linksMide3)}
+              {contaBlock(CONTA_REAL, { res:"resultadoReal", ops:"qtdOpsReal", ac:"acertoReal", err:"errosReal", resumo:"resumoReal" }, linksReal)}
+              {blocoHistoricoIon()}
               {campo("Revisão geral e pontos para lembrar", "revisaoDetalhada", "textarea", "Análise do dia, lições, pontos a carregar pra amanhã...", 5)}
             </>
           )}
@@ -969,9 +1051,9 @@ export default function Revisoes({ th, dark, setDark, revisoesProp, updatesProp,
 
                 {combinado ? (
                   <div style={{ display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
-                    <Legenda rotulo="ION 3" limite={LIMITES[CONTA_ION3]} />
+                    <Legenda rotulo="MIDE 3" limite={LIMITES[CONTA_MIDE3]} />
                     <span style={{ width: 1, height: 16, background: bordaSuave, display: "inline-block" }} />
-                    <Legenda rotulo="OTS" limite={LIMITES[CONTA_OTS]} />
+                    <Legenda rotulo="Real" limite={LIMITES[CONTA_REAL]} />
                   </div>
                 ) : (
                   <div style={{ display: "flex", gap: 11, flexWrap: "wrap", alignItems: "center" }}>
