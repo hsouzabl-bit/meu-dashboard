@@ -112,6 +112,27 @@ function Skeleton({w="100%",h=20,r=6,th}){
   return <div style={{width:w,height:h,borderRadius:r,background:`linear-gradient(90deg,${th.skeletonA} 25%,${th.skeletonB} 50%,${th.skeletonA} 75%)`,backgroundSize:"200% 100%",animation:"shimmer 1.4s infinite"}}/>;
 }
 
+// Contas ativas desde out/2026 — os nomes são os das abas da planilha
+// Gestão Trader 2026, e o GAS devolve porData chaveado por eles.
+const CONTA_MIDE3 = "MIDE 3";
+const CONTA_REAL  = "Real";
+
+// Trimestres de calendário — mesma lógica da aba Hábitos, e a chave de
+// localStorage é a mesma, pra as duas telas nunca discordarem.
+const NOMES_TRI_DASH = ["Jan–Mar", "Abr–Jun", "Jul–Set", "Out–Dez"];
+function chaveTriDash(ano, tri){ return `${ano}-T${tri+1}`; }
+function iniTriDash(ano, tri){ return `${ano}-${String(tri*3+1).padStart(2,"0")}-01`; }
+function fimTriDash(ano, tri){
+  const ultimoDia = new Date(ano, tri*3+3, 0).getDate();
+  return `${ano}-${String(tri*3+3).padStart(2,"0")}-${String(ultimoDia).padStart(2,"0")}`;
+}
+function triDaDataDash(iso){
+  return { ano: parseInt(iso.slice(0,4),10), tri: Math.floor((parseInt(iso.slice(5,7),10)-1)/3) };
+}
+function rotuloTriDash(chave){
+  return `${NOMES_TRI_DASH[parseInt(chave.slice(6),10)-1]}/${chave.slice(2,4)}`;
+}
+
 export default function App(){
   const [dados,setDados]         = useState(null);
   const [erro,setErro]           = useState(null);
@@ -121,7 +142,6 @@ export default function App(){
   const [loadingDiario, setLoadingDiario]     = useState(true);
   const [revisoes, setRevisoes]               = useState([]);
   const [updates, setUpdates]                 = useState([]);
-  const [tradesPorData, setTradesPorData]     = useState({});
   const [loadingRevisoes, setLoadingRevisoes] = useState(true);
 
   const [activeNav,setActiveNav] = useState("Dashboard");
@@ -139,19 +159,33 @@ export default function App(){
   const [metasExpandido, setMetasExpandido] = useState(true);
 
   const [calFiltro,setCalFiltro] = useState(()=>{
-    try { return localStorage.getItem("cal_filtro") || "todos"; } catch(e){ return "todos"; }
+    try {
+      const v = localStorage.getItem("cal_filtro");
+      return ["todos","mide3","real","habitos"].indexOf(v) >= 0 ? v : "todos";
+    } catch(e){ return "todos"; }
   });
   const trocarCalFiltro = (v)=>{
     setCalFiltro(v);
     try { localStorage.setItem("cal_filtro", v); } catch(e){}
   };
-  
+
+  // Conta que governa "Resultados do Mês" e "Status dos Setups".
+  const [contaDash,setContaDash] = useState(()=>{
+    try {
+      const v = localStorage.getItem("dash_conta_sel");
+      return [CONTA_MIDE3, CONTA_REAL, "todas"].indexOf(v) >= 0 ? v : "todas";
+    } catch(e){ return "todas"; }
+  });
+  const trocarContaDash = (v)=>{
+    setContaDash(v);
+    try { localStorage.setItem("dash_conta_sel", v); } catch(e){}
+  };
+
   const [diaSel,setDiaSel] = useState(null);
   const [diaDisciplinaSel, setDiaDisciplinaSel] = useState(null);
   const hoje = new Date();
   const [mesVis,setMesVis] = useState(hoje.getMonth());
   const [anoVis,setAnoVis] = useState(hoje.getFullYear());
-  const [dadosMes, setDadosMes] = useState(null);
   const [dadosOts, setDadosOts] = useState(null);
   const [objetivosSemanaAtual, setObjetivosSemanaAtual] = useState(null);
 
@@ -232,8 +266,24 @@ export default function App(){
   // Hábitos: só leitura no Dashboard. A escrita acontece na página de Hábitos.
   const [habitosLista, setHabitosLista] = useState([]);
   const [habitosCarregado, setHabitosCarregado] = useState(false);
-  // OTS vem do cache que Revisões/Estatísticas já gravam — sem requisição nova aqui.
-  const [otsPorDataApp, setOtsPorDataApp] = useState({});
+  // Contas MIDE 3 e Real — mesma chamada e mesmo cache que Revisões usa.
+  const [contasPorData, setContasPorData] = useState({});
+
+  // Trimestre exibido no card de metas. Chave compartilhada com a aba Hábitos.
+  const triHojeDash = triDaDataDash(
+    `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`
+  );
+  const [triDash,setTriDash] = useState(()=>{
+    try {
+      const c = localStorage.getItem("quarter_sel");
+      if(c && /^\d{4}-T[1-4]$/.test(c)) return c;
+    } catch(e){}
+    return chaveTriDash(triHojeDash.ano, triHojeDash.tri);
+  });
+  const trocarTriDash = (v)=>{
+    setTriDash(v);
+    try { localStorage.setItem("quarter_sel", v); } catch(e){}
+  };
 
   const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
 
@@ -253,17 +303,6 @@ export default function App(){
       backtestsValor, backtestsMeta,
       replaysValor: replaysManualValor, replaysMeta: replaysManualMeta,
     }))}`).catch(()=>{});
-  }
-
-  function salvarMetricasManuaisApp(overrides={}){
-    const payload = {
-      valor: dsiValor, meta: dsiMeta,
-      horasEstudoValor, horasEstudoMeta,
-      backtestsValor, backtestsMeta,
-      replaysValor: replaysManualValor, replaysMeta: replaysManualMeta,
-      ...overrides,
-    };
-    fetch(`${API_DIARIO}?action=salvarDSI&dados=${encodeURIComponent(JSON.stringify(payload))}`).catch(()=>{});
   }
 
   function salvarChecklistHojeApp(){
@@ -335,8 +374,11 @@ export default function App(){
       setRevisoes(rRev.revisoes || []);
       const rUpd = await fetchComRetry(`${API_DIARIO}?action=lerUpdates`);
       setUpdates(rUpd.updates || []);
-      const rTrades = await fetchComRetry(`${API_DIARIO}?action=lerTradesPorData`);
-      setTradesPorData(rTrades.porData || {});
+      const rContas = await fetchComRetry(`${API_DIARIO}?action=getContasData`);
+      if(!rContas.erro){
+        setContasPorData(rContas.porData || {});
+        try { localStorage.setItem("cache_contas", JSON.stringify(rContas)); } catch(e){}
+      }
     } catch(e){ console.error(e); }
     setLoadingRevisoes(false);
   };
@@ -345,12 +387,11 @@ export default function App(){
     carregar(); // script separado (Estudos), não compete pela mesma cota
 
     function aplicarDashboardInit(j){
+      // diario e ots seguem alimentando a aba Estatísticas, não o Dashboard.
       if(j.diario && !j.diario.erro) setDadosDiario(j.diario);
-      if(j.mes && !j.mes.erro) setDadosMes(j.mes);
       if(j.ots && !j.ots.erro) setDadosOts(j.ots);
       setRevisoes(j.revisoes || []);
       setUpdates(j.updates || []);
-      setTradesPorData(j.tradesPorData || {});
 
       const {ano,semana} = semanaISOApp(new Date());
       const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
@@ -415,9 +456,9 @@ export default function App(){
       if(c) aplicar(JSON.parse(c));
     } catch(e){}
 
-        try {
-      const co = localStorage.getItem("cache_ots");
-      if(co) setOtsPorDataApp(JSON.parse(co).porData || {});
+    try {
+      const cc = localStorage.getItem("cache_contas");
+      if(cc) setContasPorData(JSON.parse(cc).porData || {});
     } catch(e){}
 
     const t = setTimeout(()=>{
@@ -429,19 +470,18 @@ export default function App(){
           setHabitosCarregado(true);
         })
         .catch(()=>setHabitosCarregado(true))
-        // OTS logo depois, em sequência — nunca em paralelo com a chamada acima
+        // Contas logo depois, em sequência — nunca em paralelo com a chamada acima
         .finally(()=>{
-          fetchComRetry(`${API_DIARIO}?action=getOTSData`)
+          fetchComRetry(`${API_DIARIO}?action=getContasData`)
             .then(j=>{
               if(j.erro) return;
-              setOtsPorDataApp(j.porData || {});
-              try { localStorage.setItem("cache_ots", JSON.stringify(j)); } catch(e){}
+              setContasPorData(j.porData || {});
+              try { localStorage.setItem("cache_contas", JSON.stringify(j)); } catch(e){}
             })
             .catch(()=>{});
         });
     }, 3000);
 
-    
     return ()=>clearTimeout(t);
   },[]);
 
@@ -501,7 +541,7 @@ const topNav = [
     );
     if(activeNav === "Revisões") return (
       <div style={{flex:1,overflowY:"auto",minWidth:0,display:"flex",flexDirection:"column",width:"100%"}}>
-        <Revisoes th={th} dark={dark} setDark={setDark} revisoesProp={revisoes} updatesProp={updates} tradesPorDataProp={tradesPorData} loadingProp={loadingRevisoes} onCarregar={carregarRevisoes}/>
+        <Revisoes th={th} dark={dark} setDark={setDark} revisoesProp={revisoes} updatesProp={updates} loadingProp={loadingRevisoes} onCarregar={carregarRevisoes}/>
       </div>
     );
     if(activeNav === "Hábitos") return (
@@ -541,22 +581,64 @@ const topNav = [
       return null;
     }
 
-    const setupsClassificados = {};
-    (dadosDiario?.setups||[]).forEach(s=>{
-      const c = classificarSetup(s.nome);
-      if(c) setupsClassificados[c.label] = { ...s, ...c };
-    });
-    // Soma o financeiro de ION 2 + ION 3 por setup
-    const financPorSetup = {};
-    ["ION 2","ION 3"].forEach(conta=>{
-      (dadosDiario?.setupsPorConta?.[conta]||[]).forEach(s=>{
-        const c = classificarSetup(s.nome);
-        if(!c) return;
-        financPorSetup[c.label] = (financPorSetup[c.label]||0) + (s.financTotal||0);
+    // ── Contas: agregação por dia, mês e conta ───────────────────────────────
+    // Tudo sai de contasPorData, que vem numa chamada só. Trocar mês ou conta
+    // não gera requisição nova.
+    const CONTAS_DASH = [CONTA_MIDE3, CONTA_REAL];
+    const contasAtivas = contaDash === "todas" ? CONTAS_DASH : [contaDash];
+
+    const prefixoMesVis = `${anoVis}-${String(mesVis+1).padStart(2,"0")}`;
+    const diasDoMesOrdenados = Object.keys(contasPorData)
+      .filter(d=>d.startsWith(prefixoMesVis)).sort();
+
+    // Curva acumulada do mês + totais
+    let acumMes = 0, gainsMes = 0, lossesMes = 0;
+    const setupsDoMes = {};
+    const pontosMesDash = [];
+    diasDoMesOrdenados.forEach(d=>{
+      const doDia = contasPorData[d];
+      let temDia = false;
+      contasAtivas.forEach(c=>{
+        const dd = doDia[c];
+        if(!dd) return;
+        temDia = true;
+        acumMes += dd.resultado || 0;
+        gainsMes += dd.gains || 0;
+        lossesMes += dd.losses || 0;
+        Object.keys(dd.setups || {}).forEach(nome=>{
+          const s = dd.setups[nome];
+          if(!setupsDoMes[nome]) setupsDoMes[nome] = { trades:0, gains:0, losses:0, financTotal:0 };
+          setupsDoMes[nome].trades += s.trades || 0;
+          setupsDoMes[nome].gains  += s.gains  || 0;
+          setupsDoMes[nome].losses += s.losses || 0;
+          setupsDoMes[nome].financTotal += s.financTotal || 0;
+        });
       });
+      if(temDia) pontosMesDash.push({ data:d, valor: Math.round(acumMes*100)/100 });
+    });
+
+    const decMes = gainsMes + lossesMes;
+    const financMes = pontosMesDash.length ? Math.round(acumMes*100)/100 : null;
+    const wrMes = decMes > 0 ? Math.round((gainsMes/decMes)*100) : null;
+
+    // Status dos Setups — mesmo recorte de mês e conta
+    const setupsClassificados = {};
+    Object.keys(setupsDoMes).forEach(nome=>{
+      const c = classificarSetup(nome);
+      if(!c) return;
+      const s = setupsDoMes[nome];
+      const atual = setupsClassificados[c.label] || { trades:0, gains:0, losses:0, financTotal:0, ...c };
+      atual.trades += s.trades;
+      atual.gains  += s.gains;
+      atual.losses += s.losses;
+      atual.financTotal += s.financTotal;
+      setupsClassificados[c.label] = atual;
     });
     Object.keys(setupsClassificados).forEach(label=>{
-      setupsClassificados[label].financTotal = financPorSetup[label] || 0;
+      const s = setupsClassificados[label];
+      const dec = s.gains + s.losses;
+      s.taxaAcerto = dec > 0 ? Math.round((s.gains/dec)*100) : 0;
+      s.financTotal = Math.round(s.financTotal*100)/100;
     });
 
     const setupsLinhasDash = [
@@ -565,12 +647,46 @@ const topNav = [
       [setupsClassificados["TRM"], setupsClassificados["TL"]],
     ];
 
-    const setupsMesLista = (dadosMes?.setupsPorConta?.["ION 3"]||[]).map(s=>{
-      const c = classificarSetup(s.nome);
-      return c ? { nome:c.label, wr:s.taxaAcerto, financ:s.financTotal } : null;
-    }).filter(Boolean);
-    const financMes = dadosMes?.contas?.["ION 3"]?.financTotal ?? null;
-    const wrMes = dadosMes?.contas?.["ION 3"]?.taxaAcerto ?? null;
+    const setupsMesLista = Object.keys(setupsClassificados).map(label=>{
+      const s = setupsClassificados[label];
+      return { nome: label, wr: s.taxaAcerto, financ: s.financTotal };
+    }).sort((a,b)=>b.financ-a.financ);
+
+    // O mini calendário tem filtro próprio (calFiltro), separado do seletor
+    // que governa os dois cards da esquerda.
+    function somarContasNoDia(dataStr, contas){
+      const doDia = contasPorData[dataStr];
+      if(!doDia) return null;
+      let achou = false;
+      const acc = { resultado:0, trades:0, gains:0, losses:0, erros:0 };
+      contas.forEach(c=>{
+        const d = doDia[c];
+        if(!d) return;
+        achou = true;
+        acc.resultado += d.resultado || 0;
+        acc.trades    += d.trades || 0;
+        acc.gains     += d.gains || 0;
+        acc.losses    += d.losses || 0;
+        acc.erros     += d.qtdErros || 0;
+      });
+      if(!achou) return null;
+      const dec = acc.gains + acc.losses;
+      acc.taxaAcerto = dec > 0 ? Math.round((acc.gains/dec)*100) : 0;
+      acc.resultado = Math.round(acc.resultado*100)/100;
+      return acc;
+    }
+    function diaCalendario(dataStr){
+      if(calFiltro === "mide3") return somarContasNoDia(dataStr, [CONTA_MIDE3]);
+      if(calFiltro === "real")  return somarContasNoDia(dataStr, [CONTA_REAL]);
+      return somarContasNoDia(dataStr, CONTAS_DASH);
+    }
+
+    function navegarMesDash(delta){
+      let m = mesVis + delta, a = anoVis;
+      if(m < 0){ m = 11; a--; }
+      if(m > 11){ m = 0; a++; }
+      setMesVis(m); setAnoVis(a); setDiaSel(null);
+    }
 
     // Studies Streak — mesma fonte e mesmo critério da página de Hábitos:
     // 3/3 = perfeito · 2/3 = quase · resto = fraco. Registro começa em 07/08/2026.
@@ -631,10 +747,20 @@ const topNav = [
     HABITOS_DASH.forEach(h=>{ seqPorHabitoDash[h.campo] = seqHabito(h.campo); });
 
     // ── Metas de estudo do quarter — mesma base da página de Hábitos ──────────
-    const QUARTER_INI_DASH = "2026-08-07";
-    const QUARTER_FIM_DASH = "2026-09-30";
-    const DIAS_QUARTER_CHEIO_DASH = 92;
     const METAS_PADRAO_DASH = { horas:240, replays:60, paginas:300 };
+    const anoTriDash = parseInt(triDash.slice(0,4),10);
+    const numTriDash = parseInt(triDash.slice(6),10) - 1;
+    const QUARTER_INI_DASH = iniTriDash(anoTriDash, numTriDash);
+    const QUARTER_FIM_DASH = fimTriDash(anoTriDash, numTriDash);
+
+    const trisDisponiveisDash = (()=>{
+      const set = new Set([chaveTriDash(triHojeDash.ano, triHojeDash.tri), triDash]);
+      (habitosLista||[]).forEach(h=>{
+        const t = triDaDataDash(h.data);
+        set.add(chaveTriDash(t.ano, t.tri));
+      });
+      return [...set].sort().reverse();
+    })();
 
     function diasEntreDash(a, b){
       return Math.round((new Date(b+"T12:00:00") - new Date(a+"T12:00:00")) / 86400000) + 1;
@@ -646,7 +772,6 @@ const topNav = [
     } catch(e){}
 
     const diasQuarterDash = diasEntreDash(QUARTER_INI_DASH, QUARTER_FIM_DASH);
-    const fatorDash = diasQuarterDash / DIAS_QUARTER_CHEIO_DASH;
     const fimEfetivoDash = hojeChaveStreak < QUARTER_FIM_DASH ? hojeChaveStreak : QUARTER_FIM_DASH;
     const decorridosDash = hojeChaveStreak < QUARTER_INI_DASH ? 0
       : Math.min(diasEntreDash(QUARTER_INI_DASH, fimEfetivoDash), diasQuarterDash);
@@ -663,7 +788,8 @@ const topNav = [
 
     const metasEstudoDash = HABITOS_DASH.map(h=>{
       const val = totalQuarterDash[h.campo];
-      const metaEf = (Number(metasQuarter[h.campo]) || 0) * fatorDash;
+      // Trimestre cheio: a meta digitada é o alvo integral, sem proporcional.
+      const metaEf = Number(metasQuarter[h.campo]) || 0;
       const alvoHoje = metaEf * pctEsperadoDash;
       return {
         campo: h.campo, label: h.label, valor: val,
@@ -680,17 +806,25 @@ const topNav = [
       const diaSemanaD = cursorD.getDay();
       if (diaSemanaD !== 0 && diaSemanaD !== 6) {
         const chaveD = `${cursorD.getFullYear()}-${String(cursorD.getMonth()+1).padStart(2,"0")}-${String(cursorD.getDate()).padStart(2,"0")}`;
-        const errosDia = dadosDiario?.errosPorDia?.[chaveD];
-        const temTrade = tradesPorData[chaveD]?.["ION 3"] || tradesPorData[chaveD]?.["ION 2"];
-        const temEmocional = errosDia?.emocional?.length > 0;
-        const temTecnico = errosDia?.tecnico?.length > 0;
+        // Disciplina olha SEMPRE as duas contas, independente do filtro de cima:
+        // erro em qualquer uma delas queima o dia.
+        const doDiaD = contasPorData[chaveD] || {};
+        const emocD = [], tecD = [];
+        let operouD = false;
+        CONTAS_DASH.forEach(c=>{
+          const d = doDiaD[c];
+          if(!d) return;
+          operouD = true;
+          (d.errosEmocional||[]).forEach(e=>emocD.push(e));
+          (d.errosTecnico||[]).forEach(e=>tecD.push(e));
+        });
         disciplineDias.unshift({
           chave: chaveD,
           dataObj: new Date(cursorD),
-          statusEmocional: !temTrade ? null : temEmocional ? "erro" : "ok",
-          statusTecnico: !temTrade ? null : temTecnico ? "erro" : "ok",
-          errosEmocional: errosDia?.emocional || [],
-          errosTecnico: errosDia?.tecnico || [],
+          statusEmocional: !operouD ? null : emocD.length > 0 ? "erro" : "ok",
+          statusTecnico: !operouD ? null : tecD.length > 0 ? "erro" : "ok",
+          errosEmocional: emocD,
+          errosTecnico: tecD,
         });
       }
       cursorD.setDate(cursorD.getDate() - 1);
@@ -726,7 +860,7 @@ const topNav = [
     const hojeChaveCal = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-${String(hoje.getDate()).padStart(2,"0")}`;
     for(let d=1; d<=diasNoMesAtual; d++){
       const dataStr = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-      const r = tradesPorData[dataStr]?.["ION 3"] || tradesPorData[dataStr]?.["ion 3"] || null;
+      const r = diaCalendario(dataStr);
       const diaSemCal = new Date(anoVis, mesVis, d).getDay();
       const fimDeSemana = diaSemCal===0 || diaSemCal===6;
       miniCalDias.push({ dia:d, dataStr, r, futuro: dataStr > hojeChaveCal, fimDeSemana });
@@ -926,7 +1060,7 @@ const topNav = [
 
               {/* Linha 1, Coluna A: Resultados do Mês */}
               <div style={{background:th.cardBg,borderRadius:14,padding:"20px 22px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,display:"flex",flexDirection:"column",height:"100%"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:6,flexWrap:"wrap"}}>
                   <span style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em"}}>Resultados do Mês</span>
                   <div style={{display:"flex",alignItems:"baseline",gap:8}}>
                     <span style={{fontSize:18,fontWeight:800,color:financMes==null?th.textMuted:(financMes>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31"))}}>
@@ -935,10 +1069,26 @@ const topNav = [
                     <span style={{fontSize:11,color:th.textMuted}}>{wrMes!=null?`WR ${wrMes}%`:""}</span>
                   </div>
                 </div>
-                {(dadosDiario?.graficoION3?.length||0) > 0 ? (
+
+                {/* Mês e conta — governam este card e o Status dos Setups abaixo */}
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+                  <div style={{display:"flex",gap:4}}>
+                    <button onClick={()=>navegarMesDash(-1)} style={{border:`1px solid ${th.border2}`,background:th.resumeBg,borderRadius:7,width:24,height:24,cursor:"pointer",fontSize:13,color:th.textSub,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>‹</button>
+                    <button onClick={()=>navegarMesDash(1)} style={{border:`1px solid ${th.border2}`,background:th.resumeBg,borderRadius:7,width:24,height:24,cursor:"pointer",fontSize:13,color:th.textSub,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>›</button>
+                  </div>
+                  <span style={{fontSize:11.5,fontWeight:700,color:th.textSub}}>{MESES_PT[mesVis]} {anoVis}</span>
+                  <select value={contaDash} onChange={e=>trocarContaDash(e.target.value)}
+                    style={{marginLeft:"auto",fontSize:11,fontWeight:600,color:th.textSub,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:7,padding:"4px 8px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
+                    <option value="todas">Todas</option>
+                    <option value={CONTA_MIDE3}>MIDE 3</option>
+                    <option value={CONTA_REAL}>Real</option>
+                  </select>
+                </div>
+
+                {pontosMesDash.length > 0 ? (
                   <svg viewBox="0 0 600 200" style={{width:"100%",height:"auto",display:"block"}}>
                     {(() => {
-                      const pontosMes = dadosDiario.graficoION3.filter(p=>p.data.startsWith(`${anoVis}-${String(mesVis+1).padStart(2,"0")}`));
+                      const pontosMes = pontosMesDash;
                       if(pontosMes.length < 2) return <text x="300" y="100" textAnchor="middle" fontSize="13" fill={th.textMuted}>Dados insuficientes no mês</text>;
                       const vals = pontosMes.map(p=>p.valor);
                       const maxV = Math.max(...vals,0), minV = Math.min(...vals,0);
@@ -974,7 +1124,7 @@ const topNav = [
                       );
                     })()}
                   </svg>
-                ) : <div style={{padding:"40px 0",textAlign:"center",color:th.textMuted,fontSize:12}}>Carregando gráfico...</div>}
+                ) : <div style={{padding:"40px 0",textAlign:"center",color:th.textMuted,fontSize:12}}>Sem trades neste mês</div>}
 
                 {setupsMesLista.length>0 && (
                   <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
@@ -997,8 +1147,8 @@ const topNav = [
                   <select value={calFiltro} onChange={e=>trocarCalFiltro(e.target.value)}
                     style={{fontSize:11,fontWeight:600,color:th.textSub,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:7,padding:"4px 8px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
                     <option value="todos">Todos</option>
-                    <option value="ion3">ION 3</option>
-                    <option value="ots">ION OTS</option>
+                    <option value="mide3">MIDE 3</option>
+                    <option value="real">Real</option>
                     <option value="habitos">Hábitos</option>
                   </select>
                 </div>
@@ -1020,7 +1170,6 @@ const topNav = [
                     const hDia = (habitosLista||[]).find(x=>x.data === chaveDia);
                     const temHabito = hDia && (hDia.horas>0 || hDia.replays>0 || hDia.paginas>0);
                     const habitoOk = hDia && hDia.horas>=1 && hDia.replays>=1 && hDia.paginas>=1;
-                    const oDia = otsPorDataApp[chaveDia];
 
                     const verdeBd = dark?"#3d6b52":"#5cb583";
                     const vermBd  = dark?"#6b4444":"#d9776b";
@@ -1039,11 +1188,8 @@ const topNav = [
                       }
                     };
 
-                    if(calFiltro === "ion3"){
+                    if(calFiltro === "mide3" || calFiltro === "real"){
                       if(r){ fundo = r.resultado>=0 ? fundoPos : fundoNeg; borda="none"; corTexto=th.text; peso=700; }
-                      else neutro();
-                    } else if(calFiltro === "ots"){
-                      if(oDia){ fundo = oDia.resultado>=0 ? fundoPos : fundoNeg; borda="none"; corTexto=th.text; peso=700; }
                       else neutro();
                     } else if(calFiltro === "habitos"){
                       if(temHabito){
@@ -1063,7 +1209,7 @@ const topNav = [
                       }
                         
                     } else {
-                      // "todos" — fundo pelo ION 3, borda pelos hábitos (comportamento atual)
+                      // "todos" — fundo pelas duas contas somadas, borda pelos hábitos
                       if(r){ fundo = r.resultado>=0 ? fundoPos : fundoNeg; borda="none"; corTexto=th.text; peso=700; }
                       else if(temHabito){
                         fundo = "transparent";
@@ -1086,15 +1232,16 @@ const topNav = [
                 
 {diaSel && (() => {
                   const k = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-                  const temTrade = !!tradesPorData[k]?.["ION 3"];
+                  const temTrade = !!contasPorData[k];
                   const temHab = (habitosLista||[]).some(x=>x.data===k && (x.horas>0||x.replays>0||x.paginas>0));
                   return temTrade || temHab;
                 })() && (() => {
                   const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-                  const r = tradesPorData[key]?.["ION 3"] || { resultado:0, trades:0, taxaAcerto:0 };
+                  const doDiaPop = contasPorData[key] || {};
                   const diaSemanaSel = new Date(anoVis, mesVis, diaSel).getDay();
                   const ehFDS = diaSemanaSel===0 || diaSemanaSel===6;
-                
+                  const temAlgumaConta = CONTAS_DASH.some(c=>doDiaPop[c]);
+
                   return (
                     <>
                       <div onClick={()=>setDiaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
@@ -1105,72 +1252,43 @@ const topNav = [
 
                         <div style={{display:"flex",gap:20,alignItems:"stretch"}}>
 
-{/* Coluna esquerda — contas (oculta no fim de semana) */}
-                          {!ehFDS && <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column"}}>
-                            <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>ION 3</div>
-                            <div style={{display:"flex",gap:16,marginBottom:12}}>
-                              <div><div style={{fontSize:19,fontWeight:800,color:r.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{r.resultado>=0?"+":"−"}R$ {Math.abs(r.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
-                              <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
-                              <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{r.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
-                            </div>
-
-                            {(() => {
-                              const o = otsPorDataApp[key];
-                              if(!o) return null;
+{/* Coluna esquerda — contas (oculta no fim de semana e quando ninguém operou) */}
+                          {!ehFDS && temAlgumaConta && <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column"}}>
+                            {CONTAS_DASH.map(nomeConta=>{
+                              const c = doDiaPop[nomeConta];
+                              if(!c) return null;
+                              const emoc = c.errosEmocional || [];
+                              const tec  = c.errosTecnico || [];
                               return (
-                                <>
-                                  <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>ION OTS</div>
+                                <div key={nomeConta}>
+                                  <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>{nomeConta}</div>
                                   <div style={{display:"flex",gap:16,marginBottom:12}}>
-                                    <div><div style={{fontSize:19,fontWeight:800,color:o.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{o.resultado>=0?"+":"−"}R$ {Math.abs(o.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
-                                    <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{o.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
-                                    <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{o.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
+                                    <div><div style={{fontSize:19,fontWeight:800,color:c.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{c.resultado>=0?"+":"−"}R$ {Math.abs(c.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
+                                    <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{c.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
+                                    <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{c.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
                                   </div>
-
-                                  {((o.errosEmocional||[]).length>0 || (o.errosTecnico||[]).length>0) && (
-                                    <div style={{marginBottom:10,display:"flex",flexDirection:"column",gap:6}}>
-                                      {(o.errosEmocional||[]).length>0 && (
+                                  {(emoc.length>0 || tec.length>0) && (
+                                    <div style={{marginBottom:12,display:"flex",flexDirection:"column",gap:6}}>
+                                      {emoc.length>0 && (
                                         <div>
                                           <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Emocionais</div>
-                                          {o.errosEmocional.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
+                                          {emoc.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
                                         </div>
                                       )}
-                                      {(o.errosTecnico||[]).length>0 && (
+                                      {tec.length>0 && (
                                         <div>
                                           <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Técnicos</div>
-                                          {o.errosTecnico.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
+                                          {tec.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
                                         </div>
                                       )}
-                                    </div>
-                                  )} 
-                            
-                                </>
-                              );
-                            })()}
-
-                            {(() => {
-                              const keyErros = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-                              const erros = dadosDiario?.errosPorDia?.[keyErros];
-                              if (!erros || (erros.emocional.length===0 && erros.tecnico.length===0)) return null;
-                              return (
-                                <div style={{marginBottom:10,display:"flex",flexDirection:"column",gap:6}}>
-                                  {erros.emocional.length>0 && (
-                                    <div>
-                                      <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Emocionais</div>
-                                      {erros.emocional.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
-                                    </div>
-                                  )}
-                                  {erros.tecnico.length>0 && (
-                                    <div>
-                                      <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Técnicos</div>
-                                      {erros.tecnico.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
                                     </div>
                                   )}
                                 </div>
                               );
-                            })()}
+                            })}
 
                             <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer",marginTop:"auto",paddingTop:6}}>Mais detalhes →</div>
-                                                    </div>}
+                          </div>}
 
                           {/* Coluna direita — hábitos */}
                           {(() => {
@@ -1183,7 +1301,7 @@ const topNav = [
                             ];
                             return (
                               <>
-                                {!ehFDS && <div style={{width:1,background:th.border,flexShrink:0}}/>}
+                                {!ehFDS && temAlgumaConta && <div style={{width:1,background:th.border,flexShrink:0}}/>}
                                 <div style={{width:150,flexShrink:0,display:"flex",flexDirection:"column"}}>
                                   <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>Hábitos</div>
                                   <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -1209,7 +1327,12 @@ const topNav = [
 
               {/* Linha 2, Coluna A: Status dos Setups */}
               <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
-                <div style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Status dos Setups</div>
+                <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+                  <span style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em"}}>Status dos Setups</span>
+                  <span style={{fontSize:10.5,color:th.textMuted}}>
+                    {MESES_PT[mesVis]} {anoVis} · {contaDash === "todas" ? "todas as contas" : contaDash}
+                  </span>
+                </div>
                 <div style={{display:"flex",flexDirection:"column",gap:6,flex:1}}>
                   {setupsLinhasDash.map((linha,li)=>(
                     <div key={li} style={{display:"grid",gridTemplateColumns:`repeat(${linha.length},1fr)`,gap:6,flex:1}}>
@@ -1392,8 +1515,14 @@ const topNav = [
               </div>
               {metasExpandido && (
                 <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:13}}>
-                  <div style={{fontSize:10,color:th.textMuted,marginTop:-4}}>
-                    Quarter 07/08 – 30/09 · {decorridosDash} de {diasQuarterDash} dias
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:-4,flexWrap:"wrap"}}>
+                    <select value={triDash} onChange={e=>trocarTriDash(e.target.value)}
+                      style={{fontSize:10.5,fontWeight:600,color:th.textSub,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:7,padding:"3px 7px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
+                      {trisDisponiveisDash.map(c=>(<option key={c} value={c}>{rotuloTriDash(c)}</option>))}
+                    </select>
+                    <span style={{fontSize:10,color:th.textMuted}}>
+                      {decorridosDash} de {diasQuarterDash} dias
+                    </span>
                   </div>
                   {metasEstudoDash.map(item=>(
                     <div key={item.campo}>
