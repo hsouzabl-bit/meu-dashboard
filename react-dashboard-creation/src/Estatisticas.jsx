@@ -256,9 +256,12 @@ function Tabela({ th, cabecalho, children }) {
       <thead>
         <tr>
           {cabecalho.map((h, i) => (
+      
             <th key={i} style={{ fontSize: 9.5, fontWeight: 800, color: th.textMuted, textTransform: "uppercase",
               letterSpacing: "0.06em", textAlign: i === 0 ? "left" : "right", padding: "0 0 7px",
+              paddingRight: i === 0 ? 14 : 0,
               borderBottom: `1px solid ${th.border}`, whiteSpace: "nowrap" }}>{h}</th>
+      
           ))}
         </tr>
       </thead>
@@ -269,9 +272,13 @@ function Tabela({ th, cabecalho, children }) {
 
 function Td({ th, children, primeira, cor, forte }) {
   return (
-    <td style={{ padding: "7px 0", borderBottom: `1px solid ${th.border}`,
+
+    <td style={{ padding: "7px 0", paddingRight: primeira ? 14 : 0,
+      borderBottom: `1px solid ${th.border}`,
       textAlign: primeira ? "left" : "right", color: cor || (primeira ? th.text : th.textSub),
-      fontWeight: forte ? 700 : 400, fontVariantNumeric: "tabular-nums" }}>{children}</td>
+      fontWeight: forte ? 700 : 400, fontVariantNumeric: "tabular-nums",
+      whiteSpace: primeira ? "normal" : "nowrap", lineHeight: 1.45 }}>{children}</td>
+    
   );
 }
 
