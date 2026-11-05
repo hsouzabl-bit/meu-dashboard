@@ -185,12 +185,27 @@ export default function App(){
   const [contaDash,setContaDash] = useState(()=>{
     try {
       const v = localStorage.getItem("dash_conta_sel");
-      return CONTAS_DASH.concat(["todas"]).indexOf(v) >= 0 ? v : "todas";
+      return CONTAS_DASH.concat(["todas","habitos"]).indexOf(v) >= 0 ? v : "todas";
     } catch(e){ return "todas"; }
   });
   const trocarContaDash = (v)=>{
     setContaDash(v);
     try { localStorage.setItem("dash_conta_sel", v); } catch(e){}
+  };
+
+  // Chave própria dos setups. null = segue a chave de cima.
+  const [setupConta, setSetupConta] = useState(null);
+
+  // Janela da Constância, em sessões.
+  const [janelaConst, setJanelaConst] = useState(()=>{
+    try {
+      const v = parseInt(localStorage.getItem("const_janela"),10);
+      return [10,20,30,40].indexOf(v) >= 0 ? v : 20;
+    } catch(e){ return 20; }
+  });
+  const trocarJanelaConst = (n)=>{
+    setJanelaConst(n);
+    try { localStorage.setItem("const_janela", String(n)); } catch(e){}
   };
 
   const [diaSel,setDiaSel] = useState(null);
@@ -330,6 +345,54 @@ export default function App(){
     setChecklistAlterado(true);
   }
 
+  // ── Estado do dia: disposição, sono, emocional e lembrete ───────────────────
+  // Uma linha por dia na aba "Estado do Dia". O lembrete é por dia, mas se hoje
+  // ainda não tem um, mostra o último escrito em vez de aparecer vazio.
+  const [estadoDiaLista, setEstadoDiaLista] = useState([]);
+  const [estadoHoje, setEstadoHoje] = useState({ disposicao:"", sono:"", emocional:"", lembrete:"" });
+  const [estadoAlterado, setEstadoAlterado] = useState(false);
+  const [estadoSalvando, setEstadoSalvando] = useState(false);
+
+  function aplicarEstadoDia(lista){
+    const arr = lista || [];
+    setEstadoDiaLista(arr);
+    const doDia = arr.find(e=>e.data === hojeStr);
+    const ultimoLembrete = arr.slice().reverse().find(e=>e.lembrete);
+    setEstadoHoje({
+      disposicao: doDia && doDia.disposicao != null ? String(doDia.disposicao) : "",
+      sono:       doDia && doDia.sono       != null ? String(doDia.sono)       : "",
+      emocional:  doDia && doDia.emocional  != null ? String(doDia.emocional)  : "",
+      lembrete:   (doDia && doDia.lembrete) || (ultimoLembrete ? ultimoLembrete.lembrete : ""),
+    });
+    setEstadoAlterado(false);
+  }
+
+  function mudarEstadoHoje(campo, valor){
+    setEstadoHoje(p=>({ ...p, [campo]: valor }));
+    setEstadoAlterado(true);
+  }
+
+  function salvarEstadoDiaApp(){
+    setEstadoSalvando(true);
+    const payload = {
+      data: hojeStr,
+      disposicao: estadoHoje.disposicao === "" ? null : Number(estadoHoje.disposicao),
+      sono:       estadoHoje.sono       === "" ? null : Number(estadoHoje.sono),
+      emocional:  estadoHoje.emocional  === "" ? null : Number(estadoHoje.emocional),
+      lembrete:   estadoHoje.lembrete || "",
+    };
+    fetch(`${API_DIARIO}?action=salvarEstadoDia&dados=${encodeURIComponent(JSON.stringify(payload))}`)
+      .catch(()=>{})
+      .finally(()=>{
+        setEstadoSalvando(false);
+        setEstadoAlterado(false);
+        setEstadoDiaLista(prev=>{
+          const sem = prev.filter(e=>e.data !== hojeStr);
+          return [...sem, payload].sort((a,b)=>a.data < b.data ? -1 : 1);
+        });
+      });
+  }
+
   const tema = THEMES.find(t=>t.id===temaId) || THEMES[0];
   const th = tema;
   const dark = tema.dark;
@@ -404,6 +467,7 @@ export default function App(){
       if(j.ots && !j.ots.erro) setDadosOts(j.ots);
       setRevisoes(j.revisoes || []);
       setUpdates(j.updates || []);
+      if(j.estadoDia) aplicarEstadoDia(j.estadoDia);
 
       const {ano,semana} = semanaISOApp(new Date());
       const chave = `${ano}-S${String(semana).padStart(2,"0")}`;
@@ -596,7 +660,10 @@ const topNav = [
     // ── Contas: agregação por dia, mês e conta ───────────────────────────────
     // Tudo sai de contasPorData, que vem numa chamada só. Trocar mês ou conta
     // não gera requisição nova.
-    const contasAtivas = contaDash === "todas" ? CONTAS_DASH : [contaDash];
+    // "habitos" não é conta: nesse modo os números de conta somam tudo, e o
+    // que aparece na tela vem dos hábitos.
+    const contasAtivas = (contaDash === "todas" || contaDash === "habitos")
+      ? CONTAS_DASH : [contaDash];
 
     const prefixoMesVis = `${anoVis}-${String(mesVis+1).padStart(2,"0")}`;
     const diasDoMesOrdenados = Object.keys(contasPorData)
@@ -812,7 +879,7 @@ const topNav = [
 
     const disciplineDias = [];
     let cursorD = new Date(hoje);
-    while (disciplineDias.length < 20) {
+    while (disciplineDias.length < 40) {
       const diaSemanaD = cursorD.getDay();
       if (diaSemanaD !== 0 && diaSemanaD !== 6) {
         const chaveD = `${cursorD.getFullYear()}-${String(cursorD.getMonth()+1).padStart(2,"0")}-${String(cursorD.getDate()).padStart(2,"0")}`;
@@ -876,688 +943,724 @@ const topNav = [
       miniCalDias.push({ dia:d, dataStr, r, futuro: dataStr > hojeChaveCal, fimDeSemana });
     }
 
+    // ══ NOVO LAYOUT ══════════════════════════════════════════════════════════
+    // Tokens derivados do tema, pra a linguagem "vidro" do design funcionar
+    // tanto nos 6 temas escuros quanto nos 6 claros.
+    const sup      = dark ? "rgba(255,255,255,0.028)" : "rgba(15,23,42,0.022)";
+    const supFio   = dark ? "rgba(255,255,255,0.055)" : "rgba(15,23,42,0.075)";
+    const trilho   = dark ? "rgba(255,255,255,0.09)"  : "rgba(15,23,42,0.10)";
+    const pillBg   = dark ? "rgba(0,0,0,0.30)"        : "rgba(15,23,42,0.045)";
+    const pillFio  = dark ? "rgba(255,255,255,0.06)"  : "rgba(15,23,42,0.06)";
+    const faixaBg  = dark
+      ? "linear-gradient(170deg, rgba(255,255,255,0.075), rgba(255,255,255,0.022) 48%, rgba(255,255,255,0.012))"
+      : "linear-gradient(170deg, rgba(255,255,255,0.96), rgba(255,255,255,0.70))";
+    const faixaFio = dark
+      ? "inset 0 1px 0 rgba(255,255,255,0.09), inset 0 0 0 1px rgba(255,255,255,0.055), 0 30px 60px -36px rgba(0,0,0,0.9)"
+      : "inset 0 0 0 1px rgba(15,23,42,0.07), 0 26px 50px -34px rgba(15,23,42,0.45)";
+    const COR_NEG  = dark ? "#FF8A66" : "#C2502F";
+
+    function estiloPill(ativo, pequeno){
+      return {
+        border:"none", borderRadius:999, fontFamily:"inherit", cursor:"pointer", whiteSpace:"nowrap",
+        padding: pequeno ? "5px 11px" : "6px 13px",
+        fontSize: pequeno ? 11.5 : 12.5,
+        fontWeight: ativo ? 700 : 600,
+        background: ativo ? ACCENT_ATUAL : "transparent",
+        color: ativo ? (dark ? "#06100B" : "#fff") : th.textMuted,
+      };
+    }
+
+    // ── Disciplina do mês ─────────────────────────────────────────────────────
+    // Trade limpo = sem erro nomeado. Um erro por linha do diário, então
+    // "quantos trades tiveram erro" é o tamanho da lista de erros.
+    function discipDoMes(contas){
+      let trades = 0, comErro = 0, tec = 0, emo = 0;
+      diasDoMesOrdenados.forEach(d=>{
+        const doDia = contasPorData[d] || {};
+        contas.forEach(c=>{
+          const dd = doDia[c];
+          if(!dd) return;
+          trades  += dd.trades || 0;
+          comErro += (dd.erros || []).length;
+          tec     += (dd.errosTecnico || []).length;
+          emo     += (dd.errosEmocional || []).length;
+        });
+      });
+      return { trades, comErro, tec, emo, limpos: Math.max(0, trades - comErro) };
+    }
+    const dm = discipDoMes(contasAtivas);
+
+    // ── Hábitos do mês: meta mensal = meta do trimestre ÷ 3 ───────────────────
+    const habitosDoMes = { horas:0, replays:0, paginas:0 };
+    const serieHabMes = [];
+    (habitosLista||[]).forEach(h=>{
+      if(!h.data || !h.data.startsWith(prefixoMesVis)) return;
+      habitosDoMes.horas   += Number(h.horas)   || 0;
+      habitosDoMes.replays += Number(h.replays) || 0;
+      habitosDoMes.paginas += Number(h.paginas) || 0;
+    });
+    const metasMes = {
+      horas:   Math.round((Number(metasQuarter.horas)   || 0) / 3),
+      replays: Math.round((Number(metasQuarter.replays) || 0) / 3),
+      paginas: Math.round((Number(metasQuarter.paginas) || 0) / 3),
+    };
+    const pctHab = (campo)=> metasMes[campo] > 0
+      ? Math.min(100, Math.round((habitosDoMes[campo] / metasMes[campo]) * 100)) : 0;
+    const pctHabMedio = Math.round((pctHab("horas") + pctHab("replays") + pctHab("paginas")) / 3);
+
+    // Curva de avanço dos hábitos no mês, acumulada dia a dia
+    {
+      const diasMes = new Date(anoVis, mesVis+1, 0).getDate();
+      let ac = 0;
+      const metaTotal = metasMes.horas + metasMes.replays + metasMes.paginas;
+      for(let d=1; d<=diasMes; d++){
+        const k = `${prefixoMesVis}-${String(d).padStart(2,"0")}`;
+        if(k > hojeChaveStreak) break;
+        const h = habitosPorData[k];
+        if(h) ac += (Number(h.horas)||0) + (Number(h.replays)||0) + (Number(h.paginas)||0);
+        serieHabMes.push({ dia:d, pct: metaTotal>0 ? (ac/metaTotal)*100 : 0 });
+      }
+    }
+
+    const ehHabitos = contaDash === "habitos";
+    const rotuloVisao = ehHabitos ? "Hábitos" : (contaDash === "todas" ? "todas as contas" : ROTULO_CONTA[contaDash]);
+
+    const gaugePct = ehHabitos
+      ? pctHabMedio
+      : (dm.trades > 0 ? Math.round((dm.limpos / dm.trades) * 100) : 0);
+
+    function arcoGauge(p){
+      if(p <= 0) return "M30,130";
+      const rad = (180 - (Math.min(100,p) / 100) * 180) * Math.PI / 180;
+      return `M30,130 A100,100 0 0 1 ${(130 + 100*Math.cos(rad)).toFixed(1)},${(130 - 100*Math.sin(rad)).toFixed(1)}`;
+    }
+
+    const miniCirculos = ehHabitos
+      ? [
+          { label:"Horas",   pct:pctHab("horas"),   sub:`${Math.round(habitosDoMes.horas)} de ${metasMes.horas}h` },
+          { label:"Replays", pct:pctHab("replays"), sub:`${habitosDoMes.replays} de ${metasMes.replays}` },
+          { label:"Páginas", pct:pctHab("paginas"), sub:`${habitosDoMes.paginas} de ${metasMes.paginas}` },
+        ]
+      : [
+          { label:"Técnico",   pct: dm.trades>0 ? Math.round(((dm.trades-dm.tec)/dm.trades)*100) : 0,
+            sub: dm.tec===0 ? "nenhum erro" : `${dm.tec} ${dm.tec===1?"trade":"trades"} com erro` },
+          { label:"Emocional", pct: dm.trades>0 ? Math.round(((dm.trades-dm.emo)/dm.trades)*100) : 0,
+            sub: dm.emo===0 ? "nenhum erro" : `${dm.emo} ${dm.emo===1?"trade":"trades"} com erro` },
+        ];
+
+    // ── Estado do dia (faixa ao vivo) ─────────────────────────────────────────
+    const hojeContas = contasPorData[hojeStr] || {};
+    let tradesHoje = 0, resultHoje = 0, errosHoje = 0, erroNoPrimeiroHoje = false, operouHoje = false;
+    CONTAS_DASH.forEach(c=>{
+      const d = hojeContas[c];
+      if(!d) return;
+      operouHoje = true;
+      tradesHoje += d.trades || 0;
+      resultHoje += d.resultado || 0;
+      errosHoje  += (d.erros || []).length;
+      if(d.erroNoPrimeiro) erroNoPrimeiroHoje = true;
+    });
+    const STOP_DIARIO = 500;
+    const restanteHoje = Math.max(0, STOP_DIARIO + Math.min(0, resultHoje));
+
+    // ── Constância: janela de sessões e o que quebrou ─────────────────────────
+    const sessoes = disciplineDias.filter(d=>d.statusTecnico !== null || d.statusEmocional !== null);
+    const janelaSess = sessoes.slice(-janelaConst);
+    const quebras = janelaSess
+      .map((d,i)=>({ d, i }))
+      .filter(({d})=>d.statusTecnico === "erro" || d.statusEmocional === "erro");
+    let limposSeguidos = 0;
+    for(let i = janelaSess.length - 1; i >= 0; i--){
+      if(janelaSess[i].statusTecnico === "ok" && janelaSess[i].statusEmocional === "ok") limposSeguidos++;
+      else break;
+    }
+    const contagemErros = {};
+    quebras.forEach(({d})=>{
+      [...(d.errosTecnico||[]), ...(d.errosEmocional||[])].forEach(e=>{
+        const k = (e||"").trim();
+        if(!k) return;
+        contagemErros[k] = (contagemErros[k] || 0) + 1;
+      });
+    });
+    const chipsErros = Object.keys(contagemErros)
+      .sort((a,b)=>contagemErros[b]-contagemErros[a]).slice(0,5)
+      .map(k=>`${k} · ${contagemErros[k]}`);
+    const pctVerdeConst = janelaSess.length > 0
+      ? Math.round((limposSeguidos / janelaSess.length) * 100) : 0;
+
+    // ── Setups: chave própria, por padrão colada na de cima ───────────────────
+    const contaTopoSetup = ehHabitos ? "todas" : contaDash;
+    const contaSetupEfetiva = setupConta || contaTopoSetup;
+    const contasSetup = contaSetupEfetiva === "todas" ? CONTAS_DASH : [contaSetupEfetiva];
+    const setupsDaConta = {};
+    diasDoMesOrdenados.forEach(d=>{
+      const doDia = contasPorData[d] || {};
+      contasSetup.forEach(c=>{
+        const dd = doDia[c];
+        if(!dd || !dd.setups) return;
+        Object.keys(dd.setups).forEach(nome=>{
+          const s = dd.setups[nome];
+          const a = setupsDaConta[nome] || { trades:0, gains:0, losses:0, financTotal:0 };
+          a.trades += s.trades || 0; a.gains += s.gains || 0;
+          a.losses += s.losses || 0; a.financTotal += s.financTotal || 0;
+          setupsDaConta[nome] = a;
+        });
+      });
+    });
+    const listaSetupsNova = Object.keys(setupsDaConta).map(nome=>{
+      const s = setupsDaConta[nome];
+      const dec = s.gains + s.losses;
+      return { nome, valor: Math.round(s.financTotal), ops: s.trades,
+               wr: dec>0 ? Math.round((s.gains/dec)*100) : null };
+    }).sort((a,b)=>b.valor-a.valor);
+    const maxAbsSetup = listaSetupsNova.reduce((a,s)=>Math.max(a,Math.abs(s.valor)), 1);
+
+    const pillsConta = [...CONTAS_DASH.map(c=>({id:c, label:ROTULO_CONTA[c]}))];
+    const pillsTopo  = [{id:"todas", label:"Todas"}, ...pillsConta, {id:"habitos", label:"Hábitos"}];
+    const pillsSetup = [{id:"todas", label:"Todas"}, ...pillsConta];
+
+    const DIAS_SEM_CUR = ["S","T","Q","Q","S","S","D"];
+    const dataExtenso = hoje.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
+
     return (
       <div style={{width:"100%",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
 
-        {/* Header — título, fora do split de colunas */}
-        <div style={{marginBottom:16}}>
-          <h1 style={{fontSize:26,fontWeight:700,color:th.text,margin:0,letterSpacing:"-0.02em"}}>Dashboard</h1>
-          <p style={{fontSize:13,color:th.textMuted,margin:"4px 0 0"}}>Visão geral da sua evolução</p>
+        <div style={{marginBottom:22}}>
+          <div style={{fontSize:12,color:th.textMuted,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700}}>{dataExtenso}</div>
+          <h1 style={{fontSize:25,fontWeight:700,color:th.text,margin:"3px 0 0",letterSpacing:"-0.025em"}}>Evolução diária</h1>
         </div>
 
         {erro&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"13px 18px",marginBottom:20,color:"#dc2626",fontSize:13}}>⚠️ {erro}</div>}
 
-        {/* Split de colunas — main + sidebar direita */}
-        <div style={{display:"flex",gap:16,width:"100%",minWidth:0,alignItems:"flex-start"}}>
-          <main style={{flex:1,minWidth:0}}>
+        <div style={{display:"flex",gap:26,width:"100%",minWidth:0,alignItems:"flex-start",flexWrap:"wrap"}}>
+          <main style={{flex:"999 1 560px",minWidth:0,display:"flex",flexDirection:"column",gap:30}}>
 
-            {/* Metric cards + data/reload na mesma linha */}
-            <div style={{display:"flex",gap:12,marginBottom:18,alignItems:"stretch"}}>
-              {loading?Array(3).fill(0).map((_,i)=>(
-                <div key={i} style={{flex:1,background:th.cardBg,borderRadius:14,padding:"14px 16px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:8}}>
-                  <Skeleton h={10} w="55%" th={th}/><Skeleton h={26} w="70%" th={th}/><Skeleton h={6} th={th}/>
+            {/* ══ FAIXA DE FOCO ══ */}
+            <section style={{borderRadius:28,background:faixaBg,boxShadow:faixaFio,overflow:"hidden"}}>
+
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"22px 28px 0"}}>
+                <div style={{display:"flex",alignItems:"center",gap:2,background:pillBg,borderRadius:999,padding:3,boxShadow:`inset 0 0 0 1px ${pillFio}`}}>
+                  <button onClick={()=>navegarMesDash(-1)} style={{width:27,height:27,border:"none",borderRadius:999,background:"transparent",color:th.textMuted,cursor:"pointer",fontSize:15,lineHeight:1,fontFamily:"inherit"}}>‹</button>
+                  <span style={{fontSize:12.5,fontWeight:700,color:th.textSub,padding:"0 6px",fontVariantNumeric:"tabular-nums"}}>{MESES_PT[mesVis]} {anoVis}</span>
+                  <button onClick={()=>navegarMesDash(1)} style={{width:27,height:27,border:"none",borderRadius:999,background:"transparent",color:th.textMuted,cursor:"pointer",fontSize:15,lineHeight:1,fontFamily:"inherit"}}>›</button>
                 </div>
-              )):<>
-
-                <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
-                  <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Horas de Estudo</span>
-
-                  <div style={{fontSize:26,fontWeight:800,color:ACCENT_ATUAL,lineHeight:1.1}}>{fmtH(totaisMesHabitos.horas)}</div>
-                  <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:th.textMuted}}>
-                    Meta: 80 · via aba Hábitos
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
-                    <div style={{flex:1,background:th.resumeBg,borderRadius:4,height:5}}>
-                      <div style={{width:`${pct(totaisMesHabitos.horas, 80)}%`,background:ACCENT_ATUAL,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
-                    </div>
-                    <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pct(totaisMesHabitos.horas, 80)}%</span>
-                  </div>
-                  
-                </div>
-
-                <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
-                  <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>Replays</span>
-
-                  <div style={{fontSize:26,fontWeight:800,color:ACCENT_ATUAL,lineHeight:1.1}}>{totaisMesHabitos.replays}</div>
-                  <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:th.textMuted}}>
-                    Meta: 20 · via aba Hábitos
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
-                    <div style={{flex:1,background:th.resumeBg,borderRadius:4,height:5}}>
-                      <div style={{width:`${pct(totaisMesHabitos.replays, 20)}%`,background:ACCENT_ATUAL,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
-                    </div>
-                    <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pct(totaisMesHabitos.replays, 20)}%</span>
-                  </div>
-                  
-                </div>
-
-                <div style={{background:th.cardBg,borderRadius:14,padding:"14px 16px",flex:1,boxShadow:th.cardShadow,border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5}}>
-                  <span style={{fontSize:10.5,fontWeight:700,color:th.textMuted,letterSpacing:0.8,textTransform:"uppercase"}}>DSI</span>
-                  <input
-                    type="number"
-                    value={dsiValor}
-                    onChange={e=>setDsiValor(e.target.value)}
-                    onBlur={()=>salvarDSIApp(dsiValor, dsiMeta)}
-                    style={{fontSize:26,fontWeight:800,color:ACCENT_ATUAL,background:"transparent",border:"none",outline:"none",width:"100%",padding:0,fontFamily:"inherit"}}
-                  />
-                  <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:th.textMuted}}>
-                    Meta:
-                    <input
-                      type="number"
-                      value={dsiMeta}
-                      onChange={e=>setDsiMeta(e.target.value)}
-                      onBlur={()=>salvarDSIApp(dsiValor, dsiMeta)}
-                      style={{fontSize:11,color:th.textMuted,background:"transparent",border:"none",outline:"none",width:50,padding:0,fontFamily:"inherit"}}
-                    />
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
-                    <div style={{flex:1,background:th.resumeBg,borderRadius:4,height:5}}>
-                      <div style={{width:`${pct(Number(dsiValor)||0, Number(dsiMeta)||1)}%`,background:ACCENT_ATUAL,borderRadius:4,height:5,transition:"width 0.8s ease"}}/>
-                    </div>
-                    <span style={{fontSize:11,color:th.textMuted,fontWeight:600,minWidth:28}}>{pct(Number(dsiValor)||0, Number(dsiMeta)||1)}%</span>
-                  </div>
-                </div>
-              </>}
-              <div style={{flexShrink:0,marginLeft:8,display:"flex",flexDirection:"column",justifyContent:"center",gap:8}}>
-                <div style={{display:"flex",alignItems:"center",gap:7,border:`1px solid ${th.border2}`,borderRadius:9,padding:"8px 14px",background:th.surface,fontSize:13,color:th.text,whiteSpace:"nowrap"}}>
-                  <Ico.Calendar s={14} c={th.textMuted}/> {dataFormatada}
-                </div>
-                <button onClick={carregar} style={{border:`1px solid ${th.border2}`,borderRadius:9,padding:"8px 0",background:th.surface,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,fontSize:12,color:th.textMuted}} title="Atualizar">
-                  <Ico.Repeat s={14} c={th.textMuted}/> Atualizar
-                </button>
-              </div>
-            </div>
-
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:18}}>
-              <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                  <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Studies Streak</span>
-                  <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:700,color:streakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>
-                    <Ico.Growth s={13} c={streakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}/> {streakAtual}d
-                  </span>
-                </div>
-                <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                  {streakDias.map((d,i)=>{
-                    const cor = d.status===null ? "transparent" : d.status==="perfeito" ? (dark?"#1a7048":"#5cb583") : d.status==="quase" ? (dark?"#856404":"#d1a53d") : (dark?"#8a3a3a":"#d9776b");
-                    return (
-                      <div key={i} title={`${d.dataObj.toLocaleDateString("pt-BR")} — ${d.resumo}`} style={{width:18,height:18,borderRadius:5,background:cor,border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
-                    );
-                  })}
+                <div style={{display:"flex",gap:2,background:pillBg,borderRadius:999,padding:3,boxShadow:`inset 0 0 0 1px ${pillFio}`,flexWrap:"wrap"}}>
+                  {pillsTopo.map(p=>(
+                    <button key={p.id} onClick={()=>trocarContaDash(p.id)} style={estiloPill(contaDash===p.id,false)}>{p.label}</button>
+                  ))}
                 </div>
               </div>
 
-              <div style={{background:th.cardBg,borderRadius:14,padding:"16px 20px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`,position:"relative"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                  <span style={{fontWeight:700,fontSize:11.5,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Discipline Streak</span>
-                  <span style={{display:"flex",alignItems:"center",gap:6,fontSize:15,fontWeight:800,color:disciplineStreakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}}>
-                    <Ico.Growth s={16} c={disciplineStreakAtual>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted}/> {disciplineStreakAtual}d
-                  </span>
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:9.5,color:th.textMuted,width:58,flexShrink:0}}>Emocional</span>
-                    <div style={{display:"flex",gap:5,flex:1}}>
-                      {disciplineDias.map((d,i)=>{
-                        const cor = d.statusEmocional===null ? "transparent" : d.statusEmocional==="ok" ? (dark?"#1a7048":"#5cb583") : (dark?"#8a3a3a":"#d9776b");
-                        return (
-                          <div key={i} onClick={()=>d.statusEmocional!==null&&setDiaDisciplinaSel(diaDisciplinaSel===d.chave?null:d.chave)}
-                            style={{width:15,height:15,borderRadius:4,background:cor,border:d.statusEmocional===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0,cursor:d.statusEmocional!==null?"pointer":"default"}}/>
-                        );
-                      })}
-                    </div>
-                    <span style={{fontSize:10,fontWeight:700,color:streakEmocional>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted,flexShrink:0,minWidth:26,textAlign:"right"}}>{streakEmocional}d</span>
+              <div style={{display:"flex",flexWrap:"wrap",gap:0}}>
+
+                {/* velocímetro */}
+                <div style={{flex:"1 1 360px",minWidth:0,padding:"10px 28px 26px",display:"flex",flexDirection:"column",alignItems:"center",gap:18}}>
+                  <div style={{fontSize:11.5,color:th.textMuted,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700,textAlign:"center"}}>
+                    {ehHabitos ? "Hábitos do mês · meta vs real" : "Disciplina do mês"}
                   </div>
 
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:9.5,color:th.textMuted,width:58,flexShrink:0}}>Técnico</span>
-                    <div style={{display:"flex",gap:5,flex:1}}>
-                      {disciplineDias.map((d,i)=>{
-                        const cor = d.statusTecnico===null ? "transparent" : d.statusTecnico==="ok" ? (dark?"#1a7048":"#5cb583") : (dark?"#8a3a3a":"#d9776b");
-                        return (
-                          <div key={i} onClick={()=>d.statusTecnico!==null&&setDiaDisciplinaSel(diaDisciplinaSel===d.chave?null:d.chave)}
-                            style={{width:15,height:15,borderRadius:4,background:cor,border:d.statusTecnico===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0,cursor:d.statusTecnico!==null?"pointer":"default"}}/>
-                        );
-                      })}
-                    </div>
-                    <span style={{fontSize:10,fontWeight:700,color:streakTecnico>0?(dark?"#7fb89a":"#2f7d52"):th.textMuted,flexShrink:0,minWidth:26,textAlign:"right"}}>{streakTecnico}d</span>
-                  </div>
-                </div>
+                  <svg viewBox="0 0 260 172" style={{width:280,maxWidth:"100%",height:"auto",display:"block"}}>
+                    <path d="M30,130 A100,100 0 0 1 230,130" fill="none" stroke={trilho} strokeWidth="14" strokeDasharray="6.6 3.87"/>
+                    <path d={arcoGauge(gaugePct)} fill="none" stroke={ACCENT_ATUAL} strokeWidth="14" strokeDasharray="6.6 3.87"/>
+                    <text x="130" y="114" textAnchor="middle" fontSize="54" fontWeight="800" fill={th.text} style={{fontVariantNumeric:"tabular-nums",letterSpacing:"-0.02em"}}>{gaugePct}%</text>
+                    <text x="130" y="141" textAnchor="middle" fontSize="12.5" fontWeight="500" fill={th.textMuted}>
+                      {ehHabitos ? "média dos 3 hábitos" : (dm.trades>0 ? `${dm.limpos} de ${dm.trades} trades limpos` : "sem trades no mês")}
+                    </text>
+                    <text x="26" y="156" textAnchor="start" fontSize="10.5" fill={th.textMuted}>0</text>
+                    <text x="234" y="156" textAnchor="end" fontSize="10.5" fill={th.textMuted}>100</text>
+                  </svg>
 
-                {diaDisciplinaSel && (() => {
-                  const dObj = disciplineDias.find(d=>d.chave===diaDisciplinaSel);
-                  if (!dObj) return null;
-                  return (
-                    <>
-                      <div onClick={()=>setDiaDisciplinaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
-                      <div style={{position:"absolute",top:52,right:8,left:8,background:th.cardBg,borderRadius:14,padding:"16px 18px",boxShadow:"0 8px 24px rgba(0,0,0,0.4)",border:`1px solid ${th.border}`,zIndex:10}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                          <span style={{fontSize:13,fontWeight:700,color:th.text}}>{dObj.dataObj.toLocaleDateString("pt-BR")}</span>
+                  <div style={{display:"flex",gap:10,width:"100%",maxWidth:400,flexWrap:"wrap"}}>
+                    {miniCirculos.map(m=>(
+                      <div key={m.label} style={{flex:"1 1 150px",minWidth:0,display:"flex",alignItems:"center",gap:10,borderRadius:16,padding:"11px 12px",background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`}}>
+                        <svg width="46" height="46" viewBox="0 0 56 56" style={{flexShrink:0}}>
+                          <circle cx="28" cy="28" r="22" fill="none" stroke={trilho} strokeWidth="5"/>
+                          <circle cx="28" cy="28" r="22" fill="none" stroke={ACCENT_ATUAL} strokeWidth="5" strokeLinecap="round"
+                            strokeDasharray={`${(m.pct/100*138.23).toFixed(1)} 138.3`} transform="rotate(-90 28 28)"/>
+                          <text x="28" y="32" textAnchor="middle" fontSize="14" fontWeight="800" fill={th.text} style={{fontVariantNumeric:"tabular-nums"}}>{m.pct}%</text>
+                        </svg>
+                        <div style={{minWidth:0}}>
+                          <div style={{fontSize:12.5,fontWeight:700,color:th.textSub}}>{m.label}</div>
+                          <div style={{fontSize:11.5,color:th.textMuted,marginTop:2}}>{m.sub}</div>
                         </div>
-                        {dObj.errosEmocional.length===0 && dObj.errosTecnico.length===0 ? (
-                          <div style={{fontSize:12,color:th.textMuted}}>Nenhum erro registrado neste dia.</div>
-                        ) : (
-                          <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                            {dObj.errosEmocional.length>0 && (
-                              <div>
-                                <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Emocional</div>
-                                {dObj.errosEmocional.map((e,i)=>(<div key={i} style={{fontSize:12,color:th.textSub}}>• {e}</div>))}
-                              </div>
-                            )}
-                            {dObj.errosTecnico.length>0 && (
-                              <div>
-                                <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Técnico</div>
-                                {dObj.errosTecnico.map((e,i)=>(<div key={i} style={{fontSize:12,color:th.textSub}}>• {e}</div>))}
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-
-            {modoDia&&(
-              <div style={{background:dark?"#1a3028":"#f0fdf8",border:`1px solid ${dark?"#2d6b4f":"#a7e9c9"}`,borderRadius:10,padding:"10px 18px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:600}}>📅 Exibindo dados de {String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}/{anoVis}</span>
-                <button onClick={()=>setDiaSel(null)} style={{fontSize:12,color:ACCENT_ATUAL,background:"none",border:`1px solid ${ACCENT_ATUAL}`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontWeight:600}}>Voltar ao mês</button>
-              </div>
-            )}
-
-            {/* Resultados do Mês + Status dos Setups | Calendário + Hoje */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gridAutoRows:"auto",gap:16,marginBottom:18}}>
-
-              {/* Linha 1, Coluna A: Resultados do Mês */}
-              <div style={{background:th.cardBg,borderRadius:14,padding:"20px 22px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,display:"flex",flexDirection:"column",height:"100%"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:6,flexWrap:"wrap"}}>
-                  <span style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em"}}>Resultados do Mês</span>
-                  <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-                    <span style={{fontSize:18,fontWeight:800,color:financMes==null?th.textMuted:(financMes>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31"))}}>
-                      {financMes==null?"—":(financMes>=0?"+":"−")+"R$ "+Math.abs(financMes).toFixed(0)}
-                    </span>
-                    <span style={{fontSize:11,color:th.textMuted}}>{wrMes!=null?`WR ${wrMes}%`:""}</span>
+                    ))}
                   </div>
                 </div>
 
-                {/* Mês e conta — governam este card e o Status dos Setups abaixo */}
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-                  <div style={{display:"flex",gap:4}}>
-                    <button onClick={()=>navegarMesDash(-1)} style={{border:`1px solid ${th.border2}`,background:th.resumeBg,borderRadius:7,width:24,height:24,cursor:"pointer",fontSize:13,color:th.textSub,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>‹</button>
-                    <button onClick={()=>navegarMesDash(1)} style={{border:`1px solid ${th.border2}`,background:th.resumeBg,borderRadius:7,width:24,height:24,cursor:"pointer",fontSize:13,color:th.textSub,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>›</button>
+                {/* curva */}
+                <div style={{flex:"1 1 420px",minWidth:0,position:"relative",display:"flex",flexDirection:"column",justifyContent:"flex-end",minHeight:318}}>
+                  <div style={{position:"absolute",top:14,left:10,right:28,display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:14,flexWrap:"wrap"}}>
+                    <span style={{fontSize:11.5,color:th.textMuted,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700}}>
+                      {ehHabitos ? `Avanço dos hábitos · ${MESES_PT[mesVis].toLowerCase()}` : `Curva acumulada · ${rotuloVisao}`}
+                    </span>
+                    <span style={{fontSize:12.5,color:th.textMuted,fontVariantNumeric:"tabular-nums"}}>
+                      <strong style={{color:ehHabitos||financMes===null||financMes>=0?ACCENT_ATUAL:COR_NEG,fontWeight:800,fontSize:15}}>
+                        {ehHabitos ? `${pctHabMedio}%` : (financMes===null ? "—" : `${financMes>=0?"+":"−"}R$ ${Math.abs(financMes).toLocaleString("pt-BR",{maximumFractionDigits:0})}`)}
+                      </strong>
+                      {!ehHabitos && <>&nbsp;·&nbsp;{wrMes===null?"—":`${wrMes}% de acerto`} · {dm.trades} {dm.trades===1?"trade":"trades"}</>}
+                    </span>
                   </div>
-                  <span style={{fontSize:11.5,fontWeight:700,color:th.textSub}}>{MESES_PT[mesVis]} {anoVis}</span>
-                  <select value={contaDash} onChange={e=>trocarContaDash(e.target.value)}
-                    style={{marginLeft:"auto",fontSize:11,fontWeight:600,color:th.textSub,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:7,padding:"4px 8px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
-                    <option value="todas">Todas</option>
-                    {CONTAS_DASH.map(c=><option key={c} value={c}>{ROTULO_CONTA[c]}</option>)}
+
+                  {!ehHabitos && (
+                    pontosMesDash.length >= 2 ? (
+                      <svg viewBox="0 0 640 250" preserveAspectRatio="none" style={{width:"100%",height:250,display:"block"}}>
+                        <defs>
+                          <linearGradient id="curvaFillDash" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={ACCENT_ATUAL} stopOpacity="0.34"/>
+                            <stop offset="100%" stopColor={ACCENT_ATUAL} stopOpacity="0"/>
+                          </linearGradient>
+                        </defs>
+                        {(()=>{
+                          const vals = pontosMesDash.map(p=>p.valor);
+                          const maxV = Math.max(...vals,0), minV = Math.min(...vals,0);
+                          const range = (maxV-minV)||1;
+                          const X = i => (pontosMesDash.length===1?0:(i/(pontosMesDash.length-1))*640);
+                          const Y = v => 240 - ((v-minV)/range)*200;
+                          const d = pontosMesDash.map((p,i)=>`${i===0?"M":"L"}${X(i).toFixed(1)},${Y(p.valor).toFixed(1)}`).join(" ");
+                          const zeroY = Y(0);
+                          const ultX = X(pontosMesDash.length-1), ultY = Y(vals[vals.length-1]);
+                          return (<>
+                            <line x1="0" y1={zeroY} x2="640" y2={zeroY} stroke={trilho} strokeDasharray="3 5" vectorEffect="non-scaling-stroke"/>
+                            <path d={`${d} L640,250 L0,250 Z`} fill="url(#curvaFillDash)"/>
+                            <path d={d} fill="none" stroke={ACCENT_ATUAL} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/>
+                            <circle cx={ultX} cy={ultY} r="4.5" fill={ACCENT_ATUAL} stroke={th.bg} strokeWidth="2.5"/>
+                          </>);
+                        })()}
+                      </svg>
+                    ) : (
+                      <div style={{padding:"0 28px 46px",fontSize:13,color:th.textMuted}}>Sem trades suficientes no mês para desenhar a curva.</div>
+                    )
+                  )}
+
+                  {ehHabitos && (
+                    <div style={{padding:"58px 28px 26px",display:"flex",flexDirection:"column",gap:18}}>
+                      <p style={{margin:0,fontSize:12.5,lineHeight:1.5,color:th.textMuted}}>
+                        A linha pontilhada é o ritmo que o mês pede até hoje. Acima dela, está em dia.
+                      </p>
+                      <svg viewBox="0 0 560 190" preserveAspectRatio="none" style={{width:"100%",height:190,display:"block"}}>
+                        <line x1="0" y1="178" x2="560" y2="178" stroke={trilho} vectorEffect="non-scaling-stroke"/>
+                        <line x1="0" y1="178" x2="560" y2="48" stroke="#86A9FF" strokeWidth="1.8" strokeDasharray="5 5" vectorEffect="non-scaling-stroke"/>
+                        {serieHabMes.length >= 2 && (()=>{
+                          const n = serieHabMes.length;
+                          const d = serieHabMes.map((p,i)=>`${i===0?"M":"L"}${((i/(n-1))*560).toFixed(1)},${(178 - Math.min(100,p.pct)/100*140).toFixed(1)}`).join(" ");
+                          const ult = serieHabMes[n-1];
+                          return (<>
+                            <path d={d} fill="none" stroke={ACCENT_ATUAL} strokeWidth="2.6" strokeLinecap="round" vectorEffect="non-scaling-stroke"/>
+                            <circle cx="560" cy={178 - Math.min(100,ult.pct)/100*140} r="4.5" fill={ACCENT_ATUAL} stroke={th.bg} strokeWidth="2.5"/>
+                          </>);
+                        })()}
+                      </svg>
+                      <div style={{display:"flex",gap:18,flexWrap:"wrap",fontSize:11.5,color:th.textMuted}}>
+                        <span style={{display:"inline-flex",alignItems:"center",gap:7}}><span style={{width:18,height:2.5,borderRadius:2,background:ACCENT_ATUAL}}/>realizado</span>
+                        <span style={{display:"inline-flex",alignItems:"center",gap:7}}><span style={{width:18,height:2.5,borderRadius:2,background:"#86A9FF"}}/>ritmo esperado</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* ══ ESTADO DO DIA ══ */}
+            <section style={{
+              display:"flex",flexWrap:"wrap",alignItems:"center",gap:0,
+              borderRadius:18,background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`,overflow:"hidden",
+            }}>
+              <div style={{flex:"1 1 150px",minWidth:0,padding:"14px 20px",boxShadow:`inset -1px 0 0 ${supFio}`}}>
+                <div style={{fontSize:10.5,color:th.textMuted,letterSpacing:"0.09em",textTransform:"uppercase",fontWeight:700}}>Hoje</div>
+                <div style={{fontSize:17,fontWeight:800,color:th.text,marginTop:3,fontVariantNumeric:"tabular-nums"}}>
+                  {tradesHoje} {tradesHoje===1?"trade":"trades"}
+                </div>
+              </div>
+              <div style={{flex:"1 1 150px",minWidth:0,padding:"14px 20px",boxShadow:`inset -1px 0 0 ${supFio}`}}>
+                <div style={{fontSize:10.5,color:th.textMuted,letterSpacing:"0.09em",textTransform:"uppercase",fontWeight:700}}>Resultado</div>
+                <div style={{fontSize:17,fontWeight:800,marginTop:3,fontVariantNumeric:"tabular-nums",color:!operouHoje?th.textMuted:(resultHoje>=0?ACCENT_ATUAL:COR_NEG)}}>
+                  {!operouHoje ? "—" : `${resultHoje>=0?"+":"−"}R$ ${Math.abs(Math.round(resultHoje)).toLocaleString("pt-BR")}`}
+                </div>
+              </div>
+              <div style={{flex:"1 1 150px",minWidth:0,padding:"14px 20px",boxShadow:`inset -1px 0 0 ${supFio}`}}>
+                <div style={{fontSize:10.5,color:th.textMuted,letterSpacing:"0.09em",textTransform:"uppercase",fontWeight:700}}>Resta do limite</div>
+                <div style={{fontSize:17,fontWeight:800,marginTop:3,fontVariantNumeric:"tabular-nums",color:restanteHoje<=150?COR_NEG:th.text}}>
+                  R$ {restanteHoje.toLocaleString("pt-BR")}
+                </div>
+              </div>
+              <div style={{flex:"2 1 240px",minWidth:0,padding:"14px 20px"}}>
+                {erroNoPrimeiroHoje ? (
+                  <div style={{display:"flex",alignItems:"center",gap:9}}>
+                    <span style={{width:7,height:7,borderRadius:999,background:COR_NEG,flexShrink:0}}/>
+                    <span style={{fontSize:12.5,lineHeight:1.45,color:th.textSub}}>
+                      <strong style={{color:COR_NEG,fontWeight:700}}>Crivo elevado.</strong> O 1º trade teve erro nomeado — o próximo só se for nota 10. Taxa de erro sobe de 30% para 46%.
+                    </span>
+                  </div>
+                ) : tradesHoje >= 2 ? (
+                  <div style={{display:"flex",alignItems:"center",gap:9}}>
+                    <span style={{width:7,height:7,borderRadius:999,background:ACCENT_ATUAL,flexShrink:0}}/>
+                    <span style={{fontSize:12.5,lineHeight:1.45,color:th.textSub}}>
+                      1º trade sem erro. Antes do 3º clique: qual é a nota?
+                    </span>
+                  </div>
+                ) : (
+                  <div style={{fontSize:12.5,color:th.textMuted,lineHeight:1.45}}>
+                    {operouHoje ? "Dia em aberto." : "Nenhum trade hoje — dia sem trade é resultado."}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* ══ ESTUDOS · RITMO DO TRIMESTRE ══ */}
+            <section>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:14,flexWrap:"wrap"}}>
+                <h2 style={{margin:0,fontSize:12,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:th.textMuted}}>
+                  Estudos <span style={{color:th.border2}}>·</span> Ritmo do trimestre
+                </h2>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:12,color:th.textMuted,fontVariantNumeric:"tabular-nums"}}>{decorridosDash} de {diasQuarterDash} dias</span>
+                  <select value={triDash} onChange={e=>trocarTriDash(e.target.value)}
+                    style={{fontSize:11.5,fontWeight:600,color:th.textSub,background:pillBg,border:"none",boxShadow:`inset 0 0 0 1px ${pillFio}`,borderRadius:999,padding:"5px 10px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
+                    {trisDisponiveisDash.map(c=>(<option key={c} value={c}>{rotuloTriDash(c)}</option>))}
                   </select>
                 </div>
+              </div>
 
-                {pontosMesDash.length > 0 ? (
-                  <svg viewBox="0 0 600 200" style={{width:"100%",height:"auto",display:"block"}}>
-                    {(() => {
-                      const pontosMes = pontosMesDash;
-                      if(pontosMes.length < 2) return <text x="300" y="100" textAnchor="middle" fontSize="13" fill={th.textMuted}>Dados insuficientes no mês</text>;
-                      const vals = pontosMes.map(p=>p.valor);
-                      const maxV = Math.max(...vals,0), minV = Math.min(...vals,0);
-                      const range = (maxV-minV)||1;
-                      const padL=48,padR=14,padT=18,padB=26,W=600,H=200;
-                      const plotW=W-padL-padR, plotH=H-padT-padB;
-                      const pts = pontosMes.map((p,i)=>({
-                        ...p,
-                        x: padL+(i/(pontosMes.length-1))*plotW,
-                        y: padT+plotH-((p.valor-minV)/range)*plotH,
-                      }));
-                      const zeroY = padT+plotH-((0-minV)/range)*plotH;
-                      const linePath = pts.map((p,i)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ");
-                      return (
-                        <>
-                          <line x1={padL} y1={zeroY} x2={W-padR} y2={zeroY} stroke={th.border2} strokeWidth="1" strokeDasharray="3,3"/>
-                          {[minV,(minV+maxV)/2,maxV].map((v,i)=>{
-                            const y = padT+plotH-((v-minV)/range)*plotH;
-                            return <text key={i} x={padL-8} y={y+4} textAnchor="end" fontSize="11" fill={th.textMuted}>{Math.round(v)}</text>;
-                          })}
-                          <path d={`${linePath} L${pts[pts.length-1].x},${zeroY} L${pts[0].x},${zeroY} Z`} fill={ACCENT_ATUAL} opacity="0.08"/>
-                          <path d={linePath} fill="none" stroke={ACCENT_ATUAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          {pts.map((p,i)=>(
-                            <g key={i}>
-                              <circle cx={p.x} cy={p.y} r="3.5" fill={ACCENT_ATUAL} stroke={th.cardBg} strokeWidth="2"/>
-                              {(i===pts.length-1 || i%3===0) && (
-                                <text x={p.x} y={p.y-10} textAnchor="middle" fontSize="11" fontWeight="700" fill={th.text}>{p.valor>=0?"+":""}{Math.round(p.valor)}</text>
-                              )}
-                              <text x={p.x} y={H-6} textAnchor="middle" fontSize="10" fill={th.textMuted}>{p.data.slice(8,10)}/{p.data.slice(5,7)}</text>
-                            </g>
-                          ))}
-                        </>
-                      );
-                    })()}
-                  </svg>
-                ) : <div style={{padding:"40px 0",textAlign:"center",color:th.textMuted,fontSize:12}}>Sem trades neste mês</div>}
+              <div style={{display:"flex",flexWrap:"wrap",gap:0,borderRadius:22,background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`}}>
+                {metasEstudoDash.map((item,i)=>(
+                  <div key={item.label} style={{flex:"1 1 200px",minWidth:0,padding:"19px 24px",boxShadow:i<metasEstudoDash.length-1?`inset -1px 0 0 ${supFio}`:"none"}}>
+                    <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:8}}>
+                      <span style={{fontSize:13,color:th.textSub,fontWeight:600}}>{item.label}</span>
+                      <span style={{fontSize:13,color:th.textMuted,fontVariantNumeric:"tabular-nums"}}>{item.valor} / {item.meta}</span>
+                    </div>
+                    <div style={{position:"relative",height:7,borderRadius:999,background:trilho,marginTop:11}}>
+                      <div style={{position:"absolute",top:0,bottom:0,left:0,width:`${Math.min(100,item.pctVal)}%`,borderRadius:999,background:`linear-gradient(90deg, ${ACCENT_ATUAL}99, ${ACCENT_ATUAL})`,transition:"width 0.8s ease"}}/>
+                      <div title="ritmo esperado" style={{position:"absolute",top:-3,left:`${Math.min(100,pctEsperadoDash*100)}%`,width:2,height:13,borderRadius:2,background:th.text,opacity:0.55}}/>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:11.5}}>
+                      <span style={{color:th.textMuted,fontVariantNumeric:"tabular-nums"}}>{item.pctVal}%</span>
+                      <span style={{fontWeight:700,color:item.noRitmo?ACCENT_ATUAL:COR_NEG}}>{item.noRitmo?"no ritmo":`faltam ${item.falta}`}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
 
-                {setupsMesLista.length>0 && (
-                  <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
-                    {setupsMesLista.map(s=>(
-                      <div key={s.nome} style={{flex:1,minWidth:130,background:th.resumeBg,borderRadius:10,padding:"12px 16px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:4}}>
-                        <div style={{fontSize:13,fontWeight:700,color:th.text}}>{s.nome}</div>
-                        <div style={{fontSize:12,color:th.textMuted}}>WR {s.wr}%</div>
-                        <div style={{fontSize:15,fontWeight:800,color:s.financ>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{s.financ>=0?"+":"−"}R$ {Math.abs(s.financ).toFixed(0)}</div>
-                      </div>
+            {/* ══ CONSTÂNCIA ══ */}
+            <section>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:14,flexWrap:"wrap"}}>
+                <h2 style={{margin:0,fontSize:12,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:th.textMuted}}>Constância</h2>
+                <div style={{display:"flex",gap:2,background:pillBg,borderRadius:999,padding:3,boxShadow:`inset 0 0 0 1px ${pillFio}`}}>
+                  {[10,20,30,40].map(n=>(
+                    <button key={n} onClick={()=>trocarJanelaConst(n)} style={estiloPill(janelaConst===n,true)}>{n}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{borderRadius:22,background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`,padding:"24px 28px 20px"}}>
+                <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:22,flexWrap:"wrap"}}>
+                  <span style={{fontSize:30,fontWeight:800,color:ACCENT_ATUAL,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{limposSeguidos}</span>
+                  <span style={{fontSize:13,color:th.textMuted}}>
+                    dias limpos seguidos · {quebras.length} {quebras.length===1?"quebra":"quebras"} em {janelaSess.length} {janelaSess.length===1?"sessão":"sessões"}
+                  </span>
+                </div>
+
+                <div style={{position:"relative",height:34}}>
+                  <div style={{position:"absolute",top:9,left:0,right:0,height:2,borderRadius:2,background:trilho}}/>
+                  <div style={{position:"absolute",top:9,right:0,width:`${pctVerdeConst}%`,height:2,borderRadius:2,background:ACCENT_ATUAL}}/>
+                  {quebras.map(({d,i})=>(
+                    <div key={d.chave} style={{position:"absolute",top:0,left:`${janelaSess.length>1?(i/(janelaSess.length-1))*100:0}%`,display:"flex",flexDirection:"column",alignItems:"center",gap:5,transform:"translateX(-50%)"}}>
+                      <span style={{width:2,height:20,borderRadius:2,background:COR_NEG}}/>
+                      <span style={{fontSize:10,color:th.textMuted,whiteSpace:"nowrap"}}>
+                        {d.chave.slice(8,10)}/{d.chave.slice(5,7)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {chipsErros.length > 0 && (
+                  <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginTop:16,paddingTop:15,boxShadow:`inset 0 1px 0 ${supFio}`}}>
+                    <span style={{fontSize:12,color:th.textMuted}}>O que quebrou:</span>
+                    {chipsErros.map(c=>(
+                      <span key={c} style={{fontSize:12,color:th.textSub,background:dark?"rgba(196,92,62,0.14)":"rgba(194,80,47,0.10)",boxShadow:`inset 0 0 0 1px ${dark?"rgba(196,92,62,0.30)":"rgba(194,80,47,0.22)"}`,borderRadius:999,padding:"3px 10px"}}>{c}</span>
                     ))}
                   </div>
                 )}
               </div>
+            </section>
 
-              {/* Linha 1, Coluna B: Calendário */}
-              <div style={{background:th.cardBg,borderRadius:14,padding:"18px 20px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,position:"relative",display:"flex",flexDirection:"column",height:"100%"}}>
-                
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:10}}>
-                  <span style={{fontSize:12,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>{MESES_PT[mesVis]}</span>
+            {/* ══ CALENDÁRIO + SETUPS ══ */}
+            <div style={{display:"flex",flexWrap:"wrap",gap:24}}>
+
+              <section style={{flex:"1 1 320px",minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:14,flexWrap:"wrap"}}>
+                  <h2 style={{margin:0,fontSize:12,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:th.textMuted}}>{MESES_PT[mesVis]}</h2>
                   <select value={calFiltro} onChange={e=>trocarCalFiltro(e.target.value)}
-                    style={{fontSize:11,fontWeight:600,color:th.textSub,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:7,padding:"4px 8px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
+                    style={{fontSize:11.5,fontWeight:600,color:th.textSub,background:pillBg,border:"none",boxShadow:`inset 0 0 0 1px ${pillFio}`,borderRadius:999,padding:"5px 10px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
                     <option value="todos">Todos</option>
                     {CONTAS_DASH.map(c=><option key={c} value={c}>{ROTULO_CONTA[c]}</option>)}
                     <option value="habitos">Hábitos</option>
                   </select>
                 </div>
-                
-                <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
-                  {DIAS_SEMANA.map(ds=>(
-                    <div key={ds} style={{textAlign:"center",fontSize:10,fontWeight:700,color:th.textMuted,padding:"2px 0"}}>{ds}</div>
-                  ))}
+
+                <div style={{borderRadius:22,background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`,padding:"20px 22px 22px",position:"relative"}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:7,marginBottom:9}}>
+                    {DIAS_SEM_CUR.map((ds,i)=>(<span key={i} style={{textAlign:"center",fontSize:10.5,color:th.textMuted}}>{ds}</span>))}
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:7}}>
+                    {miniCalDias.map((c,i)=>{
+                      if(c.dia===null) return <span key={`v${i}`}/>;
+                      const habD = habitosPorData[c.dataStr];
+                      const okHab = habD ? ((habD.horas>=1?1:0)+(habD.replays>=1?1:0)+(habD.paginas>=1?1:0)) >= 3 : false;
+                      const ehHoje = c.dataStr === hojeChaveCal;
+                      let fundo = "transparent", cor = th.textMuted, peso = 500, fio = `inset 0 0 0 1px ${supFio}`;
+                      if(calFiltro === "habitos"){
+                        if(habD){ fundo = okHab ? (dark?"#1E6B4B":"#cdebdb") : (dark?"#5E2A1E":"#f6d9cf"); cor = th.text; peso = 700; fio = "none"; }
+                        else if(c.futuro){ fundo = "transparent"; }
+                        else if(!c.fimDeSemana){ fundo = dark?"rgba(255,255,255,0.045)":"rgba(15,23,42,0.045)"; cor = th.textSub; fio = "none"; }
+                      } else if(c.r){
+                        const forte = Math.abs(c.r.resultado) >= 400;
+                        fundo = c.r.resultado >= 0
+                          ? (forte ? (dark?"#1E6B4B":"#9fd9bd") : (dark?"#11452F":"#cdebdb"))
+                          : (forte ? (dark?"#8E3E2B":"#eeb8a7") : (dark?"#5E2A1E":"#f6d9cf"));
+                        cor = dark ? (c.r.resultado>=0?"#DFF5EA":"#FDE4DA") : "#20262e";
+                        peso = 700; fio = "none";
+                      } else if(!c.futuro && !c.fimDeSemana){
+                        fundo = dark?"rgba(255,255,255,0.045)":"rgba(15,23,42,0.045)"; cor = th.textSub; fio = "none";
+                      }
+                      const clicavel = !!c.r;
+                      return (
+                        <button key={c.dataStr} onClick={()=>clicavel && setDiaSel(diaSel===c.dataStr?null:c.dataStr)}
+                          style={{
+                            aspectRatio:"1",border:"none",borderRadius:11,background:fundo,color:cor,
+                            fontFamily:"inherit",fontSize:12.5,fontWeight:peso,fontVariantNumeric:"tabular-nums",
+                            display:"flex",alignItems:"center",justifyContent:"center",padding:0,
+                            cursor:clicavel?"pointer":"default",
+                            boxShadow: ehHoje ? `0 0 0 2px ${ACCENT_ATUAL}` : (diaSel===c.dataStr ? `0 0 0 2px ${th.text}` : fio),
+                          }}>{c.dia}</button>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{display:"flex",alignItems:"center",gap:9,marginTop:17,paddingTop:15,boxShadow:`inset 0 1px 0 ${supFio}`}}>
+                    <span style={{fontSize:11.5,color:th.textMuted}}>perda</span>
+                    <div style={{flex:1,height:6,borderRadius:999,background:dark
+                      ? "linear-gradient(90deg,#8E3E2B,#5E2A1E,rgba(255,255,255,0.08),#11452F,#2B8A61)"
+                      : "linear-gradient(90deg,#eeb8a7,#f6d9cf,rgba(15,23,42,0.07),#cdebdb,#9fd9bd)"}}/>
+                    <span style={{fontSize:11.5,color:th.textMuted}}>ganho</span>
+                  </div>
+
+                  {diaSel && contasPorData[diaSel] && (
+                    <div style={{marginTop:16,paddingTop:15,boxShadow:`inset 0 1px 0 ${supFio}`}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                        <span style={{fontSize:12,fontWeight:800,color:th.text,letterSpacing:"0.04em"}}>
+                          {diaSel.slice(8,10)}/{diaSel.slice(5,7)}
+                        </span>
+                        <span onClick={()=>setDiaSel(null)} style={{cursor:"pointer",color:th.textMuted,fontSize:16,lineHeight:1}}>×</span>
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                        {CONTAS_DASH.filter(c=>contasPorData[diaSel][c]).map(c=>{
+                          const d = contasPorData[diaSel][c];
+                          return (
+                            <div key={c} style={{borderRadius:14,background:dark?"rgba(255,255,255,0.03)":"rgba(15,23,42,0.03)",padding:"10px 13px"}}>
+                              <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:8}}>
+                                <span style={{fontSize:12,fontWeight:700,color:th.textSub}}>{ROTULO_CONTA[c]}</span>
+                                <span style={{fontSize:13,fontWeight:800,fontVariantNumeric:"tabular-nums",color:d.resultado>=0?ACCENT_ATUAL:COR_NEG}}>
+                                  {d.resultado>=0?"+":"−"}R$ {Math.abs(Math.round(d.resultado)).toLocaleString("pt-BR")}
+                                </span>
+                              </div>
+                              <div style={{fontSize:11.5,color:th.textMuted,marginTop:3,fontVariantNumeric:"tabular-nums"}}>
+                                {d.trades} {d.trades===1?"trade":"trades"} · {d.taxaAcerto}% de acerto
+                              </div>
+                              {(d.erros||[]).length>0 && (
+                                <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
+                                  {(d.erros||[]).map((e,i)=>(
+                                    <div key={i} style={{fontSize:11.5,color:th.textSub,lineHeight:1.4}}>• {e}</div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div style={{flex:1,display:"grid",gridTemplateColumns:"repeat(7,1fr)",gridTemplateRows:`repeat(${Math.ceil(miniCalDias.length/7)},1fr)`,gap:4}}>
-                  {miniCalDias.map(({dia,r,futuro,fimDeSemana},idx)=>{
-                    if(dia===null) return <div key={`vazio-${idx}`}/>;
-                    // três estados: futuro (tracejado) · passado sem clique (cinza azulado) · com trades (colorido)
-                    const naoCliqueiBg = dark ? "#1c2430" : "#dde3ec";
-                    const naoCliqueiTxt = dark ? "#8fa2bd" : "#5b6a80";
-        
-                    // Cores conforme o filtro selecionado.
-                    const chaveDia = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(dia).padStart(2,"0")}`;
-                    const hDia = (habitosLista||[]).find(x=>x.data === chaveDia);
-                    const temHabito = hDia && (hDia.horas>0 || hDia.replays>0 || hDia.paginas>0);
-                    const habitoOk = hDia && hDia.horas>=1 && hDia.replays>=1 && hDia.paginas>=1;
+              </section>
 
-                    const verdeBd = dark?"#3d6b52":"#5cb583";
-                    const vermBd  = dark?"#6b4444":"#d9776b";
-                    const fundoPos = dark?"#1a7048":"#eaf7f0";
-                    const fundoNeg = dark?"#421c26":"#fbeceb";
+              <section style={{flex:"1 1 320px",minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+                  <h2 style={{margin:0,fontSize:12,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:th.textMuted}}>Setups do mês</h2>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                    {setupConta && setupConta !== contaTopoSetup && (
+                      <button onClick={()=>setSetupConta(null)} style={{border:"none",background:"transparent",color:th.textMuted,fontFamily:"inherit",fontSize:11,cursor:"pointer",padding:0,textDecoration:"underline",textUnderlineOffset:3}}>seguir o topo</button>
+                    )}
+                    <div style={{display:"flex",gap:2,background:pillBg,borderRadius:999,padding:3,boxShadow:`inset 0 0 0 1px ${pillFio}`,flexWrap:"wrap"}}>
+                      {pillsSetup.map(p=>(
+                        <button key={p.id} onClick={()=>setSetupConta(p.id)} style={estiloPill(contaSetupEfetiva===p.id,true)}>{p.label}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
-                    let fundo, borda, corTexto, peso;
-                    const neutro = ()=>{
-                      if(futuro || fimDeSemana){
-                        fundo = "transparent";
-                        borda = `1.5px dashed ${th.border2}`;
-                        corTexto = dark ? "rgba(255,255,255,0.22)" : "#c2c2c8";
-                        peso = 400;
-                      } else {
-                        fundo = naoCliqueiBg; borda = "none"; corTexto = naoCliqueiTxt; peso = 600;
-                      }
-                    };
-
-                    if(CONTAS_DASH.indexOf(calFiltro) >= 0){
-                      if(r){ fundo = r.resultado>=0 ? fundoPos : fundoNeg; borda="none"; corTexto=th.text; peso=700; }
-                      else neutro();
-                    } else if(calFiltro === "habitos"){
-                      if(temHabito){
-                        fundo = habitoOk ? fundoPos : fundoNeg;
-                        borda = "none";
-                        corTexto = th.text; peso = 700;
-                      } else if(futuro){
-                        fundo = "transparent";
-                        borda = `1.5px dashed ${th.border2}`;
-                        corTexto = dark ? "rgba(255,255,255,0.22)" : "#c2c2c8";
-                        peso = 400;
-
-                                              } else {
-                        fundo = "transparent";
-                        borda = `1.5px solid ${th.border2}`;
-                        corTexto = th.textMuted; peso = 500;
-                      }
-                        
-                    } else {
-                      // "todos" — fundo pelas duas contas somadas, borda pelos hábitos
-                      if(r){ fundo = r.resultado>=0 ? fundoPos : fundoNeg; borda="none"; corTexto=th.text; peso=700; }
-                      else if(temHabito){
-                        fundo = "transparent";
-                        borda = `1.5px solid ${habitoOk ? verdeBd : vermBd}`;
-                        corTexto = th.textMuted; peso = 600;
-                      }
-                      else neutro();
-                    }
-        
+                <div style={{borderRadius:22,background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`,padding:"6px 24px 10px"}}>
+                  {listaSetupsNova.length===0 ? (
+                    <div style={{padding:"22px 0",fontSize:13,color:th.textMuted}}>Nenhum setup registrado no mês.</div>
+                  ) : listaSetupsNova.map((s,i)=>{
+                    const pos = s.valor >= 0;
+                    const larg = `${(Math.abs(s.valor)/maxAbsSetup*100).toFixed(0)}%`;
                     return (
-                      <div key={dia} onClick={()=>!futuro&&setDiaSel(dia===diaSel?null:dia)} title={!r&&!futuro&&!fimDeSemana?"Não cliquei":undefined}
-        
-                        style={{borderRadius:6,background:fundo,border:borda,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:corTexto,cursor:futuro?"default":"pointer",fontWeight:peso,boxSizing:"border-box"}}>
-                        {dia}
+                      <div key={s.nome} style={{padding:"15px 0",boxShadow:i===listaSetupsNova.length-1?"none":`inset 0 -1px 0 ${supFio}`}}>
+                        <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:10}}>
+                          <span style={{fontSize:13.5,fontWeight:600,color:th.text}}>{s.nome}</span>
+                          <span style={{fontSize:13.5,fontWeight:800,fontVariantNumeric:"tabular-nums",color:pos?ACCENT_ATUAL:COR_NEG}}>
+                            {pos?"+R$ ":"−R$ "}{Math.abs(s.valor).toLocaleString("pt-BR")}
+                          </span>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:11,marginTop:9}}>
+                          <div style={{flex:1,display:"flex",height:6}}>
+                            <div style={{width:"50%",display:"flex",justifyContent:"flex-end"}}>
+                              {!pos && <span style={{display:"block",width:larg,height:6,background:COR_NEG,borderRadius:"999px 0 0 999px"}}/>}
+                            </div>
+                            <div style={{width:"50%"}}>
+                              {pos && <span style={{display:"block",width:larg,height:6,background:ACCENT_ATUAL,borderRadius:"0 999px 999px 0"}}/>}
+                            </div>
+                          </div>
+                          <span style={{fontSize:11.5,color:th.textMuted,flexShrink:0,fontVariantNumeric:"tabular-nums"}}>
+                            {s.ops} {s.ops===1?"op":"ops"}{s.wr===null?"":` · ${s.wr}%`}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
+              </section>
+            </div>
+          </main>
 
-                
-{diaSel && (() => {
-                  const k = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-                  const temTrade = !!contasPorData[k];
-                  const temHab = (habitosLista||[]).some(x=>x.data===k && (x.horas>0||x.replays>0||x.paginas>0));
-                  return temTrade || temHab;
-                })() && (() => {
-                  const key = `${anoVis}-${String(mesVis+1).padStart(2,"0")}-${String(diaSel).padStart(2,"0")}`;
-                  const doDiaPop = contasPorData[key] || {};
-                  const diaSemanaSel = new Date(anoVis, mesVis, diaSel).getDay();
-                  const ehFDS = diaSemanaSel===0 || diaSemanaSel===6;
-                  const temAlgumaConta = CONTAS_DASH.some(c=>doDiaPop[c]);
+          {/* ══ COLUNA DE FOCO ══ */}
+          <aside style={{flex:"1 1 300px",minWidth:288,maxWidth:356,display:"flex",flexDirection:"column",gap:24}}>
 
+            <div style={{borderRadius:20,padding:"18px 20px",background:`linear-gradient(160deg, ${ACCENT_ATUAL}1F, ${dark?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.6)"})`,boxShadow:`inset 0 0 0 1px ${ACCENT_ATUAL}33`}}>
+              <div style={{fontSize:11.5,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:ACCENT_ATUAL,marginBottom:9}}>Lembrete</div>
+              <textarea value={estadoHoje.lembrete} onChange={e=>mudarEstadoHoje("lembrete",e.target.value)}
+                rows={3} placeholder="O que você precisa lembrar hoje"
+                style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",resize:"none",
+                  color:th.text,fontFamily:"inherit",fontSize:16.5,lineHeight:1.5,fontWeight:500,padding:0}}/>
+            </div>
+
+            <div>
+              <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:10,marginBottom:14}}>
+                <h2 style={{margin:0,fontSize:12,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:th.textMuted}}>Pré-mercado de hoje</h2>
+                <span style={{fontSize:11,color:th.textMuted}}>{hojeStr.slice(8,10)}/{hojeStr.slice(5,7)}</span>
+              </div>
+
+              <div style={{display:"flex",flexDirection:"column",gap:15}}>
+                {[
+                  { campo:"disposicao", rotulo:"Disposição", max:5, segs:5, sufixo:"/5", step:1,  larg:34 },
+                  { campo:"sono",       rotulo:"Sono",       max:10, segs:10, sufixo:"h", step:0.5, larg:42, marca:80 },
+                  { campo:"emocional",  rotulo:"Emocional",  max:5, segs:5, sufixo:"/5", step:1,  larg:34 },
+                ].map(f=>{
+                  const v = Number(estadoHoje[f.campo]) || 0;
                   return (
-                    <>
-                      <div onClick={()=>setDiaSel(null)} style={{position:"fixed",inset:0,zIndex:9,background:"transparent"}}/>
-                      <div style={{position:"absolute",top:52,right:8,left:8,background:th.cardBg,borderRadius:14,padding:"18px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.4)",border:`1px solid ${th.border}`,zIndex:10}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                          <span style={{fontSize:14,fontWeight:700,color:th.text}}>{String(diaSel).padStart(2,"0")}/{String(mesVis+1).padStart(2,"0")}</span>
-                        </div>
-
-                        <div style={{display:"flex",gap:20,alignItems:"stretch"}}>
-
-{/* Coluna esquerda — contas (oculta no fim de semana e quando ninguém operou) */}
-                          {!ehFDS && temAlgumaConta && <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column"}}>
-                            {CONTAS_DASH.map(nomeConta=>{
-                              const c = doDiaPop[nomeConta];
-                              if(!c) return null;
-                              const emoc = c.errosEmocional || [];
-                              const tec  = c.errosTecnico || [];
-                              return (
-                                <div key={nomeConta}>
-                                  <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>{nomeConta}</div>
-                                  <div style={{display:"flex",gap:16,marginBottom:12}}>
-                                    <div><div style={{fontSize:19,fontWeight:800,color:c.resultado>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{c.resultado>=0?"+":"−"}R$ {Math.abs(c.resultado).toFixed(0)}</div><div style={{fontSize:12,color:th.textMuted}}>Resultado</div></div>
-                                    <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{c.trades}</div><div style={{fontSize:12,color:th.textMuted}}>Operações</div></div>
-                                    <div><div style={{fontSize:19,fontWeight:800,color:th.text}}>{c.taxaAcerto}%</div><div style={{fontSize:12,color:th.textMuted}}>Acerto</div></div>
-                                  </div>
-                                  {(emoc.length>0 || tec.length>0) && (
-                                    <div style={{marginBottom:12,display:"flex",flexDirection:"column",gap:6}}>
-                                      {emoc.length>0 && (
-                                        <div>
-                                          <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Emocionais</div>
-                                          {emoc.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
-                                        </div>
-                                      )}
-                                      {tec.length>0 && (
-                                        <div>
-                                          <div style={{fontSize:9,fontWeight:700,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Erros Técnicos</div>
-                                          {tec.map((e,i)=>(<div key={i} style={{fontSize:11,color:th.textSub}}>• {e}</div>))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-
-                            <div onClick={()=>setActiveNav("Revisões")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer",marginTop:"auto",paddingTop:6}}>Mais detalhes →</div>
-                          </div>}
-
-                          {/* Coluna direita — hábitos */}
-                          {(() => {
-                            const h = (habitosLista||[]).find(x=>x.data===key);
-                            if(!h) return null;
-                            const linhas = [
-                              ["Horas de estudo", h.horas],
-                              ["Replays", h.replays],
-                              ["Páginas lidas", h.paginas],
-                            ];
-                            return (
-                              <>
-                                {!ehFDS && temAlgumaConta && <div style={{width:1,background:th.border,flexShrink:0}}/>}
-                                <div style={{width:150,flexShrink:0,display:"flex",flexDirection:"column"}}>
-                                  <div style={{fontSize:9,fontWeight:700,color:th.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:7}}>Hábitos</div>
-                                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                                    {linhas.map(([lb,v])=>(
-                                      <div key={lb}>
-                                        <div style={{fontSize:19,fontWeight:800,color:v>=1?th.text:th.textMuted}}>{v||0}</div>
-                                        <div style={{fontSize:12,color:th.textMuted}}>{lb}</div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  <div onClick={()=>setActiveNav("Hábitos")} style={{fontSize:13,color:ACCENT_ATUAL,fontWeight:700,cursor:"pointer",marginTop:"auto",paddingTop:6}}>Mais detalhes →</div>
-                                </div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                        
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-
-              {/* Linha 2, Coluna A: Status dos Setups */}
-              <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
-                <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:10,flexWrap:"wrap"}}>
-                  <span style={{fontWeight:700,fontSize:11.5,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.08em"}}>Status dos Setups</span>
-                  <span style={{fontSize:10.5,color:th.textMuted}}>
-                    {MESES_PT[mesVis]} {anoVis} · {contaDash === "todas" ? "todas as contas" : contaDash}
-                  </span>
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:6,flex:1}}>
-                  {setupsLinhasDash.map((linha,li)=>(
-                    <div key={li} style={{display:"grid",gridTemplateColumns:`repeat(${linha.length},1fr)`,gap:6,flex:1}}>
-                      {linha.map((s,ci)=> s ? (
-                        <div key={s.label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",borderRadius:10,background:th.cardBg,border:`1px solid ${th.border}`,borderLeft:`3px solid ${GRUPO_SETUP[s.grupo]}`,height:"100%",boxSizing:"border-box"}}>
-                          <span style={{fontSize:11.5,fontWeight:700,color:th.text}}>{s.label}</span>
-                          <div style={{display:"flex",flexDirection:"column",gap:2,alignItems:"flex-end"}}>
-                            <div style={{display:"flex",gap:5,alignItems:"center"}}>
-                              <span style={{fontSize:10,fontWeight:700,color:corWRDash(s.taxaAcerto).text,background:corWRDash(s.taxaAcerto).bg,border:`1px solid ${corWRDash(s.taxaAcerto).border}`,borderRadius:20,padding:"1px 6px"}}>{s.taxaAcerto}%</span>
-                              <span style={{fontSize:9,color:th.textMuted}}>n={s.trades}</span>
-                            </div>
-                            <span style={{fontSize:10,fontWeight:700,color:s.financTotal>=0?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>{s.financTotal>=0?"+":"−"}R$ {Math.abs(s.financTotal).toFixed(0)}</span>
-                          </div>
-                        </div>
-                      ) : <div key={ci} style={{padding:"8px 12px",borderRadius:10,background:th.resumeBg,border:`1px dashed ${th.border2}`,fontSize:10,color:th.textMuted,display:"flex",alignItems:"center",height:"100%",boxSizing:"border-box"}}>Sem dados</div>)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Linha 2, Coluna B: Hoje — Rotinas | Sequências Atuais */}
-              <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
-                <div style={{fontWeight:700,fontSize:11.5,color:"transparent",marginBottom:10,userSelect:"none"}}>.</div>
-
-                <div style={{display:"flex",gap:14,flex:1,alignItems:"stretch"}}>
-                  <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Hoje — Rotinas</span>
-                      {checklistAlterado && !checklistSalvando && (
-                        <span style={{fontSize:10,fontWeight:700,color:"#d97706",background:dark?"#2a2210":"#fef3c7",padding:"2px 8px",borderRadius:20,border:`1px solid ${dark?"#5c4a10":"#fcd34d"}`}}>
-                          Não salvo
+                    <div key={f.campo}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:7}}>
+                        <label style={{fontSize:12.5,color:th.textSub}}>{f.rotulo}</label>
+                        <span style={{display:"inline-flex",alignItems:"baseline",gap:3}}>
+                          <input type="number" min="0" max={f.max} step={f.step} value={estadoHoje[f.campo]}
+                            onChange={e=>mudarEstadoHoje(f.campo,e.target.value)}
+                            style={{width:f.larg,background:dark?"rgba(255,255,255,0.05)":"rgba(15,23,42,0.04)",border:"none",
+                              boxShadow:`inset 0 0 0 1px ${supFio}`,borderRadius:7,color:th.text,fontFamily:"inherit",
+                              fontSize:12.5,fontWeight:700,textAlign:"center",padding:"3px 0",outline:"none"}}/>
+                          <span style={{fontSize:11,color:th.textMuted}}>{f.sufixo}</span>
                         </span>
-                      )}
+                      </div>
+                      <div style={{position:"relative",display:"flex",gap:f.segs>5?3:4}}>
+                        {Array.from({length:f.segs}).map((_,i)=>{
+                          const cheio = v >= i+1;
+                          const meio = !cheio && v > i;
+                          return <span key={i} style={{flex:1,height:7,borderRadius:999,background:cheio?ACCENT_ATUAL:(meio?`${ACCENT_ATUAL}99`:trilho)}}/>;
+                        })}
+                        {f.marca && <span title="meta: 8h" style={{position:"absolute",top:-3,left:`${f.marca}%`,width:2,height:13,borderRadius:2,background:th.text,opacity:0.55}}/>}
+                      </div>
+                      {f.marca && <div style={{fontSize:10.5,color:th.textMuted,marginTop:6}}>o traço marca as 8h</div>}
                     </div>
-                    <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:12,flex:1}}>
-                      {checklistHoje.map(item=>(
-                        <div key={item.id} onClick={()=>toggleChecklistHoje(item.id)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-                          <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${item.done?ACCENT_ATUAL:th.border2}`,background:item.done?ACCENT_ATUAL:"transparent",flexShrink:0}}/>
-                          <span style={{fontSize:13,color:item.done?th.text:th.textMuted}}>{item.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <button onClick={salvarChecklistHojeApp} disabled={!checklistAlterado||checklistSalvando}
-                      style={{
-                        marginTop:14,
-                        background:checklistAlterado&&!checklistSalvando?ACCENT_ATUAL:"transparent",
-                        color:checklistAlterado&&!checklistSalvando?"#fff":th.textMuted,
-                        border:`1px solid ${checklistAlterado&&!checklistSalvando?ACCENT_ATUAL:th.border2}`,
-                        borderRadius:8,padding:"8px 0",fontSize:12,fontWeight:700,
-                        cursor:checklistAlterado&&!checklistSalvando?"pointer":"default",fontFamily:"inherit",width:"100%",
-                      }}>
-                      {checklistSalvando?"Salvando…":"Salvar"}
-                    </button>
-                  </div>
+                  );
+                })}
 
-                  <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",border:`1px solid ${th.border}`,boxShadow:th.cardShadow,flex:1,display:"flex",flexDirection:"column"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontSize:11,fontWeight:700,color:th.textSub,textTransform:"uppercase",letterSpacing:"0.06em"}}>Sequências Atuais</span>
-                      <span style={{fontSize:10,color:th.textMuted}}>via aba Hábitos</span>
-                    </div>
-
-                    <div style={{display:"flex",alignItems:"baseline",gap:7,margin:"10px 0 10px"}}>
-                      <span style={{fontSize:28,fontWeight:800,lineHeight:1,color:streakAtual>0?ACCENT_ATUAL:th.textMuted}}>{streakAtual}</span>
-                      <span style={{fontSize:12,color:th.textMuted}}>dias com os 3</span>
-                    </div>
-
-                    <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>
-                      {streakDias.map((d,i)=>{
-                        const cor = d.status===null ? "transparent"
-                          : d.status==="perfeito" ? (dark?"#1a7048":"#5cb583")
-                          : d.status==="quase" ? (dark?"#856404":"#d1a53d")
-                          : (dark?"#8a3a3a":"#d9776b");
-                        return (
-                          <div key={i} title={`${d.dataObj.toLocaleDateString("pt-BR")} — ${d.resumo}`}
-                            style={{width:16,height:16,borderRadius:5,background:cor,
-                              border:d.status===null?`1.5px dashed ${th.border2}`:"none",flexShrink:0}}/>
-                        );
-                      })}
-                    </div>
-
-                    <div style={{display:"flex",flexDirection:"column",gap:7,marginTop:"auto"}}>
-                      {HABITOS_DASH.map(h=>(
-                        <div key={h.campo} style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:6,borderBottom:`1px solid ${th.border}`}}>
-                          <span style={{fontSize:12.5,color:th.textSub}}>{h.label}</span>
-                          <span style={{fontSize:13,fontWeight:700,color:seqPorHabitoDash[h.campo]>0?th.text:th.textMuted}}>
-                            {seqPorHabitoDash[h.campo]}d
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <button onClick={salvarEstadoDiaApp} disabled={!estadoAlterado||estadoSalvando}
+                  style={{padding:"9px 0",borderRadius:11,fontSize:12.5,fontWeight:700,
+                    background:estadoAlterado&&!estadoSalvando?ACCENT_ATUAL:"transparent",
+                    color:estadoAlterado&&!estadoSalvando?"#fff":th.textMuted,
+                    border:`1px solid ${estadoAlterado&&!estadoSalvando?ACCENT_ATUAL:th.border2}`,
+                    cursor:estadoAlterado&&!estadoSalvando?"pointer":"default",fontFamily:"inherit",width:"100%"}}>
+                  {estadoSalvando?"Salvando…":(estadoAlterado?"Salvar":"Salvo")}
+                </button>
               </div>
             </div>
 
-          </main>
-
-          {/* Sidebar direita */}
-          <aside style={{width:340,flexShrink:0,display:"flex",flexDirection:"column",gap:14}}>
-            <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                <Ico.Clipboard s={16} c={ACCENT_ATUAL}/>
-                <span style={{fontWeight:700,fontSize:12,color:ACCENT_ATUAL,textTransform:"uppercase",letterSpacing:"0.06em"}}>Plano da Semana</span>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
+            <div style={{paddingTop:22,boxShadow:`inset 0 1px 0 ${supFio}`}}>
+              <h2 style={{margin:"0 0 12px",fontSize:12,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:th.textMuted}}>Plano da semana</h2>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 {planoSemana.map(p=>(
-                  <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start",minWidth:0,overflow:"hidden"}}>
-                    <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1,wordBreak:"break-word",overflowWrap:"break-word",minWidth:0}}>{p.texto}</span>
-                    <span onClick={()=>removePlanoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
+                  <div key={p.id} style={{paddingLeft:14,boxShadow:`inset 2px 0 0 ${ACCENT_ATUAL}`,display:"flex",gap:8,alignItems:"flex-start"}}>
+                    <p style={{margin:0,fontSize:13.5,lineHeight:1.5,color:th.textSub,flex:1}}>{p.texto}</p>
+                    <span onClick={()=>removePlanoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16,lineHeight:1}}>×</span>
                   </div>
                 ))}
-                {planoSemana.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum item ainda.</div>}
               </div>
               {showFormPlano ? (
-                <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  <textarea autoFocus value={novoPlano} onChange={e=>setNovoPlano(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlanoItem()} placeholder="Novo item do plano..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
-                  <div style={{display:"flex",gap:6}}>
-                    <button onClick={()=>{addPlanoItem();setShowFormPlano(false);}} style={{flex:1,background:ACCENT_ATUAL,color:"#fff",border:"none",borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>Adicionar</button>
-                    <button onClick={()=>{setShowFormPlano(false);setNovoPlano("");}} style={{background:"none",border:`1px solid ${th.border2}`,color:th.textMuted,borderRadius:8,padding:"7px 14px",fontSize:12,cursor:"pointer"}}>Cancelar</button>
+                <div style={{display:"flex",flexDirection:"column",gap:7,marginTop:12}}>
+                  <textarea autoFocus value={novoPlano} onChange={e=>setNovoPlano(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlanoItem()} placeholder="Novo item do plano..." rows={2}
+                    style={{fontSize:13,padding:"8px 10px",border:"none",boxShadow:`inset 0 0 0 1px ${supFio}`,borderRadius:10,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:dark?"rgba(255,255,255,0.035)":"rgba(15,23,42,0.03)",color:th.text}}/>
+                  <div style={{display:"flex",gap:7}}>
+                    <button onClick={()=>{addPlanoItem();setShowFormPlano(false);}} style={{flex:1,background:ACCENT_ATUAL,color:"#fff",border:"none",borderRadius:10,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Adicionar</button>
+                    <button onClick={()=>{setShowFormPlano(false);setNovoPlano("");}} style={{background:"none",border:`1px solid ${th.border2}`,color:th.textMuted,borderRadius:10,padding:"7px 14px",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Cancelar</button>
                   </div>
                 </div>
               ) : (
-                <div style={{display:"flex",justifyContent:"flex-end"}}>
-                  <button onClick={()=>setShowFormPlano(true)} style={{background:"none",border:`1px solid ${ACCENT_ATUAL}`,color:ACCENT_ATUAL,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
-                </div>
+                <button onClick={()=>setShowFormPlano(true)} style={{marginTop:12,width:"100%",padding:"9px 0",border:"none",borderRadius:11,background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`,color:th.textMuted,fontFamily:"inherit",fontSize:12.5,fontWeight:600,cursor:"pointer"}}>+ Adicionar item</button>
               )}
             </div>
 
-            <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                <span style={{width:16,height:16,borderRadius:"50%",background:"#c68888",color:"#1a1219",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>!</span>
-                <span style={{fontWeight:700,fontSize:12,color:"#c68888",textTransform:"uppercase",letterSpacing:"0.06em"}}>Pontos de Atenção</span>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
+            <div style={{paddingTop:22,boxShadow:`inset 0 1px 0 ${supFio}`}}>
+              <h2 style={{margin:"0 0 12px",fontSize:12,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:COR_NEG}}>Pontos de atenção</h2>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 {pontosAtencao.map(p=>(
-                  <div key={p.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",gap:8,alignItems:"flex-start",minWidth:0,overflow:"hidden"}}>
-                    <span style={{fontSize:13,color:th.text,lineHeight:1.4,flex:1,wordBreak:"break-word",overflowWrap:"break-word",minWidth:0}}>{p.texto}</span>
-                    <span onClick={()=>removePontoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16}}>×</span>
+                  <div key={p.id} style={{paddingLeft:14,boxShadow:`inset 2px 0 0 ${COR_NEG}`,display:"flex",gap:8,alignItems:"flex-start"}}>
+                    <p style={{margin:0,fontSize:13.5,lineHeight:1.5,color:th.textSub,flex:1}}>{p.texto}</p>
+                    <span onClick={()=>removePontoItem(p.id)} style={{cursor:"pointer",color:th.textMuted,fontSize:16,lineHeight:1}}>×</span>
                   </div>
                 ))}
-                {pontosAtencao.length===0 && <div style={{fontSize:12,color:th.textMuted}}>Nenhum ponto ainda.</div>}
               </div>
               {showFormPonto ? (
-                <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  <textarea autoFocus value={novoPonto} onChange={e=>setNovoPonto(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPontoItem()} placeholder="Novo ponto..." rows={2} style={{fontSize:13,padding:"8px 10px",border:`1px solid ${th.border2}`,borderRadius:8,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:th.resumeBg,color:th.text}}/>
-                  <div style={{display:"flex",gap:6}}>
-                    <button onClick={()=>{addPontoItem();setShowFormPonto(false);}} style={{flex:1,background:"#c68888",color:"#1a1219",border:"none",borderRadius:8,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>Adicionar</button>
-                    <button onClick={()=>{setShowFormPonto(false);setNovoPonto("");}} style={{background:"none",border:`1px solid ${th.border2}`,color:th.textMuted,borderRadius:8,padding:"7px 14px",fontSize:12,cursor:"pointer"}}>Cancelar</button>
+                <div style={{display:"flex",flexDirection:"column",gap:7,marginTop:12}}>
+                  <textarea autoFocus value={novoPonto} onChange={e=>setNovoPonto(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPontoItem()} placeholder="Novo ponto..." rows={2}
+                    style={{fontSize:13,padding:"8px 10px",border:"none",boxShadow:`inset 0 0 0 1px ${supFio}`,borderRadius:10,outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box",background:dark?"rgba(255,255,255,0.035)":"rgba(15,23,42,0.03)",color:th.text}}/>
+                  <div style={{display:"flex",gap:7}}>
+                    <button onClick={()=>{addPontoItem();setShowFormPonto(false);}} style={{flex:1,background:COR_NEG,color:"#fff",border:"none",borderRadius:10,padding:"7px 0",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Adicionar</button>
+                    <button onClick={()=>{setShowFormPonto(false);setNovoPonto("");}} style={{background:"none",border:`1px solid ${th.border2}`,color:th.textMuted,borderRadius:10,padding:"7px 14px",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Cancelar</button>
                   </div>
                 </div>
               ) : (
-                <div style={{display:"flex",justifyContent:"flex-end"}}>
-                  <button onClick={()=>setShowFormPonto(true)} style={{background:"none",border:`1px solid #c68888`,color:"#c68888",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Adicionar</button>
-                </div>
+                <button onClick={()=>setShowFormPonto(true)} style={{marginTop:12,width:"100%",padding:"9px 0",border:"none",borderRadius:11,background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`,color:th.textMuted,fontFamily:"inherit",fontSize:12.5,fontWeight:600,cursor:"pointer"}}>+ Adicionar ponto</button>
               )}
             </div>
 
             {objetivosSemanaAtual && (objetivosSemanaAtual.objetivos||[]).length>0 && (
-              <div style={{background:th.cardBg,borderRadius:14,border:`1px solid ${th.border}`,padding:"16px 16px",boxShadow:th.cardShadow}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                  <span style={{fontSize:13}}>🎯</span>
-                  <span style={{fontWeight:700,fontSize:12,color:"#7fb89a",textTransform:"uppercase",letterSpacing:"0.06em"}}>Objetivos da Semana</span>
-                </div>
-                <div style={{fontSize:10,color:th.textMuted,marginBottom:10}}>Sincronizado com a aba Objetivos</div>
-                <div style={{display:"flex",flexDirection:"column",gap:7}}>
+              <div style={{paddingTop:22,boxShadow:`inset 0 1px 0 ${supFio}`}}>
+                <h2 style={{margin:"0 0 12px",fontSize:12,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:th.textMuted}}>Objetivos da semana</h2>
+                <div style={{display:"flex",flexDirection:"column",gap:11}}>
                   {objetivosSemanaAtual.objetivos.map(o=>(
-                    <div key={o.id} style={{background:th.resumeBg,borderRadius:8,padding:"9px 11px",border:`1px solid ${th.border}`,display:"flex",flexDirection:"column",gap:5,opacity:o.feito?0.55:1}}>
-                      <span style={{fontSize:10,fontWeight:700,padding:"1px 8px",borderRadius:20,background:th.navActiveBg,color:ACCENT_ATUAL,width:"fit-content"}}>{o.categoria}</span>
-                      <span style={{fontSize:12,color:th.text,textDecoration:o.feito?"line-through":"none",lineHeight:1.4}}>{o.texto}</span>
+                    <div key={o.id} style={{display:"flex",gap:11,alignItems:"flex-start"}}>
+                      <span style={{flexShrink:0,marginTop:2,width:16,height:16,borderRadius:6,
+                        background:o.done?`${ACCENT_ATUAL}1F`:"transparent",
+                        boxShadow:`inset 0 0 0 1px ${o.done?`${ACCENT_ATUAL}4D`:th.border2}`,
+                        display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        {o.done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={ACCENT_ATUAL} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
+                      </span>
+                      <p style={{margin:0,fontSize:13.5,lineHeight:1.5,color:o.done?th.textMuted:th.textSub,textDecoration:o.done?"line-through":"none"}}>{o.texto}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-
-            <div style={{background:th.cardBg,borderRadius:14,padding:"16px 18px",boxShadow:th.cardShadow,border:`1px solid ${th.border}`}}>
-              <div onClick={()=>setMetasExpandido(v=>!v)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
-                <span style={{fontWeight:700,fontSize:11,letterSpacing:"0.06em",color:th.textSub,textTransform:"uppercase"}}>Progresso das Metas</span>
-                <span style={{color:th.textMuted,fontSize:13}}>{metasExpandido?"▲":"▼"}</span>
-              </div>
-              {metasExpandido && (
-                <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:13}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:-4,flexWrap:"wrap"}}>
-                    <select value={triDash} onChange={e=>trocarTriDash(e.target.value)}
-                      style={{fontSize:10.5,fontWeight:600,color:th.textSub,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:7,padding:"3px 7px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
-                      {trisDisponiveisDash.map(c=>(<option key={c} value={c}>{rotuloTriDash(c)}</option>))}
-                    </select>
-                    <span style={{fontSize:10,color:th.textMuted}}>
-                      {decorridosDash} de {diasQuarterDash} dias
-                    </span>
-                  </div>
-                  {metasEstudoDash.map(item=>(
-                    <div key={item.campo}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-                        <span style={{fontSize:12,color:th.textSub}}>{item.label}</span>
-                        <span style={{fontSize:11,color:th.textMuted}}>
-                          {item.valor} / {item.meta}
-                        </span>
-                      </div>
-                      <div style={{position:"relative",background:th.resumeBg,borderRadius:6,height:7,marginBottom:4}}>
-                        <div style={{width:`${item.pctVal}%`,background:ACCENT_ATUAL,borderRadius:6,height:7,transition:"width 0.8s ease"}}/>
-                        <div title="ritmo esperado hoje" style={{
-                          position:"absolute",top:-2,left:`${Math.min(100,pctEsperadoDash*100)}%`,
-                          width:2,height:11,background:th.text,opacity:0.45,borderRadius:2,
-                        }}/>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",fontSize:10}}>
-                        <span style={{color:th.textMuted}}>{item.pctVal}%</span>
-                        <span style={{fontWeight:600,color:item.noRitmo?(dark?"#7fb89a":"#2f7d52"):(dark?"#c68888":"#a83f31")}}>
-                          {item.noRitmo ? "no ritmo" : `faltam ${item.falta}`}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </aside>
         </div>
       </div>
