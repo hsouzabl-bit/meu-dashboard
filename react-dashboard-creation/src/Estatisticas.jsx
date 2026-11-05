@@ -9,11 +9,13 @@ const DIAS_SEM = ["s","t","q","q","s","s","d"];
 // Contas disponíveis. "arquivo" = conta encerrada, dado congelado.
 // fonte decide de onde os números saem — e o que existe para cada uma.
 const CONTAS = [
-  { id: "MIDE 3",  fonte: "contas", arquivo: false },
-  { id: "Real",    fonte: "contas", arquivo: false },
-  { id: "ION 3",   fonte: "diario", arquivo: true  },
-  { id: "ION 2",   fonte: "diario", arquivo: true  },
-  { id: "ION OTS", fonte: "ots",    arquivo: true  },
+  { id: "MIDE 3 (recovery)", rot: "MIDE 3",  fonte: "contas", arquivo: false },
+  { id: "Conta Real XP",     rot: "Real XP", fonte: "contas", arquivo: false },
+  { id: "Mide 2k",           rot: "MIDE 2k", fonte: "contas", arquivo: false },
+  { id: "Mide 4 - Veloz",    rot: "MIDE 4",  fonte: "contas", arquivo: false },
+  { id: "ION 3",   rot: "ION 3",   fonte: "diario", arquivo: true },
+  { id: "ION 2",   rot: "ION 2",   fonte: "diario", arquivo: true },
+  { id: "ION OTS", rot: "ION OTS", fonte: "ots",    arquivo: true },
 ];
 
 const CHAVE_A = "est_conta_a";
@@ -256,14 +258,9 @@ function Tabela({ th, cabecalho, children }) {
       <thead>
         <tr>
           {cabecalho.map((h, i) => (
-      
             <th key={i} style={{ fontSize: 9.5, fontWeight: 800, color: th.textMuted, textTransform: "uppercase",
-
               letterSpacing: "0.06em", textAlign: i === 0 ? "left" : "right", padding: "0 0 7px",
-              paddingRight: i === 0 ? 14 : 0, paddingLeft: i === 0 ? 0 : 12,
-                                
               borderBottom: `1px solid ${th.border}`, whiteSpace: "nowrap" }}>{h}</th>
-      
           ))}
         </tr>
       </thead>
@@ -274,13 +271,9 @@ function Tabela({ th, cabecalho, children }) {
 
 function Td({ th, children, primeira, cor, forte }) {
   return (
-
-    <td style={{ padding: "7px 0", paddingRight: primeira ? 14 : 0, paddingLeft: primeira ? 0 : 12,
-      borderBottom: `1px solid ${th.border}`,
+    <td style={{ padding: "7px 0", borderBottom: `1px solid ${th.border}`,
       textAlign: primeira ? "left" : "right", color: cor || (primeira ? th.text : th.textSub),
-      fontWeight: forte ? 700 : 400, fontVariantNumeric: "tabular-nums",
-      whiteSpace: primeira ? "normal" : "nowrap", lineHeight: 1.45 }}>{children}</td>
-    
+      fontWeight: forte ? 700 : 400, fontVariantNumeric: "tabular-nums" }}>{children}</td>
   );
 }
 
@@ -347,11 +340,11 @@ export default function Estatisticas({ th, dadosCache, otsCache, loadingCache, o
 
   const [contaA, setContaA] = useState(() => {
     try { const v = localStorage.getItem(CHAVE_A); if (CONTAS.some(c => c.id === v)) return v; } catch (e) {}
-    return "MIDE 3";
+    return "MIDE 3 (recovery)";
   });
   const [contaB, setContaB] = useState(() => {
     try { const v = localStorage.getItem(CHAVE_B); if (CONTAS.some(c => c.id === v)) return v; } catch (e) {}
-    return "Real";
+    return "Conta Real XP";
   });
   const trocarA = v => { setContaA(v); setSelA({ ini: null, fim: null }); try { localStorage.setItem(CHAVE_A, v); } catch (e) {} };
   const trocarB = v => { setContaB(v); setSelB({ ini: null, fim: null }); try { localStorage.setItem(CHAVE_B, v); } catch (e) {} };
@@ -491,7 +484,7 @@ export default function Estatisticas({ th, dadosCache, otsCache, loadingCache, o
               <select value={l.conta} onChange={e => l.trocar(e.target.value)}
                 style={{ background: th.resumeBg, color: th.text, border: `1px solid ${th.border2}`, borderRadius: 8,
                   padding: "7px 11px", fontSize: 13, fontWeight: 700, fontFamily: "inherit", outline: "none", cursor: "pointer" }}>
-                {CONTAS.map(c => <option key={c.id} value={c.id}>{c.id}</option>)}
+                {CONTAS.map(c => <option key={c.id} value={c.id}>{c.rot}</option>)}
               </select>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {l.d?.meta?.arquivo && (

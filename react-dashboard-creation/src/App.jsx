@@ -114,8 +114,20 @@ function Skeleton({w="100%",h=20,r=6,th}){
 
 // Contas ativas desde out/2026 — os nomes são os das abas da planilha
 // Gestão Trader 2026, e o GAS devolve porData chaveado por eles.
-const CONTA_MIDE3 = "MIDE 3";
-const CONTA_REAL  = "Real";
+const CONTA_MIDE3 = "MIDE 3 (recovery)";
+const CONTA_REAL  = "Conta Real XP";
+const CONTA_M2K   = "Mide 2k";
+const CONTA_M4    = "Mide 4 - Veloz";
+
+// Ordem de exibição e rótulo curto. O id é o nome EXATO da aba da planilha —
+// trocar o rótulo aqui não mexe em nada da leitura.
+const CONTAS_DASH = [CONTA_MIDE3, CONTA_REAL, CONTA_M2K, CONTA_M4];
+const ROTULO_CONTA = {
+  [CONTA_MIDE3]: "MIDE 3",
+  [CONTA_REAL]:  "Real XP",
+  [CONTA_M2K]:   "MIDE 2k",
+  [CONTA_M4]:    "MIDE 4",
+};
 
 // Trimestres de calendário — mesma lógica da aba Hábitos, e a chave de
 // localStorage é a mesma, pra as duas telas nunca discordarem.
@@ -161,7 +173,7 @@ export default function App(){
   const [calFiltro,setCalFiltro] = useState(()=>{
     try {
       const v = localStorage.getItem("cal_filtro");
-      return ["todos","mide3","real","habitos"].indexOf(v) >= 0 ? v : "todos";
+      return ["todos","habitos"].concat(CONTAS_DASH).indexOf(v) >= 0 ? v : "todos";
     } catch(e){ return "todos"; }
   });
   const trocarCalFiltro = (v)=>{
@@ -173,7 +185,7 @@ export default function App(){
   const [contaDash,setContaDash] = useState(()=>{
     try {
       const v = localStorage.getItem("dash_conta_sel");
-      return [CONTA_MIDE3, CONTA_REAL, "todas"].indexOf(v) >= 0 ? v : "todas";
+      return CONTAS_DASH.concat(["todas"]).indexOf(v) >= 0 ? v : "todas";
     } catch(e){ return "todas"; }
   });
   const trocarContaDash = (v)=>{
@@ -584,7 +596,6 @@ const topNav = [
     // ── Contas: agregação por dia, mês e conta ───────────────────────────────
     // Tudo sai de contasPorData, que vem numa chamada só. Trocar mês ou conta
     // não gera requisição nova.
-    const CONTAS_DASH = [CONTA_MIDE3, CONTA_REAL];
     const contasAtivas = contaDash === "todas" ? CONTAS_DASH : [contaDash];
 
     const prefixoMesVis = `${anoVis}-${String(mesVis+1).padStart(2,"0")}`;
@@ -676,8 +687,7 @@ const topNav = [
       return acc;
     }
     function diaCalendario(dataStr){
-      if(calFiltro === "mide3") return somarContasNoDia(dataStr, [CONTA_MIDE3]);
-      if(calFiltro === "real")  return somarContasNoDia(dataStr, [CONTA_REAL]);
+      if(CONTAS_DASH.indexOf(calFiltro) >= 0) return somarContasNoDia(dataStr, [calFiltro]);
       return somarContasNoDia(dataStr, CONTAS_DASH);
     }
 
@@ -1080,8 +1090,7 @@ const topNav = [
                   <select value={contaDash} onChange={e=>trocarContaDash(e.target.value)}
                     style={{marginLeft:"auto",fontSize:11,fontWeight:600,color:th.textSub,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:7,padding:"4px 8px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
                     <option value="todas">Todas</option>
-                    <option value={CONTA_MIDE3}>MIDE 3</option>
-                    <option value={CONTA_REAL}>Real</option>
+                    {CONTAS_DASH.map(c=><option key={c} value={c}>{ROTULO_CONTA[c]}</option>)}
                   </select>
                 </div>
 
@@ -1147,8 +1156,7 @@ const topNav = [
                   <select value={calFiltro} onChange={e=>trocarCalFiltro(e.target.value)}
                     style={{fontSize:11,fontWeight:600,color:th.textSub,background:th.resumeBg,border:`1px solid ${th.border2}`,borderRadius:7,padding:"4px 8px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
                     <option value="todos">Todos</option>
-                    <option value="mide3">MIDE 3</option>
-                    <option value="real">Real</option>
+                    {CONTAS_DASH.map(c=><option key={c} value={c}>{ROTULO_CONTA[c]}</option>)}
                     <option value="habitos">Hábitos</option>
                   </select>
                 </div>
@@ -1188,7 +1196,7 @@ const topNav = [
                       }
                     };
 
-                    if(calFiltro === "mide3" || calFiltro === "real"){
+                    if(CONTAS_DASH.indexOf(calFiltro) >= 0){
                       if(r){ fundo = r.resultado>=0 ? fundoPos : fundoNeg; borda="none"; corTexto=th.text; peso=700; }
                       else neutro();
                     } else if(calFiltro === "habitos"){
