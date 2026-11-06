@@ -176,6 +176,8 @@ export default function App(){
   const [itemHover,setItemHover] = useState(null);
   const RAIL_W = 64;    // largura da barra compacta
   const MENU_W = 196;   // largura reservada: barra + respiro
+  const CONTEUDO_W = 1240;
+  const menuAberto = sidebarExpandido || itemHover !== null;
   const fixarSidebar = ()=>{
     setSidebarExpandido(v=>{
       const novo = !v;
@@ -672,17 +674,17 @@ const topNav = [
 
   const renderMain = () => {
     if(activeNav === "Estatísticas") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+      <div style={{flex:1,minWidth:0}}>
         <Estatisticas th={th} dark={dark} setDark={setDark} dadosCache={dadosDiario} otsCache={dadosOts} loadingCache={loadingDiario} onRecarregar={carregarDiario}/>
       </div>
     );
     if(activeNav === "Estudos") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)",display:"flex",flexDirection:"column"}}>
+      <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column"}}>
         <Estudos th={th}/>
       </div>
     );
     if(activeNav === "Objetivos") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+      <div style={{flex:1,minWidth:0}}>
         <Objetivos th={th} dark={dark} setDark={setDark}/>
       </div>
     );
@@ -692,17 +694,17 @@ const topNav = [
       </div>
     );
     if(activeNav === "Hábitos") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
+      <div style={{flex:1,minWidth:0}}>
         <Habitos th={th} habitosProp={habitosLista}/>
       </div>
     );
     if(activeNav === "Replays") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
+      <div style={{flex:1,minWidth:0}}>
         <Replays th={th}/>
       </div>
     );
     if(activeNav === "Plano de Trade") return (
-      <div style={{flex:1,overflowY:"auto",minWidth:0,maxWidth:"calc(75vw - 240px)"}}>
+      <div style={{flex:1,minWidth:0}}>
         <PlanoTrade th={th}/>
       </div>
     );
@@ -1245,7 +1247,7 @@ const topNav = [
     const dataExtenso = hoje.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
 
     return (
-      <div style={{width:"100%",minWidth:0,maxWidth:1240,margin:"0 auto"}}>
+      <div style={{width:"100%",minWidth:0}}>
 
         <div style={{marginBottom:22}}>
           <div style={{fontSize:12,color:th.textMuted,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700}}>{dataExtenso}</div>
@@ -1913,65 +1915,62 @@ const topNav = [
         </div>
       </div>
 
-      <div style={{display:"flex",gap:18,alignItems:"flex-start"}}>
+      <div style={{
+        display:"flex", gap:18, alignItems:"flex-start",
+        width:"100%", maxWidth:MENU_W+18+CONTEUDO_W, margin:"0 auto",
+      }}>
 
         {/* MENU LATERAL */}
-        {/* A coluna tem SEMPRE MENU_W de largura, fixada ou não. A barra em si
-            ocupa RAIL_W quando compacta; o resto é o respiro onde o item
-            cresce ao passar o mouse. Por isso o conteúdo nunca se mexe e nada
-            fica por cima dele. */}
-        <div style={{width:MENU_W,flexShrink:0,alignSelf:"flex-start"}}>
-          <aside style={{
-            width:sidebarExpandido?MENU_W:RAIL_W, borderRadius:24,
-            background: dark
-              ? "linear-gradient(170deg, rgba(255,255,255,0.075), rgba(255,255,255,0.03) 55%, rgba(255,255,255,0.022))"
-              : "linear-gradient(170deg, rgba(255,255,255,0.98), rgba(255,255,255,0.86))",
-            boxShadow: dark
-              ? "inset 0 1px 0 rgba(255,255,255,0.09), inset 0 0 0 1px rgba(255,255,255,0.06), 0 20px 40px -30px rgba(0,0,0,0.8)"
-              : "inset 0 0 0 1px rgba(15,23,42,0.07), 0 18px 38px -30px rgba(15,23,42,0.35)",
-            padding:sidebarExpandido?"12px 10px":"12px 0", display:"flex", flexDirection:"column",
-            alignItems:sidebarExpandido?"stretch":"center", gap:3,
-            transition:"width 0.18s ease",
-          }}>
+        {/* A coluna tem SEMPRE MENU_W e estica na altura (alignSelf stretch),
+            que é o que dá ao sticky espaço pra grudar. A barra ocupa RAIL_W
+            quando compacta e cresce até MENU_W ao passar o mouse — sempre
+            DENTRO da coluna, então nunca cobre o conteúdo nem o desloca. */}
+        <div style={{width:MENU_W,flexShrink:0,alignSelf:"stretch"}}>
+          <aside
+            onMouseLeave={()=>setItemHover(null)}
+            style={{
+              position:"sticky", top:0,
+              width:menuAberto?MENU_W:RAIL_W, borderRadius:24,
+              background: dark
+                ? "linear-gradient(170deg, rgba(255,255,255,0.075), rgba(255,255,255,0.03) 55%, rgba(255,255,255,0.022))"
+                : "linear-gradient(170deg, rgba(255,255,255,0.98), rgba(255,255,255,0.86))",
+              boxShadow: dark
+                ? "inset 0 1px 0 rgba(255,255,255,0.09), inset 0 0 0 1px rgba(255,255,255,0.06), 0 20px 40px -30px rgba(0,0,0,0.8)"
+                : "inset 0 0 0 1px rgba(15,23,42,0.07), 0 18px 38px -30px rgba(15,23,42,0.35)",
+              padding:"12px 10px", display:"flex", flexDirection:"column",
+              alignItems:"stretch", gap:3,
+              transition:"width 0.18s ease",
+            }}>
             {navItems.map(item=>{
               const ativo = activeNav===item.label;
-              const solto = !sidebarExpandido;
-              const aberto = sidebarExpandido || itemHover===item.label;
+              const mostraLabel = sidebarExpandido || itemHover===item.label;
               return (
                 <button key={item.label}
                   onClick={()=>setActiveNav(item.label)}
-                  onMouseEnter={()=>solto && setItemHover(item.label)}
-                  onMouseLeave={()=>solto && setItemHover(null)}
+                  onMouseEnter={()=>setItemHover(item.label)}
+                  title={menuAberto?undefined:item.label}
                   style={{
-                    position:"relative",
-                    display:"flex",alignItems:"center",gap:11,
-                    justifyContent:aberto?"flex-start":"center",
-                    width:sidebarExpandido?"100%":(aberto?MENU_W-12:44),
-                    height:44,padding:aberto?"0 14px":0,
+                    display:"flex",alignItems:"center",gap:11,justifyContent:"flex-start",
+                    width:"100%",height:44,padding:"0 10px",
                     borderRadius:999,border:"none",cursor:"pointer",fontFamily:"inherit",
                     background:ativo
                       ? `${ACCENT_ATUAL}1F`
-                      : (aberto&&solto ? (dark?"rgba(255,255,255,0.07)":"rgba(15,23,42,0.055)") : "transparent"),
+                      : (itemHover===item.label ? (dark?"rgba(255,255,255,0.06)":"rgba(15,23,42,0.05)") : "transparent"),
                     boxShadow:ativo?`inset 0 0 0 1px ${ACCENT_ATUAL}40`:"none",
                     color:ativo?ACCENT_ATUAL:th.textMuted,
                     fontSize:13.5,fontWeight:ativo?700:500,
-                    transition:"width 0.16s ease, background 0.15s ease, color 0.15s ease",
-                    overflow:"hidden",
+                    overflow:"hidden",whiteSpace:"nowrap",
+                    transition:"background 0.15s ease, color 0.15s ease",
                   }}>
-                  <span style={{flexShrink:0,display:"flex"}}>{item.icon}</span>
-                  <span style={{
-                    whiteSpace:"nowrap",
-                    opacity:aberto?1:0,
-                    width:aberto?"auto":0,
-                    transition:"opacity 0.14s ease",
-                  }}>{item.label}</span>
+                  <span style={{flexShrink:0,display:"flex",width:20,justifyContent:"center"}}>{item.icon}</span>
+                  <span style={{opacity:mostraLabel?1:0,transition:"opacity 0.14s ease"}}>{item.label}</span>
                 </button>
               );
             })}
 
-            <div style={{marginTop:9,paddingTop:9,boxShadow:`inset 0 1px 0 ${supFioApp}`,display:"flex",justifyContent:"center"}}>
+            <div style={{marginTop:9,paddingTop:9,boxShadow:`inset 0 1px 0 ${supFioApp}`,display:"flex",justifyContent:menuAberto?"flex-start":"center",paddingLeft:menuAberto?10:0}}>
               <div onClick={fixarSidebar} title={sidebarExpandido?"Soltar — abre um item por vez ao passar o mouse":"Fixar aberto"} style={{
-                width:32,height:32,borderRadius:999,cursor:"pointer",
+                width:32,height:32,borderRadius:999,cursor:"pointer",flexShrink:0,
                 background:sidebarExpandido?`${ACCENT_ATUAL}1F`:supApp,
                 boxShadow:`inset 0 0 0 1px ${sidebarExpandido?`${ACCENT_ATUAL}40`:supFioApp}`,
                 display:"flex",alignItems:"center",justifyContent:"center",
