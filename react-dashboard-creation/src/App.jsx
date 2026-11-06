@@ -173,7 +173,7 @@ export default function App(){
   const [calFiltro,setCalFiltro] = useState(()=>{
     try {
       const v = localStorage.getItem("cal_filtro");
-      return ["todos","habitos"].concat(CONTAS_DASH).indexOf(v) >= 0 ? v : "todos";
+      return ["segue","todos","habitos"].concat(CONTAS_DASH).indexOf(v) >= 0 ? v : "segue";
     } catch(e){ return "todos"; }
   });
   const trocarCalFiltro = (v)=>{
@@ -397,6 +397,9 @@ export default function App(){
   const th = tema;
   const dark = tema.dark;
   const ACCENT_ATUAL = tema.accent;
+  // Mesma linguagem de "vidro" usada no Dashboard, disponível fora dele.
+  const supApp    = dark ? "rgba(255,255,255,0.028)" : "rgba(15,23,42,0.022)";
+  const supFioApp = dark ? "rgba(255,255,255,0.055)" : "rgba(15,23,42,0.075)";
   // compatibilidade: componentes filhos ainda chamam setDark
   const setDark = (v)=>{
     const querEscuro = typeof v === "function" ? v(tema.dark) : v;
@@ -753,8 +756,14 @@ const topNav = [
       acc.resultado = Math.round(acc.resultado*100)/100;
       return acc;
     }
+    // "segue" = usa a chave do topo. Antes o calendário tinha filtro próprio e
+    // independente, então um dia operado numa conta fora do filtro sumia do
+    // calendário mesmo estando somado na faixa de cima.
+    const calEfetivo = calFiltro === "segue"
+      ? (contaDash === "habitos" ? "habitos" : (contaDash === "todas" ? "todos" : contaDash))
+      : calFiltro;
     function diaCalendario(dataStr){
-      if(CONTAS_DASH.indexOf(calFiltro) >= 0) return somarContasNoDia(dataStr, [calFiltro]);
+      if(CONTAS_DASH.indexOf(calEfetivo) >= 0) return somarContasNoDia(dataStr, [calEfetivo]);
       return somarContasNoDia(dataStr, CONTAS_DASH);
     }
 
@@ -886,7 +895,7 @@ const topNav = [
         // Disciplina olha SEMPRE as duas contas, independente do filtro de cima:
         // erro em qualquer uma delas queima o dia.
         const doDiaD = contasPorData[chaveD] || {};
-        const emocD = [], tecD = [];
+        const emocD = [], tecD = [], todosD = [];
         let operouD = false;
         CONTAS_DASH.forEach(c=>{
           const d = doDiaD[c];
@@ -894,6 +903,10 @@ const topNav = [
           operouD = true;
           (d.errosEmocional||[]).forEach(e=>emocD.push(e));
           (d.errosTecnico||[]).forEach(e=>tecD.push(e));
+          // erros sem "tipo de erro" preenchido não entram em nenhuma das duas
+          // listas acima — por isso a contagem do mês podia não bater com os
+          // chips aqui embaixo.
+          (d.erros||[]).forEach(e=>todosD.push(e));
         });
         disciplineDias.unshift({
           chave: chaveD,
@@ -902,6 +915,7 @@ const topNav = [
           statusTecnico: !operouD ? null : tecD.length > 0 ? "erro" : "ok",
           errosEmocional: emocD,
           errosTecnico: tecD,
+          errosTodos: todosD,
         });
       }
       cursorD.setDate(cursorD.getDate() - 1);
@@ -958,6 +972,14 @@ const topNav = [
       ? "inset 0 1px 0 rgba(255,255,255,0.09), inset 0 0 0 1px rgba(255,255,255,0.055), 0 30px 60px -36px rgba(0,0,0,0.9)"
       : "inset 0 0 0 1px rgba(15,23,42,0.07), 0 26px 50px -34px rgba(15,23,42,0.45)";
     const COR_NEG  = dark ? "#FF8A66" : "#C2502F";
+    const COR_MEIO = dark ? "#E0B050" : "#A8761A";
+    // Verde é o tema, mas disciplina ruim não pode sair verde só porque o
+    // accent é verde. Abaixo de 60% vira vermelho, 60–79% âmbar.
+    function corNivel(p){
+      if(p >= 80) return ACCENT_ATUAL;
+      if(p >= 60) return COR_MEIO;
+      return COR_NEG;
+    }
 
     function estiloPill(ativo, pequeno){
       return {
@@ -1008,6 +1030,24 @@ const topNav = [
       ? Math.min(100, Math.round((habitosDoMes[campo] / metasMes[campo]) * 100)) : 0;
     const pctHabMedio = Math.round((pctHab("horas") + pctHab("replays") + pctHab("paginas")) / 3);
 
+    // Proporcional ao ponto do mês em que estamos: no dia 5 de um mês de 30,
+    // a referência é 1/6 da meta, não a meta inteira.
+    const diasMesTotal = new Date(anoVis, mesVis+1, 0).getDate();
+    const diaCorrenteMes = (anoVis === hoje.getFullYear() && mesVis === hoje.getMonth())
+      ? hoje.getDate()
+      : (`${prefixoMesVis}-01` < hojeChaveStreak ? diasMesTotal : 0);
+    const pctDecorridoMes = diasMesTotal > 0 ? diaCorrenteMes / diasMesTotal : 0;
+    const esperadoHab = {
+      horas:   metasMes.horas   * pctDecorridoMes,
+      replays: metasMes.replays * pctDecorridoMes,
+      paginas: metasMes.paginas * pctDecorridoMes,
+    };
+    const ritmoHab = (campo)=>{
+      if(esperadoHab[campo] <= 0) return habitosDoMes[campo] > 0 ? 100 : 0;
+      return Math.round((habitosDoMes[campo] / esperadoHab[campo]) * 100);
+    };
+    const pctHabRitmo = Math.round((ritmoHab("horas") + ritmoHab("replays") + ritmoHab("paginas")) / 3);
+
     // Curva de avanço dos hábitos no mês, acumulada dia a dia
     {
       const diasMes = new Date(anoVis, mesVis+1, 0).getDate();
@@ -1025,8 +1065,9 @@ const topNav = [
     const ehHabitos = contaDash === "habitos";
     const rotuloVisao = ehHabitos ? "Hábitos" : (contaDash === "todas" ? "todas as contas" : ROTULO_CONTA[contaDash]);
 
+    // No modo hábitos o ponteiro mede ritmo (real ÷ esperado até hoje).
     const gaugePct = ehHabitos
-      ? pctHabMedio
+      ? pctHabRitmo
       : (dm.trades > 0 ? Math.round((dm.limpos / dm.trades) * 100) : 0);
 
     function arcoGauge(p){
@@ -1037,54 +1078,67 @@ const topNav = [
 
     const miniCirculos = ehHabitos
       ? [
-          { label:"Horas",   pct:pctHab("horas"),   sub:`${Math.round(habitosDoMes.horas)} de ${metasMes.horas}h` },
-          { label:"Replays", pct:pctHab("replays"), sub:`${habitosDoMes.replays} de ${metasMes.replays}` },
-          { label:"Páginas", pct:pctHab("paginas"), sub:`${habitosDoMes.paginas} de ${metasMes.paginas}` },
+          { label:"Horas",   pct:ritmoHab("horas"),
+            sub:`${Math.round(habitosDoMes.horas)} · esperado ${Math.round(esperadoHab.horas)} · ${pctHab("horas")}% do mês` },
+          { label:"Replays", pct:ritmoHab("replays"),
+            sub:`${habitosDoMes.replays} · esperado ${Math.round(esperadoHab.replays)} · ${pctHab("replays")}% do mês` },
+          { label:"Páginas", pct:ritmoHab("paginas"),
+            sub:`${habitosDoMes.paginas} · esperado ${Math.round(esperadoHab.paginas)} · ${pctHab("paginas")}% do mês` },
         ]
       : [
           { label:"Técnico",   pct: dm.trades>0 ? Math.round(((dm.trades-dm.tec)/dm.trades)*100) : 0,
-            sub: dm.tec===0 ? "nenhum erro" : `${dm.tec} ${dm.tec===1?"trade":"trades"} com erro` },
+            sub: dm.tec===0 ? "nenhum erro no mês" : `${dm.tec} no mês` },
           { label:"Emocional", pct: dm.trades>0 ? Math.round(((dm.trades-dm.emo)/dm.trades)*100) : 0,
-            sub: dm.emo===0 ? "nenhum erro" : `${dm.emo} ${dm.emo===1?"trade":"trades"} com erro` },
+            sub: dm.emo===0 ? "nenhum erro no mês" : `${dm.emo} no mês` },
         ];
 
     // ── Estado do dia (faixa ao vivo) ─────────────────────────────────────────
     const hojeContas = contasPorData[hojeStr] || {};
-    let tradesHoje = 0, resultHoje = 0, errosHoje = 0, erroNoPrimeiroHoje = false, operouHoje = false;
-    CONTAS_DASH.forEach(c=>{
-      const d = hojeContas[c];
-      if(!d) return;
-      operouHoje = true;
-      tradesHoje += d.trades || 0;
-      resultHoje += d.resultado || 0;
-      errosHoje  += (d.erros || []).length;
-      if(d.erroNoPrimeiro) erroNoPrimeiroHoje = true;
-    });
     const STOP_DIARIO = 500;
-    const restanteHoje = Math.max(0, STOP_DIARIO + Math.min(0, resultHoje));
+    // Cada conta tem o próprio limite diário, então o dia é lido conta a conta
+    // em vez de somado num número só.
+    const hojePorConta = CONTAS_DASH
+      .filter(c=>hojeContas[c])
+      .map(c=>{
+        const d = hojeContas[c];
+        return {
+          conta: c,
+          rotulo: ROTULO_CONTA[c],
+          trades: d.trades || 0,
+          resultado: d.resultado || 0,
+          erros: (d.erros || []).length,
+          erroNoPrimeiro: !!d.erroNoPrimeiro,
+          restante: Math.max(0, STOP_DIARIO + Math.min(0, d.resultado || 0)),
+        };
+      });
+    const operouHoje = hojePorConta.length > 0;
+    const tradesHoje = hojePorConta.reduce((a,c)=>a+c.trades, 0);
+    const contasCrivo = hojePorConta.filter(c=>c.erroNoPrimeiro);
 
     // ── Constância: janela de sessões e o que quebrou ─────────────────────────
     const sessoes = disciplineDias.filter(d=>d.statusTecnico !== null || d.statusEmocional !== null);
     const janelaSess = sessoes.slice(-janelaConst);
     const quebras = janelaSess
       .map((d,i)=>({ d, i }))
-      .filter(({d})=>d.statusTecnico === "erro" || d.statusEmocional === "erro");
+      .filter(({d})=>(d.errosTodos||[]).length > 0);
     let limposSeguidos = 0;
     for(let i = janelaSess.length - 1; i >= 0; i--){
-      if(janelaSess[i].statusTecnico === "ok" && janelaSess[i].statusEmocional === "ok") limposSeguidos++;
+      if((janelaSess[i].errosTodos||[]).length === 0) limposSeguidos++;
       else break;
     }
     const contagemErros = {};
+    let totalErrosJanela = 0;
     quebras.forEach(({d})=>{
-      [...(d.errosTecnico||[]), ...(d.errosEmocional||[])].forEach(e=>{
+      (d.errosTodos||[]).forEach(e=>{
         const k = (e||"").trim();
         if(!k) return;
+        totalErrosJanela++;
         contagemErros[k] = (contagemErros[k] || 0) + 1;
       });
     });
     const chipsErros = Object.keys(contagemErros)
-      .sort((a,b)=>contagemErros[b]-contagemErros[a]).slice(0,5)
-      .map(k=>`${k} · ${contagemErros[k]}`);
+      .sort((a,b)=>contagemErros[b]-contagemErros[a])
+      .map(k=>({ texto:k, n:contagemErros[k] }));
     const pctVerdeConst = janelaSess.length > 0
       ? Math.round((limposSeguidos / janelaSess.length) * 100) : 0;
 
@@ -1123,7 +1177,7 @@ const topNav = [
     const dataExtenso = hoje.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
 
     return (
-      <div style={{width:"100%",minWidth:0,maxWidth:"calc(85vw - 240px)"}}>
+      <div style={{width:"100%",minWidth:0,maxWidth:1240,margin:"0 auto"}}>
 
         <div style={{marginBottom:22}}>
           <div style={{fontSize:12,color:th.textMuted,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700}}>{dataExtenso}</div>
@@ -1156,28 +1210,37 @@ const topNav = [
                 {/* velocímetro */}
                 <div style={{flex:"1 1 360px",minWidth:0,padding:"10px 28px 26px",display:"flex",flexDirection:"column",alignItems:"center",gap:18}}>
                   <div style={{fontSize:11.5,color:th.textMuted,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700,textAlign:"center"}}>
-                    {ehHabitos ? "Hábitos do mês · meta vs real" : "Disciplina do mês"}
+                    {ehHabitos ? "Hábitos · ritmo até hoje" : "Disciplina do mês"}
                   </div>
 
                   <svg viewBox="0 0 260 172" style={{width:280,maxWidth:"100%",height:"auto",display:"block"}}>
                     <path d="M30,130 A100,100 0 0 1 230,130" fill="none" stroke={trilho} strokeWidth="14" strokeDasharray="6.6 3.87"/>
-                    <path d={arcoGauge(gaugePct)} fill="none" stroke={ACCENT_ATUAL} strokeWidth="14" strokeDasharray="6.6 3.87"/>
-                    <text x="130" y="114" textAnchor="middle" fontSize="54" fontWeight="800" fill={th.text} style={{fontVariantNumeric:"tabular-nums",letterSpacing:"-0.02em"}}>{gaugePct}%</text>
+                    <path d={arcoGauge(gaugePct)} fill="none" stroke={corNivel(gaugePct)} strokeWidth="14" strokeDasharray="6.6 3.87"/>
+                    <text x="130" y="114" textAnchor="middle" fontSize="54" fontWeight="800" fill={corNivel(gaugePct)} style={{fontVariantNumeric:"tabular-nums",letterSpacing:"-0.02em"}}>{gaugePct}%</text>
                     <text x="130" y="141" textAnchor="middle" fontSize="12.5" fontWeight="500" fill={th.textMuted}>
-                      {ehHabitos ? "média dos 3 hábitos" : (dm.trades>0 ? `${dm.limpos} de ${dm.trades} trades limpos` : "sem trades no mês")}
+                      {ehHabitos
+                        ? `${pctHabMedio}% do mês cheio · dia ${diaCorrenteMes} de ${diasMesTotal}`
+                        : (dm.trades>0 ? `${dm.limpos} de ${dm.trades} trades limpos` : "sem trades no mês")}
                     </text>
                     <text x="26" y="156" textAnchor="start" fontSize="10.5" fill={th.textMuted}>0</text>
                     <text x="234" y="156" textAnchor="end" fontSize="10.5" fill={th.textMuted}>100</text>
                   </svg>
+
+                  {ehHabitos && (
+                    <div style={{fontSize:12,color:th.textMuted,textAlign:"center",marginTop:-8,lineHeight:1.5}}>
+                      100% = exatamente no ritmo que o mês pede até hoje.<br/>
+                      Acima disso, adiantado.
+                    </div>
+                  )}
 
                   <div style={{display:"flex",gap:10,width:"100%",maxWidth:400,flexWrap:"wrap"}}>
                     {miniCirculos.map(m=>(
                       <div key={m.label} style={{flex:"1 1 150px",minWidth:0,display:"flex",alignItems:"center",gap:10,borderRadius:16,padding:"11px 12px",background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`}}>
                         <svg width="46" height="46" viewBox="0 0 56 56" style={{flexShrink:0}}>
                           <circle cx="28" cy="28" r="22" fill="none" stroke={trilho} strokeWidth="5"/>
-                          <circle cx="28" cy="28" r="22" fill="none" stroke={ACCENT_ATUAL} strokeWidth="5" strokeLinecap="round"
-                            strokeDasharray={`${(m.pct/100*138.23).toFixed(1)} 138.3`} transform="rotate(-90 28 28)"/>
-                          <text x="28" y="32" textAnchor="middle" fontSize="14" fontWeight="800" fill={th.text} style={{fontVariantNumeric:"tabular-nums"}}>{m.pct}%</text>
+                          <circle cx="28" cy="28" r="22" fill="none" stroke={corNivel(m.pct)} strokeWidth="5" strokeLinecap="round"
+                            strokeDasharray={`${(Math.min(100,m.pct)/100*138.23).toFixed(1)} 138.3`} transform="rotate(-90 28 28)"/>
+                          <text x="28" y="32" textAnchor="middle" fontSize="13" fontWeight="800" fill={corNivel(m.pct)} style={{fontVariantNumeric:"tabular-nums"}}>{m.pct}%</text>
                         </svg>
                         <div style={{minWidth:0}}>
                           <div style={{fontSize:12.5,fontWeight:700,color:th.textSub}}>{m.label}</div>
@@ -1262,49 +1325,49 @@ const topNav = [
             </section>
 
             {/* ══ ESTADO DO DIA ══ */}
-            <section style={{
-              display:"flex",flexWrap:"wrap",alignItems:"center",gap:0,
-              borderRadius:18,background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`,overflow:"hidden",
-            }}>
-              <div style={{flex:"1 1 150px",minWidth:0,padding:"14px 20px",boxShadow:`inset -1px 0 0 ${supFio}`}}>
-                <div style={{fontSize:10.5,color:th.textMuted,letterSpacing:"0.09em",textTransform:"uppercase",fontWeight:700}}>Hoje</div>
-                <div style={{fontSize:17,fontWeight:800,color:th.text,marginTop:3,fontVariantNumeric:"tabular-nums"}}>
-                  {tradesHoje} {tradesHoje===1?"trade":"trades"}
+            <section style={{borderRadius:18,background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`,overflow:"hidden"}}>
+              {!operouHoje ? (
+                <div style={{padding:"15px 20px",fontSize:12.5,color:th.textMuted}}>
+                  Nenhum trade hoje — dia sem trade é resultado, não empate.
                 </div>
-              </div>
-              <div style={{flex:"1 1 150px",minWidth:0,padding:"14px 20px",boxShadow:`inset -1px 0 0 ${supFio}`}}>
-                <div style={{fontSize:10.5,color:th.textMuted,letterSpacing:"0.09em",textTransform:"uppercase",fontWeight:700}}>Resultado</div>
-                <div style={{fontSize:17,fontWeight:800,marginTop:3,fontVariantNumeric:"tabular-nums",color:!operouHoje?th.textMuted:(resultHoje>=0?ACCENT_ATUAL:COR_NEG)}}>
-                  {!operouHoje ? "—" : `${resultHoje>=0?"+":"−"}R$ ${Math.abs(Math.round(resultHoje)).toLocaleString("pt-BR")}`}
-                </div>
-              </div>
-              <div style={{flex:"1 1 150px",minWidth:0,padding:"14px 20px",boxShadow:`inset -1px 0 0 ${supFio}`}}>
-                <div style={{fontSize:10.5,color:th.textMuted,letterSpacing:"0.09em",textTransform:"uppercase",fontWeight:700}}>Resta do limite</div>
-                <div style={{fontSize:17,fontWeight:800,marginTop:3,fontVariantNumeric:"tabular-nums",color:restanteHoje<=150?COR_NEG:th.text}}>
-                  R$ {restanteHoje.toLocaleString("pt-BR")}
-                </div>
-              </div>
-              <div style={{flex:"2 1 240px",minWidth:0,padding:"14px 20px"}}>
-                {erroNoPrimeiroHoje ? (
-                  <div style={{display:"flex",alignItems:"center",gap:9}}>
-                    <span style={{width:7,height:7,borderRadius:999,background:COR_NEG,flexShrink:0}}/>
-                    <span style={{fontSize:12.5,lineHeight:1.45,color:th.textSub}}>
-                      <strong style={{color:COR_NEG,fontWeight:700}}>Crivo elevado.</strong> O 1º trade teve erro nomeado — o próximo só se for nota 10. Taxa de erro sobe de 30% para 46%.
-                    </span>
+              ) : (
+                <>
+                  <div style={{display:"flex",flexWrap:"wrap"}}>
+                    {hojePorConta.map((c,i)=>(
+                      <div key={c.conta} style={{flex:"1 1 180px",minWidth:0,padding:"14px 20px",boxShadow:i<hojePorConta.length-1?`inset -1px 0 0 ${supFio}`:"none"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}>
+                          <span style={{fontSize:10.5,color:th.textMuted,letterSpacing:"0.09em",textTransform:"uppercase",fontWeight:700}}>{c.rotulo}</span>
+                          {c.erroNoPrimeiro && <span style={{width:6,height:6,borderRadius:999,background:COR_NEG}}/>}
+                        </div>
+                        <div style={{fontSize:17,fontWeight:800,fontVariantNumeric:"tabular-nums",color:c.resultado>=0?ACCENT_ATUAL:COR_NEG}}>
+                          {c.resultado>=0?"+":"−"}R$ {Math.abs(Math.round(c.resultado)).toLocaleString("pt-BR")}
+                        </div>
+                        <div style={{fontSize:11.5,color:th.textMuted,marginTop:3,fontVariantNumeric:"tabular-nums"}}>
+                          {c.trades} {c.trades===1?"trade":"trades"} · resta <strong style={{color:c.restante<=150?COR_NEG:th.textSub,fontWeight:700}}>R$ {c.restante.toLocaleString("pt-BR")}</strong>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ) : tradesHoje >= 2 ? (
-                  <div style={{display:"flex",alignItems:"center",gap:9}}>
-                    <span style={{width:7,height:7,borderRadius:999,background:ACCENT_ATUAL,flexShrink:0}}/>
-                    <span style={{fontSize:12.5,lineHeight:1.45,color:th.textSub}}>
-                      1º trade sem erro. Antes do 3º clique: qual é a nota?
-                    </span>
+                  <div style={{padding:"12px 20px",boxShadow:`inset 0 1px 0 ${supFio}`}}>
+                    {contasCrivo.length > 0 ? (
+                      <div style={{display:"flex",alignItems:"flex-start",gap:9}}>
+                        <span style={{width:7,height:7,borderRadius:999,background:COR_NEG,flexShrink:0,marginTop:5}}/>
+                        <span style={{fontSize:12.5,lineHeight:1.45,color:th.textSub}}>
+                          <strong style={{color:COR_NEG,fontWeight:700}}>Crivo elevado em {contasCrivo.map(c=>c.rotulo).join(" e ")}.</strong>{" "}
+                          O 1º trade teve erro nomeado — o próximo só se for nota 10. A taxa de erro nos trades seguintes sobe de 30% para 46%.
+                        </span>
+                      </div>
+                    ) : tradesHoje >= 2 ? (
+                      <div style={{display:"flex",alignItems:"center",gap:9}}>
+                        <span style={{width:7,height:7,borderRadius:999,background:ACCENT_ATUAL,flexShrink:0}}/>
+                        <span style={{fontSize:12.5,lineHeight:1.45,color:th.textSub}}>1º trade sem erro. Antes do 3º clique: qual é a nota?</span>
+                      </div>
+                    ) : (
+                      <span style={{fontSize:12.5,color:th.textMuted}}>Dia em aberto.</span>
+                    )}
                   </div>
-                ) : (
-                  <div style={{fontSize:12.5,color:th.textMuted,lineHeight:1.45}}>
-                    {operouHoje ? "Dia em aberto." : "Nenhum trade hoje — dia sem trade é resultado."}
-                  </div>
-                )}
-              </div>
+                </>
+              )}
             </section>
 
             {/* ══ ESTUDOS · RITMO DO TRIMESTRE ══ */}
@@ -1355,9 +1418,9 @@ const topNav = [
 
               <div style={{borderRadius:22,background:sup,boxShadow:`inset 0 0 0 1px ${supFio}`,padding:"24px 28px 20px"}}>
                 <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:22,flexWrap:"wrap"}}>
-                  <span style={{fontSize:30,fontWeight:800,color:ACCENT_ATUAL,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{limposSeguidos}</span>
+                  <span style={{fontSize:30,fontWeight:800,color:limposSeguidos>0?ACCENT_ATUAL:COR_NEG,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{limposSeguidos}</span>
                   <span style={{fontSize:13,color:th.textMuted}}>
-                    dias limpos seguidos · {quebras.length} {quebras.length===1?"quebra":"quebras"} em {janelaSess.length} {janelaSess.length===1?"sessão":"sessões"}
+                    dias limpos seguidos · {quebras.length} {quebras.length===1?"quebra":"quebras"} e {totalErrosJanela} {totalErrosJanela===1?"erro":"erros"} nas últimas {janelaSess.length} {janelaSess.length===1?"sessão":"sessões"}
                   </span>
                 </div>
 
@@ -1376,9 +1439,11 @@ const topNav = [
 
                 {chipsErros.length > 0 && (
                   <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginTop:16,paddingTop:15,boxShadow:`inset 0 1px 0 ${supFio}`}}>
-                    <span style={{fontSize:12,color:th.textMuted}}>O que quebrou:</span>
+                    <span style={{fontSize:12,color:th.textMuted}}>O que quebrou, nessas {janelaSess.length} sessões:</span>
                     {chipsErros.map(c=>(
-                      <span key={c} style={{fontSize:12,color:th.textSub,background:dark?"rgba(196,92,62,0.14)":"rgba(194,80,47,0.10)",boxShadow:`inset 0 0 0 1px ${dark?"rgba(196,92,62,0.30)":"rgba(194,80,47,0.22)"}`,borderRadius:999,padding:"3px 10px"}}>{c}</span>
+                      <span key={c.texto} style={{fontSize:12,color:th.textSub,background:dark?"rgba(196,92,62,0.14)":"rgba(194,80,47,0.10)",boxShadow:`inset 0 0 0 1px ${dark?"rgba(196,92,62,0.30)":"rgba(194,80,47,0.22)"}`,borderRadius:999,padding:"3px 10px"}}>
+                        {c.texto}{c.n>1 && <strong style={{fontWeight:800,marginLeft:5}}>×{c.n}</strong>}
+                      </span>
                     ))}
                   </div>
                 )}
@@ -1393,7 +1458,8 @@ const topNav = [
                   <h2 style={{margin:0,fontSize:12,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:th.textMuted}}>{MESES_PT[mesVis]}</h2>
                   <select value={calFiltro} onChange={e=>trocarCalFiltro(e.target.value)}
                     style={{fontSize:11.5,fontWeight:600,color:th.textSub,background:pillBg,border:"none",boxShadow:`inset 0 0 0 1px ${pillFio}`,borderRadius:999,padding:"5px 10px",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
-                    <option value="todos">Todos</option>
+                    <option value="segue">Segue o topo</option>
+                    <option value="todos">Todas as contas</option>
                     {CONTAS_DASH.map(c=><option key={c} value={c}>{ROTULO_CONTA[c]}</option>)}
                     <option value="habitos">Hábitos</option>
                   </select>
@@ -1410,7 +1476,7 @@ const topNav = [
                       const okHab = habD ? ((habD.horas>=1?1:0)+(habD.replays>=1?1:0)+(habD.paginas>=1?1:0)) >= 3 : false;
                       const ehHoje = c.dataStr === hojeChaveCal;
                       let fundo = "transparent", cor = th.textMuted, peso = 500, fio = `inset 0 0 0 1px ${supFio}`;
-                      if(calFiltro === "habitos"){
+                      if(calEfetivo === "habitos"){
                         if(habD){ fundo = okHab ? (dark?"#1E6B4B":"#cdebdb") : (dark?"#5E2A1E":"#f6d9cf"); cor = th.text; peso = 700; fio = "none"; }
                         else if(c.futuro){ fundo = "transparent"; }
                         else if(!c.fimDeSemana){ fundo = dark?"rgba(255,255,255,0.045)":"rgba(15,23,42,0.045)"; cor = th.textSub; fio = "none"; }
@@ -1447,39 +1513,71 @@ const topNav = [
                   </div>
 
                   {diaSel && contasPorData[diaSel] && (
-                    <div style={{marginTop:16,paddingTop:15,boxShadow:`inset 0 1px 0 ${supFio}`}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                        <span style={{fontSize:12,fontWeight:800,color:th.text,letterSpacing:"0.04em"}}>
-                          {diaSel.slice(8,10)}/{diaSel.slice(5,7)}
-                        </span>
-                        <span onClick={()=>setDiaSel(null)} style={{cursor:"pointer",color:th.textMuted,fontSize:16,lineHeight:1}}>×</span>
-                      </div>
-                      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                        {CONTAS_DASH.filter(c=>contasPorData[diaSel][c]).map(c=>{
-                          const d = contasPorData[diaSel][c];
-                          return (
-                            <div key={c} style={{borderRadius:14,background:dark?"rgba(255,255,255,0.03)":"rgba(15,23,42,0.03)",padding:"10px 13px"}}>
-                              <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:8}}>
-                                <span style={{fontSize:12,fontWeight:700,color:th.textSub}}>{ROTULO_CONTA[c]}</span>
-                                <span style={{fontSize:13,fontWeight:800,fontVariantNumeric:"tabular-nums",color:d.resultado>=0?ACCENT_ATUAL:COR_NEG}}>
-                                  {d.resultado>=0?"+":"−"}R$ {Math.abs(Math.round(d.resultado)).toLocaleString("pt-BR")}
-                                </span>
-                              </div>
-                              <div style={{fontSize:11.5,color:th.textMuted,marginTop:3,fontVariantNumeric:"tabular-nums"}}>
-                                {d.trades} {d.trades===1?"trade":"trades"} · {d.taxaAcerto}% de acerto
-                              </div>
-                              {(d.erros||[]).length>0 && (
-                                <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:3}}>
-                                  {(d.erros||[]).map((e,i)=>(
-                                    <div key={i} style={{fontSize:11.5,color:th.textSub,lineHeight:1.4}}>• {e}</div>
-                                  ))}
-                                </div>
-                              )}
+                    <>
+                      <div onClick={()=>setDiaSel(null)} style={{position:"absolute",inset:0,borderRadius:22,background:dark?"rgba(6,10,14,0.55)":"rgba(15,23,42,0.22)",backdropFilter:"blur(3px)",zIndex:2}}/>
+                      <div style={{
+                        position:"absolute",zIndex:3,left:16,right:16,top:"50%",transform:"translateY(-50%)",
+                        borderRadius:20,padding:"18px 20px 20px",
+                        background:dark?"#141A20":"#ffffff",
+                        boxShadow:dark
+                          ? "inset 0 0 0 1px rgba(255,255,255,0.09), 0 28px 60px -22px rgba(0,0,0,0.85)"
+                          : "inset 0 0 0 1px rgba(15,23,42,0.08), 0 28px 60px -26px rgba(15,23,42,0.45)",
+                        maxHeight:"calc(100% - 32px)",overflowY:"auto",
+                      }}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:14}}>
+                          <div>
+                            <div style={{fontSize:10.5,color:th.textMuted,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700}}>
+                              {new Date(`${diaSel}T12:00:00`).toLocaleDateString("pt-BR",{weekday:"long"})}
                             </div>
-                          );
-                        })}
+                            <div style={{fontSize:19,fontWeight:800,color:th.text,letterSpacing:"-0.02em",fontVariantNumeric:"tabular-nums"}}>
+                              {diaSel.slice(8,10)}/{diaSel.slice(5,7)}
+                            </div>
+                          </div>
+                          <button onClick={()=>setDiaSel(null)} style={{width:28,height:28,borderRadius:999,border:"none",background:dark?"rgba(255,255,255,0.07)":"rgba(15,23,42,0.06)",color:th.textMuted,cursor:"pointer",fontFamily:"inherit",fontSize:15,lineHeight:1}}>×</button>
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                          {CONTAS_DASH.filter(c=>contasPorData[diaSel][c]).map(c=>{
+                            const d = contasPorData[diaSel][c];
+                            return (
+                              <div key={c} style={{borderRadius:15,background:dark?"rgba(255,255,255,0.038)":"rgba(15,23,42,0.035)",padding:"12px 14px"}}>
+                                <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:8}}>
+                                  <span style={{fontSize:12,fontWeight:700,color:th.textSub,letterSpacing:"0.02em"}}>{ROTULO_CONTA[c]}</span>
+                                  <span style={{fontSize:15,fontWeight:800,fontVariantNumeric:"tabular-nums",color:d.resultado>=0?ACCENT_ATUAL:COR_NEG}}>
+                                    {d.resultado>=0?"+":"−"}R$ {Math.abs(Math.round(d.resultado)).toLocaleString("pt-BR")}
+                                  </span>
+                                </div>
+                                <div style={{display:"flex",gap:14,marginTop:7,fontSize:11.5,color:th.textMuted,fontVariantNumeric:"tabular-nums",flexWrap:"wrap"}}>
+                                  <span>{d.trades} {d.trades===1?"trade":"trades"}</span>
+                                  <span>{d.taxaAcerto}% de acerto</span>
+                                  {d.gains>0 && <span>{d.gains} gain</span>}
+                                  {d.losses>0 && <span>{d.losses} loss</span>}
+                                  {d.nota10>0 && <span style={{color:ACCENT_ATUAL,fontWeight:700}}>{d.nota10} nota 10</span>}
+                                </div>
+                                {(d.erros||[]).length>0 && (
+                                  <div style={{marginTop:10,paddingTop:9,boxShadow:`inset 0 1px 0 ${supFio}`,display:"flex",flexDirection:"column",gap:5}}>
+                                    {(d.erros||[]).map((e,i)=>{
+                                      const tec = (d.errosTecnico||[]).indexOf(e) >= 0;
+                                      const emo = (d.errosEmocional||[]).indexOf(e) >= 0;
+                                      return (
+                                        <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                                          <span style={{flexShrink:0,marginTop:4,width:6,height:6,borderRadius:999,background:emo?COR_NEG:(tec?COR_MEIO:th.textMuted)}}/>
+                                          <span style={{fontSize:12,color:th.textSub,lineHeight:1.45}}>
+                                            {e}
+                                            <span style={{color:th.textMuted,marginLeft:6,fontSize:10.5,textTransform:"uppercase",letterSpacing:"0.06em"}}>
+                                              {emo?"emocional":(tec?"técnico":"sem tipo")}
+                                            </span>
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
               </section>
@@ -1743,29 +1841,38 @@ const topNav = [
 
         {/* SIDEBAR FLUTUANTE */}
         <aside style={{
-          width:sidebarExpandido?230:74, background:th.surface, borderRadius:30, border:`1px solid ${th.border}`,
-          padding:sidebarExpandido?"18px 12px":"18px 0", display:"flex", flexDirection:"column",
-          alignItems:sidebarExpandido?"stretch":"center", gap:3, flexShrink:0,
+          width:sidebarExpandido?224:70, borderRadius:26, flexShrink:0,
+          background: dark
+            ? "linear-gradient(170deg, rgba(255,255,255,0.065), rgba(255,255,255,0.018) 55%, rgba(255,255,255,0.01))"
+            : "linear-gradient(170deg, rgba(255,255,255,0.96), rgba(255,255,255,0.72))",
+          boxShadow: dark
+            ? "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.05), 0 26px 50px -34px rgba(0,0,0,0.85)"
+            : "inset 0 0 0 1px rgba(15,23,42,0.065), 0 22px 44px -32px rgba(15,23,42,0.4)",
+          padding:sidebarExpandido?"14px 10px":"14px 0", display:"flex", flexDirection:"column",
+          alignItems:sidebarExpandido?"stretch":"center", gap:2,
           transition:"width 0.2s ease",
         }}>
           {navItems.map(item=>{
             const ativo = activeNav===item.label;
             return (
               <button key={item.label} onClick={()=>setActiveNav(item.label)} title={sidebarExpandido?undefined:item.label} style={{
-                display:"flex",alignItems:"center",gap:sidebarExpandido?10:0,justifyContent:sidebarExpandido?"flex-start":"center",
-                width:sidebarExpandido?"100%":46,height:sidebarExpandido?"auto":46,padding:sidebarExpandido?"11px 14px":0,
-                borderRadius:sidebarExpandido?14:16,border:"none",cursor:"pointer",
-                background:ativo?ACCENT_ATUAL:"transparent",color:ativo?"#fff":th.textMuted,
-                fontSize:14,fontWeight:ativo?600:500,
+                display:"flex",alignItems:"center",gap:sidebarExpandido?11:0,justifyContent:sidebarExpandido?"flex-start":"center",
+                width:sidebarExpandido?"100%":44,height:sidebarExpandido?"auto":44,padding:sidebarExpandido?"10px 13px":0,
+                borderRadius:999,border:"none",cursor:"pointer",fontFamily:"inherit",
+                background:ativo?`${ACCENT_ATUAL}1F`:"transparent",
+                boxShadow:ativo?`inset 0 0 0 1px ${ACCENT_ATUAL}40`:"none",
+                color:ativo?ACCENT_ATUAL:th.textMuted,
+                fontSize:13.5,fontWeight:ativo?700:500,
+                transition:"background 0.15s ease, color 0.15s ease",
               }}>
                 {item.icon}
-                {sidebarExpandido && <span>{item.label}</span>}
+                {sidebarExpandido && <span style={{whiteSpace:"nowrap"}}>{item.label}</span>}
               </button>
             );
           })}
 
-          <div style={{marginTop:sidebarExpandido?12:8,borderTop:`1px solid ${th.border}`,paddingTop:sidebarExpandido?12:8,display:"flex",justifyContent:"center"}}>
-            <div onClick={()=>setSidebarExpandido(v=>!v)} style={{width:32,height:32,borderRadius:12,background:th.resumeBg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+          <div style={{marginTop:sidebarExpandido?10:8,paddingTop:sidebarExpandido?10:8,boxShadow:`inset 0 1px 0 ${supFioApp}`,display:"flex",justifyContent:"center"}}>
+            <div onClick={()=>setSidebarExpandido(v=>!v)} title={sidebarExpandido?"Recolher":"Expandir"} style={{width:32,height:32,borderRadius:999,background:supApp,boxShadow:`inset 0 0 0 1px ${supFioApp}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
               {sidebarExpandido?<Ico.Collapse c={th.textMuted}/>:<Ico.Expand c={th.textMuted}/>}
             </div>
           </div>
