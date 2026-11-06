@@ -167,13 +167,15 @@ export default function App(){
     try { localStorage.setItem("tema_app", id); } catch(e){}
   };
 
-  // sidebarExpandido = fixado pela setinha. sidebarHover = aberto só enquanto
-  // o mouse está em cima. Aberto é a soma dos dois.
+  // sidebarExpandido = barra fixada aberta pela setinha.
   const [sidebarExpandido,setSidebarExpandido] = useState(()=>{
     try { return localStorage.getItem("sidebar_fixo") !== "0"; } catch(e){ return true; }
   });
-  const [sidebarHover,setSidebarHover] = useState(false);
-  const sidebarAberto = sidebarExpandido || sidebarHover;
+  // Compacto, só o item sob o mouse se abre. A faixa reservada ao lado da
+  // barra absorve essa abertura, então nada nunca cobre o conteúdo.
+  const [itemHover,setItemHover] = useState(null);
+  const RAIL_W = 64;    // largura da barra compacta
+  const MENU_W = 196;   // largura reservada: barra + respiro
   const fixarSidebar = ()=>{
     setSidebarExpandido(v=>{
       const novo = !v;
@@ -365,28 +367,66 @@ export default function App(){
   const [estadoHoje, setEstadoHoje] = useState({ disposicao:"", sono:"", emocional:"", lembrete:"" });
   const [estadoAlterado, setEstadoAlterado] = useState(false);
   const [estadoSalvando, setEstadoSalvando] = useState(false);
+  const [erroEstado, setErroEstado] = useState(false);
+
+  // Rascunho local: o que está digitado e ainda não foi salvo sobrevive a um
+  // F5. Não é auto-save — o Salvar continua sendo explícito; isso só evita
+  // perder o texto entre digitar e salvar.
+  const CHAVE_RASCUNHO = `estado_dia_rascunho_${hojeStr}`;
+  // Ref porque o fetch atrasado de 3s roda com o estado antigo em closure e
+  // apagaria o que está sendo digitado nesse meio-tempo.
+  const estadoAlteradoRef = useRef(false);
 
   function aplicarEstadoDia(lista){
     const arr = lista || [];
     setEstadoDiaLista(arr);
+
+    // Nunca sobrescrever edição em andamento.
+    if(estadoAlteradoRef.current) return;
+
     const doDia = arr.find(e=>e.data === hojeStr);
     const ultimoLembrete = arr.slice().reverse().find(e=>e.lembrete);
-    setEstadoHoje({
+    const doServidor = {
       disposicao: doDia && doDia.disposicao != null ? String(doDia.disposicao) : "",
       sono:       doDia && doDia.sono       != null ? String(doDia.sono)       : "",
       emocional:  doDia && doDia.emocional  != null ? String(doDia.emocional)  : "",
       lembrete:   (doDia && doDia.lembrete) || (ultimoLembrete ? ultimoLembrete.lembrete : ""),
-    });
-    setEstadoAlterado(false);
+    };
+
+    let rascunho = null;
+    try {
+      const r = localStorage.getItem(CHAVE_RASCUNHO);
+      if(r) rascunho = JSON.parse(r);
+    } catch(e){}
+
+    const difere = rascunho && ["disposicao","sono","emocional","lembrete"]
+      .some(k => String(rascunho[k] ?? "") !== String(doServidor[k] ?? ""));
+
+    if(difere){
+      setEstadoHoje(rascunho);
+      estadoAlteradoRef.current = true;
+      setEstadoAlterado(true);
+    } else {
+      setEstadoHoje(doServidor);
+      estadoAlteradoRef.current = false;
+      setEstadoAlterado(false);
+      try { localStorage.removeItem(CHAVE_RASCUNHO); } catch(e){}
+    }
   }
 
   function mudarEstadoHoje(campo, valor){
-    setEstadoHoje(p=>({ ...p, [campo]: valor }));
+    setEstadoHoje(p=>{
+      const novo = { ...p, [campo]: valor };
+      try { localStorage.setItem(CHAVE_RASCUNHO, JSON.stringify(novo)); } catch(e){}
+      return novo;
+    });
+    estadoAlteradoRef.current = true;
     setEstadoAlterado(true);
   }
 
   function salvarEstadoDiaApp(){
     setEstadoSalvando(true);
+    setErroEstado(false);
     const payload = {
       data: hojeStr,
       disposicao: estadoHoje.disposicao === "" ? null : Number(estadoHoje.disposicao),
@@ -395,10 +435,25 @@ export default function App(){
       lembrete:   estadoHoje.lembrete || "",
     };
     fetch(`${API_DIARIO}?action=salvarEstadoDia&dados=${encodeURIComponent(JSON.stringify(payload))}`)
-      .catch(()=>{})
+      .then(()=>{
+        setEstadoAlterado(false);
+        estadoAlteradoRef.current = false;
+        try { localStorage.removeItem(CHAVE_RASCUNHO); } catch(e){}
+        // O cache do init também precisa saber, senão um F5 logo depois
+        // mostra o valor antigo até a busca nova chegar.
+        try {
+          const c = localStorage.getItem("cache_dashboard");
+          if(c){
+            const j = JSON.parse(c);
+            const lista = (j.estadoDia || []).filter(e=>e.data !== hojeStr);
+            j.estadoDia = [...lista, payload].sort((a,b)=>a.data < b.data ? -1 : 1);
+            localStorage.setItem("cache_dashboard", JSON.stringify(j));
+          }
+        } catch(e){}
+      })
+      .catch(()=>{ setErroEstado(true); })
       .finally(()=>{
         setEstadoSalvando(false);
-        setEstadoAlterado(false);
         setEstadoDiaLista(prev=>{
           const sem = prev.filter(e=>e.data !== hojeStr);
           return [...sem, payload].sort((a,b)=>a.data < b.data ? -1 : 1);
@@ -1190,7 +1245,7 @@ const topNav = [
     const dataExtenso = hoje.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
 
     return (
-      <div style={{width:"100%",minWidth:0,maxWidth:1240}}>
+      <div style={{width:"100%",minWidth:0,maxWidth:1240,margin:"0 auto"}}>
 
         <div style={{marginBottom:22}}>
           <div style={{fontSize:12,color:th.textMuted,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700}}>{dataExtenso}</div>
@@ -1649,7 +1704,10 @@ const topNav = [
           <aside style={{flex:"1 1 300px",minWidth:288,maxWidth:356,display:"flex",flexDirection:"column",gap:24}}>
 
             <div style={{borderRadius:20,padding:"18px 20px",background:`linear-gradient(160deg, ${ACCENT_ATUAL}1F, ${dark?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.6)"})`,boxShadow:`inset 0 0 0 1px ${ACCENT_ATUAL}33`}}>
-              <div style={{fontSize:11.5,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:ACCENT_ATUAL,marginBottom:9}}>Lembrete</div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:9}}>
+                <span style={{fontSize:11.5,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:ACCENT_ATUAL}}>Lembrete</span>
+                {estadoAlterado && <span style={{fontSize:10.5,fontWeight:700,color:COR_MEIO,letterSpacing:"0.04em"}}>não salvo</span>}
+              </div>
               <textarea value={estadoHoje.lembrete} onChange={e=>mudarEstadoHoje("lembrete",e.target.value)}
                 rows={3} placeholder="O que você precisa lembrar hoje"
                 style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",resize:"none",
@@ -1703,6 +1761,11 @@ const topNav = [
                     cursor:estadoAlterado&&!estadoSalvando?"pointer":"default",fontFamily:"inherit",width:"100%"}}>
                   {estadoSalvando?"Salvando…":(estadoAlterado?"Salvar":"Salvo")}
                 </button>
+                {erroEstado && (
+                  <div style={{fontSize:11.5,color:COR_NEG,lineHeight:1.45,marginTop:-6}}>
+                    Não consegui salvar. O texto fica guardado aqui no navegador — tente de novo em instantes.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1850,57 +1913,73 @@ const topNav = [
         </div>
       </div>
 
-      <div style={{display:"flex",gap:14,alignItems:"stretch"}}>
+      <div style={{display:"flex",gap:18,alignItems:"flex-start"}}>
 
-        {/* SIDEBAR FLUTUANTE */}
-        <div style={{width:sidebarExpandido?224:70,flexShrink:0,position:"relative",alignSelf:"stretch",transition:"width 0.2s ease",zIndex:30}}>
-        <aside
-          onMouseEnter={()=>setSidebarHover(true)}
-          onMouseLeave={()=>setSidebarHover(false)}
-          style={{
-          position:"sticky", top:0,
-          width:sidebarAberto?224:70, borderRadius:26,
-          background: dark
-            ? "linear-gradient(170deg, rgba(255,255,255,0.065), rgba(255,255,255,0.018) 55%, rgba(255,255,255,0.01))"
-            : "linear-gradient(170deg, rgba(255,255,255,0.96), rgba(255,255,255,0.72))",
-          boxShadow: dark
-            ? "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.05), 0 26px 50px -34px rgba(0,0,0,0.85)"
-            : "inset 0 0 0 1px rgba(15,23,42,0.065), 0 22px 44px -32px rgba(15,23,42,0.4)",
-          padding:sidebarAberto?"14px 10px":"14px 0", display:"flex", flexDirection:"column",
-          alignItems:sidebarAberto?"stretch":"center", gap:2,
-          transition:"width 0.2s ease",
-          overflow:"hidden",
-        }}>
-          {navItems.map(item=>{
-            const ativo = activeNav===item.label;
-            return (
-              <button key={item.label} onClick={()=>setActiveNav(item.label)} title={sidebarAberto?undefined:item.label} style={{
-                display:"flex",alignItems:"center",gap:sidebarAberto?11:0,justifyContent:sidebarAberto?"flex-start":"center",
-                width:sidebarAberto?"100%":44,height:sidebarAberto?"auto":44,padding:sidebarAberto?"10px 13px":0,
-                borderRadius:999,border:"none",cursor:"pointer",fontFamily:"inherit",
-                background:ativo?`${ACCENT_ATUAL}1F`:"transparent",
-                boxShadow:ativo?`inset 0 0 0 1px ${ACCENT_ATUAL}40`:"none",
-                color:ativo?ACCENT_ATUAL:th.textMuted,
-                fontSize:13.5,fontWeight:ativo?700:500,
-                transition:"background 0.15s ease, color 0.15s ease",
+        {/* MENU LATERAL */}
+        {/* A coluna tem SEMPRE MENU_W de largura, fixada ou não. A barra em si
+            ocupa RAIL_W quando compacta; o resto é o respiro onde o item
+            cresce ao passar o mouse. Por isso o conteúdo nunca se mexe e nada
+            fica por cima dele. */}
+        <div style={{width:MENU_W,flexShrink:0,alignSelf:"flex-start"}}>
+          <aside style={{
+            width:sidebarExpandido?MENU_W:RAIL_W, borderRadius:24,
+            background: dark
+              ? "linear-gradient(170deg, rgba(255,255,255,0.075), rgba(255,255,255,0.03) 55%, rgba(255,255,255,0.022))"
+              : "linear-gradient(170deg, rgba(255,255,255,0.98), rgba(255,255,255,0.86))",
+            boxShadow: dark
+              ? "inset 0 1px 0 rgba(255,255,255,0.09), inset 0 0 0 1px rgba(255,255,255,0.06), 0 20px 40px -30px rgba(0,0,0,0.8)"
+              : "inset 0 0 0 1px rgba(15,23,42,0.07), 0 18px 38px -30px rgba(15,23,42,0.35)",
+            padding:sidebarExpandido?"12px 10px":"12px 0", display:"flex", flexDirection:"column",
+            alignItems:sidebarExpandido?"stretch":"center", gap:3,
+            transition:"width 0.18s ease",
+          }}>
+            {navItems.map(item=>{
+              const ativo = activeNav===item.label;
+              const solto = !sidebarExpandido;
+              const aberto = sidebarExpandido || itemHover===item.label;
+              return (
+                <button key={item.label}
+                  onClick={()=>setActiveNav(item.label)}
+                  onMouseEnter={()=>solto && setItemHover(item.label)}
+                  onMouseLeave={()=>solto && setItemHover(null)}
+                  style={{
+                    position:"relative",
+                    display:"flex",alignItems:"center",gap:11,
+                    justifyContent:aberto?"flex-start":"center",
+                    width:sidebarExpandido?"100%":(aberto?MENU_W-12:44),
+                    height:44,padding:aberto?"0 14px":0,
+                    borderRadius:999,border:"none",cursor:"pointer",fontFamily:"inherit",
+                    background:ativo
+                      ? `${ACCENT_ATUAL}1F`
+                      : (aberto&&solto ? (dark?"rgba(255,255,255,0.07)":"rgba(15,23,42,0.055)") : "transparent"),
+                    boxShadow:ativo?`inset 0 0 0 1px ${ACCENT_ATUAL}40`:"none",
+                    color:ativo?ACCENT_ATUAL:th.textMuted,
+                    fontSize:13.5,fontWeight:ativo?700:500,
+                    transition:"width 0.16s ease, background 0.15s ease, color 0.15s ease",
+                    overflow:"hidden",
+                  }}>
+                  <span style={{flexShrink:0,display:"flex"}}>{item.icon}</span>
+                  <span style={{
+                    whiteSpace:"nowrap",
+                    opacity:aberto?1:0,
+                    width:aberto?"auto":0,
+                    transition:"opacity 0.14s ease",
+                  }}>{item.label}</span>
+                </button>
+              );
+            })}
+
+            <div style={{marginTop:9,paddingTop:9,boxShadow:`inset 0 1px 0 ${supFioApp}`,display:"flex",justifyContent:"center"}}>
+              <div onClick={fixarSidebar} title={sidebarExpandido?"Soltar — abre um item por vez ao passar o mouse":"Fixar aberto"} style={{
+                width:32,height:32,borderRadius:999,cursor:"pointer",
+                background:sidebarExpandido?`${ACCENT_ATUAL}1F`:supApp,
+                boxShadow:`inset 0 0 0 1px ${sidebarExpandido?`${ACCENT_ATUAL}40`:supFioApp}`,
+                display:"flex",alignItems:"center",justifyContent:"center",
               }}>
-                {item.icon}
-                {sidebarAberto && <span style={{whiteSpace:"nowrap"}}>{item.label}</span>}
-              </button>
-            );
-          })}
-
-          <div style={{marginTop:sidebarAberto?10:8,paddingTop:sidebarAberto?10:8,boxShadow:`inset 0 1px 0 ${supFioApp}`,display:"flex",justifyContent:"center"}}>
-            <div onClick={fixarSidebar} title={sidebarExpandido?"Soltar — abre só ao passar o mouse":"Fixar aberto"} style={{
-              width:32,height:32,borderRadius:999,cursor:"pointer",
-              background:sidebarExpandido?`${ACCENT_ATUAL}1F`:supApp,
-              boxShadow:`inset 0 0 0 1px ${sidebarExpandido?`${ACCENT_ATUAL}40`:supFioApp}`,
-              display:"flex",alignItems:"center",justifyContent:"center",
-            }}>
-              {sidebarExpandido?<Ico.Collapse c={ACCENT_ATUAL}/>:<Ico.Expand c={th.textMuted}/>}
+                {sidebarExpandido?<Ico.Collapse c={ACCENT_ATUAL}/>:<Ico.Expand c={th.textMuted}/>}
+              </div>
             </div>
-          </div>
-        </aside>
+          </aside>
         </div>
 
         {renderMain()}
