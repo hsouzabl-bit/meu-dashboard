@@ -177,7 +177,26 @@ export default function App(){
   const RAIL_W = 64;    // largura da barra compacta
   const MENU_W = 196;   // largura reservada: barra + respiro
   const CONTEUDO_W = 1240;
-  const menuAberto = sidebarExpandido || itemHover !== null;
+
+  // O menu alinha pelo topo do primeiro card do conteúdo, não pelo topo da
+  // página. A medida é lida do próprio DOM (o card leva data-ancora-menu),
+  // então continua certa se o cabeçalho mudar de altura ou de aba.
+  const refConteudo = useRef(null);
+  const [offsetMenu, setOffsetMenu] = useState(0);
+  useEffect(()=>{
+    const caixa = refConteudo.current;
+    if(!caixa || typeof ResizeObserver === "undefined") return;
+    const medir = ()=>{
+      const alvo = caixa.querySelector("[data-ancora-menu]");
+      if(!alvo){ setOffsetMenu(0); return; }
+      const d = alvo.getBoundingClientRect().top - caixa.getBoundingClientRect().top;
+      setOffsetMenu(Math.max(0, Math.round(d)));
+    };
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(caixa);
+    return ()=>ro.disconnect();
+  },[activeNav]);
   const fixarSidebar = ()=>{
     setSidebarExpandido(v=>{
       const novo = !v;
@@ -1260,7 +1279,7 @@ const topNav = [
           <main style={{flex:"999 1 560px",minWidth:0,display:"flex",flexDirection:"column",gap:30}}>
 
             {/* ══ FAIXA DE FOCO ══ */}
-            <section style={{borderRadius:28,background:faixaBg,boxShadow:faixaFio,overflow:"hidden"}}>
+            <section data-ancora-menu style={{borderRadius:28,background:faixaBg,boxShadow:faixaFio,overflow:"hidden"}}>
 
               <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"22px 28px 0"}}>
                 <div style={{display:"flex",alignItems:"center",gap:2,background:pillBg,borderRadius:999,padding:3,boxShadow:`inset 0 0 0 1px ${pillFio}`}}>
@@ -1921,16 +1940,17 @@ const topNav = [
       }}>
 
         {/* MENU LATERAL */}
-        {/* A coluna tem SEMPRE MENU_W e estica na altura (alignSelf stretch),
-            que é o que dá ao sticky espaço pra grudar. A barra ocupa RAIL_W
-            quando compacta e cresce até MENU_W ao passar o mouse — sempre
-            DENTRO da coluna, então nunca cobre o conteúdo nem o desloca. */}
+        {/* A coluna tem SEMPRE MENU_W e estica na altura, que é o que dá ao
+            sticky espaço pra grudar. O painel fica em RAIL_W e só o item sob
+            o mouse cresce, pra fora do painel mas dentro da coluna — por isso
+            nada cobre o conteúdo nem o desloca. Fixado pela setinha, aí sim o
+            painel inteiro abre. */}
         <div style={{width:MENU_W,flexShrink:0,alignSelf:"stretch"}}>
           <aside
             onMouseLeave={()=>setItemHover(null)}
             style={{
-              position:"sticky", top:0,
-              width:menuAberto?MENU_W:RAIL_W, borderRadius:24,
+              position:"sticky", top:0, marginTop:offsetMenu,
+              width:sidebarExpandido?MENU_W:RAIL_W, borderRadius:24,
               background: dark
                 ? "linear-gradient(170deg, rgba(255,255,255,0.075), rgba(255,255,255,0.03) 55%, rgba(255,255,255,0.022))"
                 : "linear-gradient(170deg, rgba(255,255,255,0.98), rgba(255,255,255,0.86))",
@@ -1938,29 +1958,33 @@ const topNav = [
                 ? "inset 0 1px 0 rgba(255,255,255,0.09), inset 0 0 0 1px rgba(255,255,255,0.06), 0 20px 40px -30px rgba(0,0,0,0.8)"
                 : "inset 0 0 0 1px rgba(15,23,42,0.07), 0 18px 38px -30px rgba(15,23,42,0.35)",
               padding:"12px 10px", display:"flex", flexDirection:"column",
-              alignItems:"stretch", gap:3,
-              transition:"width 0.18s ease",
+              alignItems:"flex-start", gap:3, overflow:"visible",
+              transition:"width 0.18s ease, margin-top 0.2s ease",
             }}>
             {navItems.map(item=>{
               const ativo = activeNav===item.label;
-              const mostraLabel = sidebarExpandido || itemHover===item.label;
+              const voando = !sidebarExpandido && itemHover===item.label;
+              const mostraLabel = sidebarExpandido || voando;
               return (
                 <button key={item.label}
                   onClick={()=>setActiveNav(item.label)}
                   onMouseEnter={()=>setItemHover(item.label)}
-                  title={menuAberto?undefined:item.label}
+                  title={mostraLabel?undefined:item.label}
                   style={{
+                    position:"relative", zIndex:voando?5:1,
                     display:"flex",alignItems:"center",gap:11,justifyContent:"flex-start",
-                    width:"100%",height:44,padding:"0 10px",
+                    width:mostraLabel?MENU_W-20:44, height:44, padding:"0 12px",
                     borderRadius:999,border:"none",cursor:"pointer",fontFamily:"inherit",
-                    background:ativo
-                      ? `${ACCENT_ATUAL}1F`
-                      : (itemHover===item.label ? (dark?"rgba(255,255,255,0.06)":"rgba(15,23,42,0.05)") : "transparent"),
-                    boxShadow:ativo?`inset 0 0 0 1px ${ACCENT_ATUAL}40`:"none",
+                    background: ativo
+                      ? (voando ? (dark?"#17241D":"#e6f6ee") : `${ACCENT_ATUAL}1F`)
+                      : (voando ? (dark?"#161C21":"#ffffff") : "transparent"),
+                    boxShadow: voando
+                      ? `inset 0 0 0 1px ${ativo?`${ACCENT_ATUAL}55`:(dark?"rgba(255,255,255,0.1)":"rgba(15,23,42,0.1)")}, 0 14px 30px -16px rgba(0,0,0,${dark?0.9:0.3})`
+                      : (ativo?`inset 0 0 0 1px ${ACCENT_ATUAL}40`:"none"),
                     color:ativo?ACCENT_ATUAL:th.textMuted,
                     fontSize:13.5,fontWeight:ativo?700:500,
                     overflow:"hidden",whiteSpace:"nowrap",
-                    transition:"background 0.15s ease, color 0.15s ease",
+                    transition:"width 0.16s ease, background 0.15s ease, color 0.15s ease",
                   }}>
                   <span style={{flexShrink:0,display:"flex",width:20,justifyContent:"center"}}>{item.icon}</span>
                   <span style={{opacity:mostraLabel?1:0,transition:"opacity 0.14s ease"}}>{item.label}</span>
@@ -1968,7 +1992,7 @@ const topNav = [
               );
             })}
 
-            <div style={{marginTop:9,paddingTop:9,boxShadow:`inset 0 1px 0 ${supFioApp}`,display:"flex",justifyContent:menuAberto?"flex-start":"center",paddingLeft:menuAberto?10:0}}>
+            <div style={{width:sidebarExpandido?MENU_W-20:44,marginTop:9,paddingTop:9,boxShadow:`inset 0 1px 0 ${supFioApp}`,display:"flex",justifyContent:"center"}}>
               <div onClick={fixarSidebar} title={sidebarExpandido?"Soltar — abre um item por vez ao passar o mouse":"Fixar aberto"} style={{
                 width:32,height:32,borderRadius:999,cursor:"pointer",flexShrink:0,
                 background:sidebarExpandido?`${ACCENT_ATUAL}1F`:supApp,
@@ -1981,7 +2005,9 @@ const topNav = [
           </aside>
         </div>
 
-        {renderMain()}
+        <div ref={refConteudo} style={{flex:1,minWidth:0}}>
+                  {renderMain()}
+        </div>
       </div>
     </div>
   );
