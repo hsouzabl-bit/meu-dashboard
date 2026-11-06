@@ -167,7 +167,20 @@ export default function App(){
     try { localStorage.setItem("tema_app", id); } catch(e){}
   };
 
-  const [sidebarExpandido,setSidebarExpandido] = useState(true);
+  // sidebarExpandido = fixado pela setinha. sidebarHover = aberto só enquanto
+  // o mouse está em cima. Aberto é a soma dos dois.
+  const [sidebarExpandido,setSidebarExpandido] = useState(()=>{
+    try { return localStorage.getItem("sidebar_fixo") !== "0"; } catch(e){ return true; }
+  });
+  const [sidebarHover,setSidebarHover] = useState(false);
+  const sidebarAberto = sidebarExpandido || sidebarHover;
+  const fixarSidebar = ()=>{
+    setSidebarExpandido(v=>{
+      const novo = !v;
+      try { localStorage.setItem("sidebar_fixo", novo ? "1" : "0"); } catch(e){}
+      return novo;
+    });
+  };
   const [metasExpandido, setMetasExpandido] = useState(true);
 
   const [calFiltro,setCalFiltro] = useState(()=>{
@@ -1177,7 +1190,7 @@ const topNav = [
     const dataExtenso = hoje.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
 
     return (
-      <div style={{width:"100%",minWidth:0,maxWidth:1240,margin:"0 auto"}}>
+      <div style={{width:"100%",minWidth:0,maxWidth:1240}}>
 
         <div style={{marginBottom:22}}>
           <div style={{fontSize:12,color:th.textMuted,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700}}>{dataExtenso}</div>
@@ -1837,27 +1850,33 @@ const topNav = [
         </div>
       </div>
 
-      <div style={{display:"flex",gap:28,alignItems:"flex-start"}}>
+      <div style={{display:"flex",gap:14,alignItems:"stretch"}}>
 
         {/* SIDEBAR FLUTUANTE */}
-        <aside style={{
-          width:sidebarExpandido?224:70, borderRadius:26, flexShrink:0,
+        <div style={{width:sidebarExpandido?224:70,flexShrink:0,position:"relative",alignSelf:"stretch",transition:"width 0.2s ease",zIndex:30}}>
+        <aside
+          onMouseEnter={()=>setSidebarHover(true)}
+          onMouseLeave={()=>setSidebarHover(false)}
+          style={{
+          position:"sticky", top:0,
+          width:sidebarAberto?224:70, borderRadius:26,
           background: dark
             ? "linear-gradient(170deg, rgba(255,255,255,0.065), rgba(255,255,255,0.018) 55%, rgba(255,255,255,0.01))"
             : "linear-gradient(170deg, rgba(255,255,255,0.96), rgba(255,255,255,0.72))",
           boxShadow: dark
             ? "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.05), 0 26px 50px -34px rgba(0,0,0,0.85)"
             : "inset 0 0 0 1px rgba(15,23,42,0.065), 0 22px 44px -32px rgba(15,23,42,0.4)",
-          padding:sidebarExpandido?"14px 10px":"14px 0", display:"flex", flexDirection:"column",
-          alignItems:sidebarExpandido?"stretch":"center", gap:2,
+          padding:sidebarAberto?"14px 10px":"14px 0", display:"flex", flexDirection:"column",
+          alignItems:sidebarAberto?"stretch":"center", gap:2,
           transition:"width 0.2s ease",
+          overflow:"hidden",
         }}>
           {navItems.map(item=>{
             const ativo = activeNav===item.label;
             return (
-              <button key={item.label} onClick={()=>setActiveNav(item.label)} title={sidebarExpandido?undefined:item.label} style={{
-                display:"flex",alignItems:"center",gap:sidebarExpandido?11:0,justifyContent:sidebarExpandido?"flex-start":"center",
-                width:sidebarExpandido?"100%":44,height:sidebarExpandido?"auto":44,padding:sidebarExpandido?"10px 13px":0,
+              <button key={item.label} onClick={()=>setActiveNav(item.label)} title={sidebarAberto?undefined:item.label} style={{
+                display:"flex",alignItems:"center",gap:sidebarAberto?11:0,justifyContent:sidebarAberto?"flex-start":"center",
+                width:sidebarAberto?"100%":44,height:sidebarAberto?"auto":44,padding:sidebarAberto?"10px 13px":0,
                 borderRadius:999,border:"none",cursor:"pointer",fontFamily:"inherit",
                 background:ativo?`${ACCENT_ATUAL}1F`:"transparent",
                 boxShadow:ativo?`inset 0 0 0 1px ${ACCENT_ATUAL}40`:"none",
@@ -1866,17 +1885,23 @@ const topNav = [
                 transition:"background 0.15s ease, color 0.15s ease",
               }}>
                 {item.icon}
-                {sidebarExpandido && <span style={{whiteSpace:"nowrap"}}>{item.label}</span>}
+                {sidebarAberto && <span style={{whiteSpace:"nowrap"}}>{item.label}</span>}
               </button>
             );
           })}
 
-          <div style={{marginTop:sidebarExpandido?10:8,paddingTop:sidebarExpandido?10:8,boxShadow:`inset 0 1px 0 ${supFioApp}`,display:"flex",justifyContent:"center"}}>
-            <div onClick={()=>setSidebarExpandido(v=>!v)} title={sidebarExpandido?"Recolher":"Expandir"} style={{width:32,height:32,borderRadius:999,background:supApp,boxShadow:`inset 0 0 0 1px ${supFioApp}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-              {sidebarExpandido?<Ico.Collapse c={th.textMuted}/>:<Ico.Expand c={th.textMuted}/>}
+          <div style={{marginTop:sidebarAberto?10:8,paddingTop:sidebarAberto?10:8,boxShadow:`inset 0 1px 0 ${supFioApp}`,display:"flex",justifyContent:"center"}}>
+            <div onClick={fixarSidebar} title={sidebarExpandido?"Soltar — abre só ao passar o mouse":"Fixar aberto"} style={{
+              width:32,height:32,borderRadius:999,cursor:"pointer",
+              background:sidebarExpandido?`${ACCENT_ATUAL}1F`:supApp,
+              boxShadow:`inset 0 0 0 1px ${sidebarExpandido?`${ACCENT_ATUAL}40`:supFioApp}`,
+              display:"flex",alignItems:"center",justifyContent:"center",
+            }}>
+              {sidebarExpandido?<Ico.Collapse c={ACCENT_ATUAL}/>:<Ico.Expand c={th.textMuted}/>}
             </div>
           </div>
         </aside>
+        </div>
 
         {renderMain()}
       </div>
